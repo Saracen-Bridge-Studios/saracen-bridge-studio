@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.0.8.1"
+VERSION = "1.1.0"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 
@@ -101,7 +101,7 @@ def diagnostics():
         w = rc.wrap_key(key, "s_check", 1, b.public(), a)
         ok = rc.unwrap_key(w, b) == key and len(rc.WORDS) == 2048
         from .room import host as _h
-        import room_hub.app  # noqa: F401 - hosting: the hub and its phone app are bundled (1.0.8.1)
+        import room_hub.app  # noqa: F401 - hosting: the hub and its phone app are bundled (1.1.0)
         from pathlib import Path as _P
         app_static = _P(room_hub.app.__file__).with_name("static") / "index.html"
         out["room"] = {"crypto": ok, "words": len(rc.WORDS), "hub": app_static.exists(), "meetings": bool(_h._livekit_bin()),
@@ -1003,7 +1003,7 @@ app.include_router(_room_router)
 
 @app.on_event("startup")
 def _room_host_autostart():
-    """If this PC hosts a Room (whoever starts a project hosts it), bring it up so the team can connect (1.0.8.1)."""
+    """If this PC hosts a Room (whoever starts a project hosts it), bring it up so the team can connect (1.1.0)."""
     from .room import host as _room_host
     threading.Thread(target=_room_host.autostart, daemon=True, name="room-host-start").start()
 

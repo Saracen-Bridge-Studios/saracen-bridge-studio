@@ -36,7 +36,7 @@ NOTE_STATUSES = ("Open", "Needs review", "Decision", "Done")
 
 _LOCK = threading.RLock()
 _CLIENT: RoomClient | None = None             # the Room the page is looking at now (the "active" one)
-_CLIENTS: dict[str, RoomClient] = {}          # every Room this PC is in: one per host (1.0.8.1), keyed by folder
+_CLIENTS: dict[str, RoomClient] = {}          # every Room this PC is in: one per host (1.1.0), keyed by folder
 _LIVE: dict = {"threads": {}, "stops": {}, "seq": 0, "error": "", "cond": threading.Condition()}
 HTTP_FACTORY = None                           # tests: hub address -> http client
 MEETINGS: dict[str, str] = {}                 # meeting id -> folder of the Room it belongs to
@@ -344,7 +344,7 @@ def view(c: RoomClient, production: str | None = None) -> dict:
     board.sort(key=lambda n: (not n["pinned"], -n["seq"]))
     tier = my_tier(c, pid)
     allp = []
-    for other in clients():                      # every host's productions in one switcher (1.0.8.1)
+    for other in clients():                      # every host's productions in one switcher (1.1.0)
         mine_here = str(other.dir) == str(c.dir)
         for x in (prods if mine_here else productions(other)):
             allp.append(dict(x, here=_hosted_here(other)))

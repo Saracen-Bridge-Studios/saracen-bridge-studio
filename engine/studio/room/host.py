@@ -1,4 +1,4 @@
-"""This PC hosts the Room (1.0.8.1).
+"""This PC hosts the Room (1.1.0).
 
 Whoever starts a project hosts it: their Studio runs the Room's hub on their own PC, and everyone they invite connects
 to that PC. Jon's projects live on Jon's PC, Colin's on Colin's; a person in both sees them together in one Studio.

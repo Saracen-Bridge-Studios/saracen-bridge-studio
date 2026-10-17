@@ -4,7 +4,7 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
-## 1.0.8.1 (17 Oct 2026), whoever starts a production hosts it
+## 1.1.0 (17 Oct 2026), whoever starts a production hosts it
 Setup `SETUPHASH`, SETUPSIZE. Replaces 1.0.8 the same day. Tested by a silent upgrade over 1.0.7 and the smoke on the installed app, including starting a production in the installed app (its Room and meetings server running under Windows), and a Studio joined to two hosts' productions. Not yet run on Tim's PC.
 - Changed: no web address or founder code. **Start a production** runs the Room on this PC: the person who starts a production is its host and its executive, sends the invites, approves each device and sets everyone's access. Invite links carry the host PC's network address. (S-88)
 - Added: a Studio can be in several hosts' productions at once (Jon's on Jon's PC, Colin's on Colin's): they appear together in one switcher, marked "on this PC" where they're hosted here, and every message, file, call sheet and meeting goes to the PC that holds that production. **Join with an invite** is in the switcher too. (S-88)
@@ -12,7 +12,7 @@ Setup `SETUPHASH`, SETUPSIZE. Replaces 1.0.8 the same day. Tested by a silent up
 - Fixed: the production switcher's menu was cut off by the top bar, so it never showed. (S-89)
 
 ## 1.0.8 (17 Oct 2026), the Room
-Setup `4fd0a424`, 68.3 MB. Delivered to Tim's Downloads; superseded by 1.0.8.1 before use. Tested by a silent upgrade over 1.0.7 and the 35-check smoke on the installed app (Room crypto bundled, Room pages, mic panel, a test Room server's health). 198 tests pass under Windows Python (3 skipped: Node and POSIX-only), 203 under Linux.
+Setup `4fd0a424`, 68.3 MB. Delivered to Tim's Downloads; superseded by 1.1.0 before use. Tested by a silent upgrade over 1.0.7 and the 35-check smoke on the installed app (Room crypto bundled, Room pages, mic panel, a test Room server's health). 198 tests pass under Windows Python (3 skipped: Node and POSIX-only), 203 under Linux.
 - Added: the Room, a private team space per production, end-to-end encrypted on each device before anything leaves it: a board of notes (Open, Needs review, Decision, Done; pinned; with files), channels and private messages with @mentions, files with versions and resumable uploads, a production switcher, and Members & access (invites, device approval by three safety words, tiers, contact grants, the executive oversight notice and an append-only audit log). Hidden, not locked: people see only what their tier and spaces allow, in lists, search, counts and notifications as well. (S-79, S-80, S-84)
 - Added: call sheets in the Room: a strip with "X / Y confirmed", Remind the ones who haven't, each person's own times (pickup address and driver only to them and the production office), Got it per version, and a new version starts the count again. (S-81)
 - Added: voice huddles (anyone in a space) and meetings of up to 75 (executives on stage, others watch and raise a hand, executives bring them up), end-to-end encrypted, never recorded, with calendar invites; the system's default microphone is used and followed when it changes, with noise suppression and echo cancelling and a level meter. (S-82)

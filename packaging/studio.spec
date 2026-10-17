@@ -22,7 +22,7 @@ datas = [
 for t in ("t05_brand_integration", "t07_bfi_certification", "fpm_finance_plan_modeller"):
     datas.append((str(ROOT / "sources" / t / "skills" / "instructions" / "SKILL.md"), f"sources/{t}/skills/instructions"))
 # The Room (1.0.8): the safety-word list the crypto library reads at run time; ui/vendor (LiveKit, MIT/Apache) rides in ui.
-# 1.0.8.1: whoever starts a production hosts it, so the Studio carries the hub (and its phone app) and LiveKit.
+# 1.1.0: whoever starts a production hosts it, so the Studio carries the hub (and its phone app) and LiveKit.
 datas.append((str(ROOT / "engine" / "room_crypto" / "words.txt"), "room_crypto"))
 datas.append((str(ROOT / "engine" / "room_hub" / "static"), "room_hub/static"))
 if (ROOT / "packaging" / "livekit" / "livekit-server.exe").exists():
@@ -40,7 +40,7 @@ if (ROOT / "packaging" / "ocr" / "tesseract.exe").exists():
 binaries = collect_dynamic_libs("pypdfium2_raw")
 hidden = collect_submodules("uvicorn") + collect_submodules("studio") + collect_submodules("pypdf") + ["multipart", "python_multipart"]
 hidden += collect_submodules("room_crypto") + collect_submodules("nacl") + collect_submodules("websockets")   # the Room (1.0.8)
-hidden += collect_submodules("room_hub") + collect_submodules("jwt") + ["cryptography.hazmat.primitives.ciphers.aead"]  # hosting (1.0.8.1)
+hidden += collect_submodules("room_hub") + collect_submodules("jwt") + ["cryptography.hazmat.primitives.ciphers.aead"]  # hosting (1.1.0)
 hidden += collect_submodules("pypdfium2") + collect_submodules("pypdfium2_raw") + ["PIL.JpegImagePlugin", "PIL.PngImagePlugin", "PIL.WebPImagePlugin"]
 # Jon's agreement-builder scripts ship as data and are imported at run time, so PyInstaller cannot see their imports.
 hidden += collect_submodules("lxml") + ["argparse", "collections", "copy", "decimal", "hashlib", "json", "zipfile"]

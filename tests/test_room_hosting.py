@@ -1,4 +1,4 @@
-"""Whoever starts a production hosts it (1.0.8.1): their Studio runs the Room on their own PC, with no web address to
+"""Whoever starts a production hosts it (1.1.0): their Studio runs the Room on their own PC, with no web address to
 type, and a Studio in several people's productions (Jon's on Jon's PC, Colin's on Colin's) sees them all in one
 switcher, with every action going to the PC that holds it."""
 import socket
