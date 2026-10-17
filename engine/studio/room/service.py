@@ -35,8 +35,11 @@ TIER_SEES = {
 NOTE_STATUSES = ("Open", "Needs review", "Decision", "Done")
 
 _LOCK = threading.RLock()
-_CLIENT: RoomClient | None = None
-_LIVE: dict = {"thread": None, "stop": None, "seq": 0, "error": "", "cond": threading.Condition()}
+_CLIENT: RoomClient | None = None             # the Room the page is looking at now (the "active" one)
+_CLIENTS: dict[str, RoomClient] = {}          # every Room this PC is in: one per host (1.0.8.1), keyed by folder
+_LIVE: dict = {"threads": {}, "stops": {}, "seq": 0, "error": "", "cond": threading.Condition()}
+HTTP_FACTORY = None                           # tests: hub address -> http client
+MEETINGS: dict[str, str] = {}                 # meeting id -> folder of the Room it belongs to
 
 
 def folder() -> Path:
@@ -45,20 +48,98 @@ def folder() -> Path:
     return p
 
 
+def _norm(hub: str) -> str:
+    return (hub or "").strip().rstrip("/").lower()
+
+
+def _new_client(path: Path, hub: str | None) -> RoomClient:
+    http = HTTP_FACTORY(hub) if (HTTP_FACTORY and hub) else None
+    c = RoomClient(path, hub=hub, http=http)
+    if hub:
+        c._save_state()
+    _CLIENTS[str(path)] = c
+    return c
+
+
+def _discover():
+    """Load every Room on this PC: the first one (1.0.8, in room/) and one folder per host since (room/hubs/<id>)."""
+    roots = [folder()] + sorted((folder() / "hubs").glob("*")) if (folder() / "hubs").exists() else [folder()]
+    for d in roots:
+        if str(d) not in _CLIENTS and (d / "state.json").exists():
+            hub = json.loads((d / "state.json").read_text() or "{}").get("hub")
+            _CLIENTS[str(d)] = RoomClient(d, http=HTTP_FACTORY(hub) if (HTTP_FACTORY and hub) else None)
+
+
+def clients(status: str | None = "approved") -> list[RoomClient]:
+    with _LOCK:
+        _discover()
+        cs = list(_CLIENTS.values())
+        if _CLIENT is not None and _CLIENT not in cs:
+            cs.insert(0, _CLIENT)
+    return [c for c in cs if status is None or c.state.get("status") == status]
+
+
 def client(hub: str | None = None) -> RoomClient:
+    """The Room the page is on. With a hub address: the Room at that address (a new one if this PC isn't in it yet)."""
     global _CLIENT
     with _LOCK:
-        if _CLIENT is None or hub:
-            _CLIENT = RoomClient(folder(), hub=hub)
-            if hub:
-                _CLIENT._save_state()
+        _discover()
+        if hub:
+            for c in _CLIENTS.values():
+                if _norm(c.state.get("hub")) == _norm(hub):
+                    _CLIENT = c
+                    return c
+            legacy = folder()
+            if not (legacy / "state.json").exists() and not any(Path(k) == legacy for k in _CLIENTS):
+                _CLIENT = _new_client(legacy, hub)            # this PC's first Room
+            else:
+                import hashlib
+                _CLIENT = _new_client(folder() / "hubs" / hashlib.sha1(_norm(hub).encode()).hexdigest()[:12], hub)
+            return _CLIENT
+        if _CLIENT is None:
+            approved = [c for c in _CLIENTS.values() if c.state.get("status") == "approved"]
+            _CLIENT = (approved or list(_CLIENTS.values()) or [None])[0] or _new_client(folder(), None)
         return _CLIENT
+
+
+def own() -> RoomClient | None:
+    """The Room this PC hosts, if it hosts one and has founded it."""
+    from . import host
+    for c in clients():
+        if _norm(c.state.get("hub")) == _norm(host.local()):
+            return c
+    return None
+
+
+def activate(c: RoomClient) -> RoomClient:
+    global _CLIENT
+    with _LOCK:
+        _CLIENT = c
+    return c
+
+
+def resolve(production: str | None = None, space: str | None = None, item: str | None = None,
+            file: str | None = None, meeting: str | None = None) -> RoomClient:
+    """The Room that holds this production, space, item, file or meeting (this PC may be in several hosts' Rooms)."""
+    cs = clients()
+    if len(cs) <= 1:
+        return client()
+    for c in cs:
+        snap = c.snapshot
+        if (production and any(p["id"] == production for p in snap.get("productions", []))) or \
+           (space and any(sp["id"] == space for sp in snap.get("spaces", []))) or \
+           (item and item in c.items) or (meeting and MEETINGS.get(meeting) == str(c.dir)) or \
+           (file and any(f["id"] == file for f in c.files())):
+            return activate(c)
+    return client()
 
 
 def reset_for_tests():
     global _CLIENT
     stop_live()
     _CLIENT = None
+    _CLIENTS.clear()
+    MEETINGS.clear()
 
 
 def is_local(url: str) -> bool:
@@ -72,23 +153,28 @@ def is_local(url: str) -> bool:
         return host.endswith(".local") or host.endswith(".lan")
 
 
-# ------------------------------------------------------------------ live link to the hub
+# ------------------------------------------------------------------ live links to the hosts
 def start_live():
-    c = client()
-    if c.state.get("status") != "approved" or not c.state.get("hub"):
-        return
-    with _LOCK:
-        if _LIVE["thread"] and _LIVE["thread"].is_alive():
-            return
-        stop = threading.Event()
-        _LIVE["stop"] = stop
-        _LIVE["thread"] = threading.Thread(target=_live_loop, args=(stop,), daemon=True, name="room-live")
-        _LIVE["thread"].start()
+    """One live link per Room this PC is in."""
+    for c in clients():
+        if not c.state.get("hub"):
+            continue
+        k = str(c.dir)
+        with _LOCK:
+            th = _LIVE["threads"].get(k)
+            if th and th.is_alive():
+                continue
+            stop = threading.Event()
+            _LIVE["stops"][k] = stop
+            _LIVE["threads"][k] = threading.Thread(target=_live_loop, args=(c, stop), daemon=True, name="room-live")
+            _LIVE["threads"][k].start()
 
 
 def stop_live():
-    if _LIVE["stop"]:
-        _LIVE["stop"].set()
+    for st in list(_LIVE["stops"].values()):
+        st.set()
+    _LIVE["stops"].clear()
+    _LIVE["threads"].clear()
 
 
 def bumped():
@@ -103,11 +189,10 @@ def wait(since: int, timeout: float = 25) -> int:
         return _LIVE["seq"]
 
 
-def _live_loop(stop: threading.Event):
+def _live_loop(c: RoomClient, stop: threading.Event):
     from websockets.sync.client import connect
     backoff = 1
     while not stop.is_set():
-        c = client()
         try:
             url = c.state["hub"].replace("https://", "wss://").replace("http://", "ws://") + "/api/live"
             kw = {"proxy": None} if is_local(c.state["hub"]) else {}
@@ -258,7 +343,12 @@ def view(c: RoomClient, production: str | None = None) -> dict:
                       "file": att and {"id": att["id"], "name": att["name"], "size": att["size"]}})
     board.sort(key=lambda n: (not n["pinned"], -n["seq"]))
     tier = my_tier(c, pid)
-    out = {"me": _me(c, pid), "productions": prods, "production": pid,
+    allp = []
+    for other in clients():                      # every host's productions in one switcher (1.0.8.1)
+        mine_here = str(other.dir) == str(c.dir)
+        for x in (prods if mine_here else productions(other)):
+            allp.append(dict(x, here=_hosted_here(other)))
+    out = {"me": _me(c, pid), "productions": allp or prods, "production": pid,
            "production_name": next(x["name"] for x in prods if x["id"] == pid),
            "archived": next(x["archived"] for x in prods if x["id"] == pid),
            "spaces": spaces, "dms": dms, "my_day": mine, "board": board,
@@ -272,6 +362,11 @@ def view(c: RoomClient, production: str | None = None) -> dict:
     from . import callsheets
     out["callsheet"] = callsheets.today(c, pid, ppl, sname)
     return out
+
+
+def _hosted_here(c: RoomClient) -> bool:
+    from . import host
+    return _norm(c.state.get("hub")) == _norm(host.local())
 
 
 def _me(c: RoomClient, p: str | None) -> dict:
@@ -392,8 +487,9 @@ def start_upload(space: str, name: str, path: Path, size: int, note: str = "", n
     def prog(stage, i, n):
         UPLOADS[key].update(stage=stage, done=i, total=n)
 
+    c = resolve(space=space)
+
     def run():
-        c = client()
         try:
             with open(path, "rb") as fh:
                 item = c.upload(space, name, fh, size=size, note=note, progress=prog)
@@ -414,7 +510,11 @@ def start_upload(space: str, name: str, path: Path, size: int, note: str = "", n
 
 def resume_uploads():
     """Uploads interrupted earlier (the app closed, the connection dropped) carry on from the outbox."""
-    c = client()
+    for c in clients():
+        _resume(c)
+
+
+def _resume(c: RoomClient):
     for fid, up in list((c.state.get("uploads") or {}).items()):
         key = "resume_" + fid
         if key in UPLOADS and UPLOADS[key]["stage"] not in ("failed", "done"):
@@ -424,7 +524,7 @@ def resume_uploads():
 
         def run(fid=fid, key=key):
             try:
-                client().resume_upload(fid, progress=lambda st, i, n: UPLOADS[key].update(stage=st, done=i, total=n))
+                c.resume_upload(fid, progress=lambda st, i, n: UPLOADS[key].update(stage=st, done=i, total=n))
                 UPLOADS[key]["stage"] = "done"
             except Exception as e:  # noqa: BLE001
                 UPLOADS[key].update(stage="failed", error=str(e))

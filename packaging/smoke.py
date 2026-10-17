@@ -146,6 +146,8 @@ check("Gemma download ready to resume", set(dl["options"]) == {"12b", "e4b"} and
       f"{dl['state']}, wanted {dl.get('wanted') or 'none'}")
 room = call("/api/diagnostics").get("room", {})
 check("1.0.8 the Room's encryption is bundled (libsodium, safety words, live link)", room.get("crypto") is True, room)
+check("1.0.8.1 this Studio can host its own productions (the Room's hub, phone app and meetings server are bundled)",
+      room.get("hub") is True and room.get("meetings") is True, {k: room.get(k) for k in ("hub", "meetings")})
 rs = call("/api/room/state")
 check("1.0.8 the Room answers before it's set up", isinstance(rs.get("status"), str) and "hub" in rs, rs.get("status"))
 idx = call("/", raw=True)

@@ -28,6 +28,7 @@ const onRoom = () => (location.hash || "").startsWith("#/room");
 
 async function roomRoute(a, b) {
   RM.st = await api.get("/api/room/state");
+  if (a === "joining") return roomJoining();
   if (RM.st.status === "none" || RM.st.status === "declined" || RM.st.status === "revoked") return roomSetup();
   if (RM.st.status === "pending") return roomJoining();
   if (a === "access") return roomAccess();
@@ -41,9 +42,8 @@ function roomSetup() {
   topbar(["Studio", "Room"]);
   const link = el("input", { type: "text", placeholder: "Paste the invite link you were sent", "aria-label": "Invite link", style: "width:100%" });
   const name = el("input", { type: "text", placeholder: "Your name", "aria-label": "Your name", style: "width:100%" });
-  const hub = el("input", { type: "text", placeholder: "https://room.yourcompany.com", "aria-label": "Room address", style: "width:100%" });
-  const tok = el("input", { type: "password", placeholder: "One-time founder code from the Room's setup", "aria-label": "Founder code", style: "width:100%" });
-  const fname = el("input", { type: "text", placeholder: "Your name", "aria-label": "Your name (founder)", style: "width:100%" });
+  const fname = el("input", { type: "text", placeholder: "Your name", "aria-label": "Your name", style: "width:100%" });
+  const prod = el("input", { type: "text", placeholder: "e.g. SHADE", "aria-label": "Production name", style: "width:100%" });
   const busy = async (btn, fn) => { btn.disabled = true; try { await fn(); } catch (e) { toast("bad", "Couldn't do that", e.message); } btn.disabled = false; };
   put(app(), el("h1", {}, "The Room"),
     el("p", { class: "lede" }, "A private, encrypted hub for each production: a board, channels, files, call sheets and meetings. Everything is encrypted on this PC before it leaves, and only the people who can see a space can read it."),
@@ -53,15 +53,15 @@ function roomSetup() {
         el("label", { class: "f" }, "Invite link", link), el("label", { class: "f", style: "margin-top:12px" }, "Your name", name),
         el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: e => busy(e.currentTarget, async () => {
           if (!link.value.trim()) throw new Error("Paste the invite link first.");
-          await api.post("/api/room/join", { invite: link.value.trim(), name: name.value.trim() }); route(); }) }, "Join"))),
-      el("div", { class: "card" }, el("h2", {}, icon("shield"), "Set up a new Room"),
-        el("p", { class: "muted small" }, "For the company's first executive. The Room's server (the hub) is installed first; its setup prints a one-time founder code."),
-        el("label", { class: "f" }, "Room address", hub), el("label", { class: "f", style: "margin-top:12px" }, "Founder code", tok),
-        el("label", { class: "f", style: "margin-top:12px" }, "Your name", fname),
-        el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn", onclick: e => busy(e.currentTarget, async () => {
-          await api.post("/api/room/hub", { hub: hub.value.trim() });
-          await api.post("/api/room/found", { token: tok.value.trim(), name: fname.value.trim(), role: "Executive" });
-          toast("ok", "Your Room is ready", "Create your first production next."); route(); }) }, "Set up")))));
+          await api.post("/api/room/join", { invite: link.value.trim(), name: name.value.trim() }); location.hash = "#/room/joining"; route(); }) }, "Join"))),
+      el("div", { class: "card" }, el("h2", {}, icon("reel"), "Start a production"),
+        el("p", { class: "muted small" }, "The production lives on this PC. You invite people with a link, and they connect to it here. Nothing to install and no web address needed."),
+        el("label", { class: "f" }, "Your name", fname), el("label", { class: "f", style: "margin-top:12px" }, "Production", prod),
+        el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: e => busy(e.currentTarget, async () => {
+          if (!fname.value.trim() || !prod.value.trim()) throw new Error("Enter your name and the production's name.");
+          const r = await api.post("/api/room/host", { name: fname.value.trim(), production: prod.value.trim() });
+          toast("ok", `${prod.value.trim()} is set up`, "It runs on this PC. Invite people from Members & access.");
+          RM.prod = r.id; RM.space = "board"; location.hash = `#/room/${r.id}`; route(); }) }, "Start")))));
 }
 
 async function roomJoining() {
@@ -72,10 +72,10 @@ async function roomJoining() {
     if (!onRoom()) return;
     let r;
     try { r = await api.get("/api/room/join"); } catch (e) { put(box, errBox(e)); return setTimeout(tick, 5000); }
-    if (r.stage === "approved") { await roomOversightOnce(true); return route(); }
+    if (r.stage === "approved") { await roomOversightOnce(true); if (location.hash !== "#/room") { location.hash = "#/room"; return; } return route(); }
     if (r.stage === "declined" || r.stage === "none") {
       put(box, el("h2", {}, "This PC wasn't approved"), el("p", {}, "The invite was declined or has expired. Ask for a new invite."),
-        el("button", { type: "button", class: "btn", onclick: async () => { await api.post("/api/room/leave", {}); route(); } }, "Start again"));
+        el("button", { type: "button", class: "btn", onclick: async () => { await api.post("/api/room/leave", {}); if (location.hash !== "#/room") location.hash = "#/room"; else route(); } }, "Start again"));
       return;
     }
     if (r.stage === "waiting") put(box, el("h2", {}, icon("clock"), "Waiting for an executive"),
@@ -136,11 +136,12 @@ function roomTopbar() {
   const btn = el("button", { type: "button", class: "prod-switch", "aria-haspopup": "true", "aria-expanded": "false",
     onclick: () => { const open = menu.hidden; menu.hidden = !open; btn.setAttribute("aria-expanded", String(open)); } },
     el("span", { class: "lbl" }, "Production"), el("b", {}, v.production_name), v.archived ? el("span", { class: "muted small" }, "archived") : null, icon("arrow", "rot"));
-  put(menu, el("div", { class: "pm-h" }, v.is_exec ? "Every production" : "Your productions"),
+  put(menu, el("div", { class: "pm-h" }, "Your productions"),
     v.productions.map(p => el("button", { type: "button", role: "menuitem", "aria-pressed": String(p.id === v.production),
       onclick: () => { menu.hidden = true; location.hash = `#/room/${p.id}`; } },
-      el("span", { class: "pm-n" }, p.name, p.archived ? el("small", {}, " · archived") : null), el("span", { class: "pm-c" }, plural(p.members, "person", "people")))),
-    v.is_exec ? el("button", { type: "button", class: "pm-new", onclick: () => { menu.hidden = true; roomNewProduction(); } }, icon("plus"), "New production") : null);
+      el("span", { class: "pm-n" }, p.name, p.archived ? el("small", {}, " · archived") : null, p.here ? el("small", {}, " · on this PC") : null), el("span", { class: "pm-c" }, plural(p.members, "person", "people")))),
+    el("button", { type: "button", class: "pm-new", onclick: () => { menu.hidden = true; roomNewProduction(); } }, icon("plus"), "Start a production"),
+    el("button", { type: "button", class: "pm-new", onclick: () => { menu.hidden = true; roomJoinAnother(); } }, icon("door"), "Join with an invite"));
   if (!RM.menuOff) {          /* one listener for the page: a click outside an open menu closes it */
     RM.menuOff = e => document.querySelectorAll(".prod-menu:not([hidden])").forEach(m => { const w = m.closest(".prod-wrap");
       if (w && !w.contains(e.target)) { m.hidden = true; w.querySelector(".prod-switch")?.setAttribute("aria-expanded", "false"); } });
@@ -155,8 +156,9 @@ function roomDraw() {
   const v = RM.v;
   roomTopbar();
   if (!v.production) {
-    put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, v.is_exec ? "Create the first production. Each production is its own Room, with its own people, spaces, board, files and call sheets." : "You aren't on a production yet. An executive adds you when you're invited to one."),
-      v.is_exec ? el("button", { type: "button", class: "btn primary", onclick: roomNewProduction }, icon("plus"), "New production") : null);
+    put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, "Start a production on this PC, or join one with an invite. Each production has its own people, spaces, board, files and call sheets."),
+      el("div", { class: "row" }, el("button", { type: "button", class: "btn primary", onclick: roomNewProduction }, icon("plus"), "Start a production"),
+        el("button", { type: "button", class: "btn", onclick: roomJoinAnother }, icon("door"), "Join with an invite")));
     return;
   }
   const side = el("aside", { class: "room-side", "aria-label": "Spaces" });
@@ -414,10 +416,18 @@ async function roomNewDM() {
 
 async function roomNewProduction() {
   const name = el("input", { type: "text", placeholder: "e.g. SHADE", "aria-label": "Production name", style: "width:100%" });
-  const ok = await modal({ icon: "reel", title: "New production", body: [el("p", { class: "muted small" }, "It gets its own people, spaces, board and files, with a Production office, Heads of department and Cast channel to start."), el("label", { class: "f" }, "Name", name)], actions: [["Cancel", false], ["Create", true, true]] });
+  const ok = await modal({ icon: "reel", title: "Start a production", body: [el("p", { class: "muted small" }, "It lives on this PC, and the people you invite connect to it here. It starts with a Production office, Heads of department and Cast channel."), el("label", { class: "f" }, "Name", name)], actions: [["Cancel", false], ["Start", true, true]] });
   if (!ok || !name.value.trim()) return;
   try { const r = await api.post("/api/room/productions", { name: name.value.trim() }); RM.prod = r.id; RM.space = "board"; location.hash = `#/room/${r.id}`; }
   catch (e) { toast("bad", "Couldn't create it", e.message); }
+}
+
+async function roomJoinAnother() {
+  const link = el("input", { type: "text", placeholder: "Paste the invite link you were sent", "aria-label": "Invite link", style: "width:100%" });
+  const ok = await modal({ icon: "door", title: "Join with an invite", body: [el("p", { class: "muted small" }, "Someone sent you a link to their production. An executive there checks three safety words with you before you get in."), el("label", { class: "f" }, "Invite link", link)], actions: [["Cancel", false], ["Join", true, true]] });
+  if (!ok || !link.value.trim()) return;
+  try { await api.post("/api/room/join", { invite: link.value.trim(), name: (RM.v && RM.v.me && RM.v.me.name) || "" }); location.hash = "#/room/joining"; }
+  catch (e) { toast("bad", "Couldn't join", e.message); }
 }
 
 async function roomNewSpace() {

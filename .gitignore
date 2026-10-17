@@ -5,3 +5,4 @@ build/
 packaging/ocr/
 packaging/redist/*.exe
 *.pyc
+packaging/livekit/*.exe

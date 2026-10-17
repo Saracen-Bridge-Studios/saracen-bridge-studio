@@ -13,7 +13,7 @@ import time
 
 import httpx
 import jwt
-from fastapi import Body, Depends, HTTPException
+from fastapi import Body, Depends, HTTPException, Request
 
 MEETING_MAX = 75
 HUDDLE_MAX = 25
@@ -124,7 +124,7 @@ def install(app, store, approved, View):
         return {"id": mid}
 
     @app.post("/api/meetings/{mid}/token")
-    def meeting_token(mid: str, ctx=Depends(approved)):
+    def meeting_token(mid: str, request: Request, ctx=Depends(approved)):
         m, v, _ = _meeting(mid, ctx)
         on_stage = m["kind"] == "huddle" or v.exec or bool(store.one(
             "SELECT 1 FROM meeting_stage WHERE meeting=? AND user=?", (mid, ctx.user)))
@@ -133,7 +133,8 @@ def install(app, store, approved, View):
         if len(here) >= cap and ctx.user not in here:
             raise HTTPException(409, f"The meeting is full ({cap} people).")
         cfg = app.state.livekit
-        return {"url": cfg.get("public_url") or cfg["url"], "token": lk().token(ctx.user, mid, publish=on_stage),
+        url = (cfg.get("public_url") or cfg["url"]).replace("{host}", request.url.hostname or "127.0.0.1")  # a hub on a PC
+        return {"url": url, "token": lk().token(ctx.user, mid, publish=on_stage),
                 "on_stage": on_stage, "kind": m["kind"], "max": cap, "identity": ctx.user}
 
     @app.get("/api/meetings/{mid}")

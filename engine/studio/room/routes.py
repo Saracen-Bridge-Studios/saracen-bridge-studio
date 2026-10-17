@@ -12,14 +12,17 @@ from fastapi import APIRouter, Body, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
+from . import host as H
 from . import service as S
 from .client import RoomError
 
 router = APIRouter(prefix="/api/room")
 
 
-def _c():
-    c = S.client()
+def _c(**hint):
+    """The Room this request is about (this PC may be in several hosts' Rooms): found from the production, space,
+    item, file or meeting it names; otherwise the one the page is on."""
+    c = S.resolve(**hint) if hint else S.client()
     if c.state.get("status") != "approved":
         raise HTTPException(409, "This PC isn't in the Room yet.")
     return c
@@ -56,8 +59,12 @@ def _hub_from(link: str) -> str | None:
 @router.get("/state")
 def state():
     c = S.client()
+    approved = S.clients()
+    if approved and c.state.get("status") != "approved":
+        c = S.activate(approved[0])
     st = c.state.get("status") or "none"
-    out = {"status": st, "hub": c.state.get("hub", ""), "name": (c.state.get("profile") or {}).get("name", "")}
+    out = {"status": st, "hub": c.state.get("hub", ""), "name": (c.state.get("profile") or {}).get("name", ""),
+           "joining": any(x.state.get("status") == "pending" for x in S.clients(None)), "host": H.status()}
     if st == "approved":
         S.start_live()
         S.resume_uploads()
@@ -89,20 +96,54 @@ def found(body: dict = Body(...)):
     return {"ok": True}
 
 
+def _host_and_found(name: str) -> "S.RoomClient":
+    """Run the Room on this PC (if it isn't already) and make this PC's owner its first executive."""
+    try:
+        H.start()
+    except RoomError as e:
+        raise HTTPException(400, str(e)) from e
+    c = S.own()
+    if c:
+        return S.activate(c)
+    if not name:
+        raise HTTPException(400, "Enter your name first.")
+    tok = H.founder_token()
+    if not tok:
+        raise HTTPException(409, "This PC's Room already has its first executive. Join it with an invite instead.")
+    c = S.client(hub=H.local())
+    _run(c.bootstrap, tok, name, "Executive")
+    S.start_live()
+    return c
+
+
+@router.post("/host")
+def host_room(body: dict = Body(...)):
+    """Start a project on this PC: the Room runs here and everyone invited connects to this PC."""
+    name, prod = (body.get("name") or "").strip(), (body.get("production") or "").strip()
+    if not prod:
+        raise HTTPException(400, "Name the production.")
+    c = _host_and_found(name[:120])
+    pid = _run(c.create_production, prod[:120])
+    S.bumped()
+    return {"id": pid, "address": H.address()}
+
+
 @router.post("/join")
 def join(body: dict = Body(...)):
     link = body.get("invite", "")
     hub = _hub_from(link) or body.get("hub")
-    c = S.client(hub=hub or None)
+    c = S.client(hub=hub) if hub else S.client()
+    if not c.state.get("hub") and not getattr(c, "_http", None):
+        raise HTTPException(400, "Paste the whole invite link you were sent (it starts http).")
     if c.state.get("status") == "approved":
-        raise HTTPException(409, "This PC is already in the Room.")
+        raise HTTPException(409, "You're already in this Room. Its productions are in the switcher.")
     _run(c.join, _token_from(link), (body.get("name") or "").strip())
     return _run(c.join_progress)
 
 
 @router.get("/join")
 def join_progress():
-    c = S.client()
+    c = next(iter(S.clients("pending")), None) or S.client()
     if c.state.get("status") not in ("pending", "approved"):
         return {"stage": "none"}
     r = _run(c.join_progress)
@@ -114,17 +155,24 @@ def join_progress():
 @router.post("/leave")
 def leave():
     """Forget the Room on this PC (keys and cache). The executive should also remove the device."""
+    c = next(iter(S.clients("pending") + S.clients("declined") + S.clients("revoked")), None)
     S.stop_live()
     with S._LOCK:
-        shutil.rmtree(S.folder(), ignore_errors=True)
+        if c is not None and c.dir != S.folder():          # one host's Room this PC never got into
+            S._CLIENTS.pop(str(c.dir), None)
+            shutil.rmtree(c.dir, ignore_errors=True)
+        elif not S.clients():
+            shutil.rmtree(S.folder(), ignore_errors=True)
+            S._CLIENTS.clear()
         S._CLIENT = None
+    S.start_live()
     return {"ok": True}
 
 
 # ------------------------------------------------------------------ the room
 @router.get("/view")
 def view(production: str | None = None):
-    c = _c()
+    c = _c(production=production) if production else _c()
     S.start_live()
     return _run(S.view, c, production)
 
@@ -145,12 +193,12 @@ async def wait(since: int = 0):
 
 @router.get("/space/{sid}")
 def space(sid: str, oversight: bool = False):
-    return _run(S.space_view, _c(), sid, open_oversight=oversight)
+    return _run(S.space_view, _c(space=sid), sid, open_oversight=oversight)
 
 
 @router.get("/search")
 def search(production: str, q: str):
-    return _run(S.search, _c(), production, q)
+    return _run(S.search, _c(production=production), production, q)
 
 
 @router.post("/oversight-seen")
@@ -171,7 +219,7 @@ def notifications_seen(body: dict = Body(...)):
 
 @router.post("/message")
 def message(body: dict = Body(...)):
-    c = _c()
+    c = _c(space=body["space"])
     sid, text = body["space"], (body.get("text") or "").strip()
     if not text:
         raise HTTPException(400, "Write a message first.")
@@ -184,8 +232,8 @@ def message(body: dict = Body(...)):
 
 @router.post("/note")
 def note(body: dict = Body(...)):
-    c = _c()
     spaces = [s for s in body.get("spaces", []) if s]
+    c = _c(space=spaces[0]) if spaces else _c()
     title = (body.get("title") or "").strip()
     if not spaces or not title:
         raise HTTPException(400, "Give the note a title and pick where it goes.")
@@ -198,7 +246,7 @@ def note(body: dict = Body(...)):
 
 @router.post("/note/{nid}")
 def note_update(nid: str, body: dict = Body(...)):
-    c = _c()
+    c = _c(item=nid)
     it = c.items.get(nid)
     if not it:
         raise HTTPException(404, "Unknown note.")
@@ -216,7 +264,7 @@ def note_update(nid: str, body: dict = Body(...)):
 @router.post("/upload")
 async def upload(space: str = Form(...), file: UploadFile = File(...), note: str = Form(""),
                  note_title: str = Form(""), note_spaces: str = Form("")):
-    c = _c()
+    _c(space=space)
     tmp = Path(tempfile.mkdtemp(dir=S.folder())) / "upload.bin"
     size = 0
     with open(tmp, "wb") as fh:
@@ -238,7 +286,7 @@ def uploads():
 
 @router.get("/file/{fid}")
 def download(fid: str):
-    c = _c()
+    c = _c(file=fid)
     f = next((x for x in c.files() if x["id"] == fid), None)
     if not f:
         raise HTTPException(404, "That file isn't visible to you.")
@@ -259,7 +307,7 @@ def download(fid: str):
 
 @router.post("/dm")
 def dm(body: dict = Body(...)):
-    sid = _run(_c().dm, body["production"], body["user"])
+    sid = _run(_c(production=body["production"]).dm, body["production"], body["user"])
     S.bumped()
     return {"id": sid}
 
@@ -270,14 +318,15 @@ def new_production(body: dict = Body(...)):
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Name the production.")
-    pid = _run(_c().create_production, name[:120])
+    c = _host_and_found((body.get("you") or S._me(S.client(), None).get("name") or "").strip())   # always on this PC
+    pid = _run(c.create_production, name[:120])
     S.bumped()
     return {"id": pid}
 
 
 @router.post("/productions/{pid}/archive")
 def archive(pid: str, body: dict = Body({})):
-    c = _c()
+    c = _c(production=pid)
     _run(c._req, "POST", f"/api/productions/{pid}/archive", json={"archived": bool(body.get("archived", True))})
     _run(c.sync)
     S.bumped()
@@ -286,10 +335,10 @@ def archive(pid: str, body: dict = Body({})):
 
 @router.post("/spaces")
 def new_space(body: dict = Body(...)):
-    c = _c()
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Name the space.")
+    c = _c(production=body["production"])
     aud = {"tiers": body.get("tiers") or [], "departments": body.get("departments") or [], "second_ad": bool(body.get("second_ad"))}
     members = list(body.get("members") or [])
     if c.is_exec and c.me not in members:
@@ -302,7 +351,7 @@ def new_space(body: dict = Body(...)):
 
 @router.post("/spaces/{sid}/people")
 def space_people(sid: str, body: dict = Body(...)):
-    c = _c()
+    c = _c(space=sid)
     _run(c._req, "POST", f"/api/spaces/{sid}/members", json={"add": body.get("add", []), "remove": body.get("remove", [])})
     _run(c.sync)
     S.bumped()
@@ -314,28 +363,29 @@ def new_department(body: dict = Body(...)):
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Name the department.")
-    dep = _run(_c().add_department, body["production"], name[:80])
+    dep = _run(_c(production=body["production"]).add_department, body["production"], name[:80])
     S.bumped()
     return {"id": dep}
 
 
 @router.post("/invite")
 def invite(body: dict = Body(...)):
-    c = _c()
+    c = _c(production=body["production"]) if body.get("production") else _c()
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Who are you inviting?")
     r = _run(c.invite, body.get("production"), body.get("tier"), name[:120], role=(body.get("role") or "")[:120],
              department=body.get("department") or "", second_ad=bool(body.get("second_ad")),
              user=body.get("user"), company=bool(body.get("company")))
-    link = f"{c.state['hub']}/app/#join={r['token']}"
+    base = H.address() if S._hosted_here(c) else c.state["hub"]      # people reach a host's PC on its network address
+    link = f"{base}/app/#join={r['token']}"
     return {"link": link, "expires_in_days": r["expires_in_days"]}
 
 
 @router.get("/access")
 def access(production: str):
     from . import access as A
-    return _run(A.view, _c(), production)
+    return _run(A.view, _c(production=production), production)
 
 
 @router.post("/pending/{device}/check")
@@ -360,7 +410,7 @@ def pending_decline(device: str):
 
 @router.post("/members/set")
 def member_set(body: dict = Body(...)):
-    c = _c()
+    c = _c(production=body["production"])
     _run(c.set_member, body["production"], body["user"], body["tier"], body.get("department") or "", bool(body.get("second_ad")))
     if body.get("name") is not None:
         _run(c.set_person, body["production"], body["user"], {"name": body["name"].strip(), "role": (body.get("role") or "").strip()})
@@ -370,7 +420,7 @@ def member_set(body: dict = Body(...)):
 
 @router.post("/members/remove")
 def member_remove(body: dict = Body(...)):
-    _run(_c().remove_member, body["production"], body["user"])
+    _run(_c(production=body["production"]).remove_member, body["production"], body["user"])
     S.bumped()
     return {"ok": True}
 
@@ -384,7 +434,7 @@ def device_remove(device: str):
 
 @router.post("/grants")
 def grant(body: dict = Body(...)):
-    c = _c()
+    c = _c(production=body["production"])
     gid = _run(c.grant_contact, body["production"], body["a"], body["b"])
     _run(c.sync)
     S.bumped()
@@ -410,7 +460,7 @@ def execs(body: dict = Body(...)):
 @router.get("/callsheets")
 def callsheet_list(production: str):
     from . import callsheets as CS
-    c = _c()
+    c = _c(production=production)
     out = []
     for lin, versions in CS.sheets(c, production).items():
         s = versions[0]
@@ -424,7 +474,7 @@ def callsheet_list(production: str):
 @router.get("/callsheets/{lineage}")
 def callsheet_get(lineage: str, production: str):
     from . import callsheets as CS
-    c = _c()
+    c = _c(production=production)
     versions = CS.sheets(c, production).get(lineage)
     if not versions:
         raise HTTPException(404, "Unknown call sheet.")
@@ -437,7 +487,7 @@ def callsheet_get(lineage: str, production: str):
 @router.post("/callsheets/pdf")
 async def callsheet_pdf(production: str = Form(...), file: UploadFile = File(...)):
     from . import callsheets as CS
-    c = _c()
+    c = _c(production=production)
     data = await file.read()
     if len(data) > 50 * 1024 * 1024:
         raise HTTPException(413, "That PDF is over 50 MB.")
@@ -452,7 +502,7 @@ async def callsheet_pdf(production: str = Form(...), file: UploadFile = File(...
 @router.post("/callsheets")
 def callsheet_publish(body: dict = Body(...)):
     from . import callsheets as CS
-    r = _run(CS.publish, _c(), body["production"], body, pdf_file=body.get("pdf"))
+    r = _run(CS.publish, _c(production=body["production"]), body["production"], body, pdf_file=body.get("pdf"))
     S.bumped()
     return r
 
@@ -460,14 +510,14 @@ def callsheet_publish(body: dict = Body(...)):
 @router.post("/callsheets/csv")
 def callsheet_csv(body: dict = Body(...)):
     from . import callsheets as CS
-    c = _c()
+    c = _c(production=body["production"])
     return _run(CS.parse_csv, body.get("text", ""), S.people(c, body["production"]))
 
 
 @router.post("/callsheets/item/{item}/confirm")
 def callsheet_confirm(item: str):
     from . import callsheets as CS
-    _run(CS.confirm, _c(), item)
+    _run(CS.confirm, _c(item=item), item)
     S.bumped()
     return {"ok": True}
 
@@ -475,38 +525,43 @@ def callsheet_confirm(item: str):
 @router.post("/callsheets/item/{item}/remind")
 def callsheet_remind(item: str):
     from . import callsheets as CS
-    return {"reminded": _run(CS.remind, _c(), item)}
+    return {"reminded": _run(CS.remind, _c(item=item), item)}
 
 
 # ------------------------------------------------------------------ huddles and meetings
 @router.get("/meetings")
 def meetings_list(production: str):
     from . import meetings as M
-    c = _c()
-    return _run(M.listing, c, production, S.people(c, production))
+    c = _c(production=production)
+    rows = _run(M.listing, c, production, S.people(c, production))
+    for m in rows:
+        S.MEETINGS[m["id"]] = str(c.dir)
+    return rows
 
 
 @router.post("/huddle")
 def huddle(body: dict = Body(...)):
     """Join the huddle in a space, starting it if nobody has yet."""
     from . import meetings as M
-    c = _c()
+    c = _c(space=body["space"])
     sp = body["space"]
     m = _run(M.huddle_for, c, sp)
     mid = m["id"] if m else _run(M.start, c, c.space(sp)["production"], [sp], "huddle", "Huddle")
+    S.MEETINGS[mid] = str(c.dir)
     return _run(M.join, c, mid)
 
 
 @router.post("/meetings")
 def meeting_new(body: dict = Body(...)):
     from . import meetings as M
-    c = _c()
+    c = _c(production=body["production"])
     title = (body.get("title") or "").strip()
     spaces = [s for s in body.get("spaces") or [] if s]
     if not title or not spaces:
         raise HTTPException(400, "Give the meeting a title and pick who it's for.")
     mid = _run(M.start, c, body["production"], spaces, "meeting", title, body.get("starts"), int(body.get("minutes") or 60),
                body.get("agenda") or "")
+    S.MEETINGS[mid] = str(c.dir)
     S.bumped()
     return {"id": mid}
 
@@ -514,28 +569,28 @@ def meeting_new(body: dict = Body(...)):
 @router.post("/meetings/{mid}/join")
 def meeting_join(mid: str):
     from . import meetings as M
-    return _run(M.join, _c(), mid)
+    return _run(M.join, _c(meeting=mid), mid)
 
 
 @router.get("/meetings/{mid}")
 def meeting_state(mid: str):
-    c = _c()
+    c = _c(meeting=mid)
     return _run(c._req, "GET", f"/api/meetings/{mid}")
 
 
 @router.post("/meetings/{mid}/stage")
 def meeting_stage(mid: str, body: dict = Body(...)):
-    return _run(_c()._req, "POST", f"/api/meetings/{mid}/stage", json={"user": body["user"], "on": bool(body.get("on", True))})
+    return _run(_c(meeting=mid)._req, "POST", f"/api/meetings/{mid}/stage", json={"user": body["user"], "on": bool(body.get("on", True))})
 
 
 @router.post("/meetings/{mid}/mute")
 def meeting_mute(mid: str, body: dict = Body(...)):
-    return _run(_c()._req, "POST", f"/api/meetings/{mid}/mute", json={"user": body["user"], "track": body["track"]})
+    return _run(_c(meeting=mid)._req, "POST", f"/api/meetings/{mid}/mute", json={"user": body["user"], "track": body["track"]})
 
 
 @router.post("/meetings/{mid}/end")
 def meeting_end(mid: str):
-    r = _run(_c()._req, "POST", f"/api/meetings/{mid}/end")
+    r = _run(_c(meeting=mid)._req, "POST", f"/api/meetings/{mid}/end")
     S.bumped()
     return r
 
@@ -544,7 +599,7 @@ def meeting_end(mid: str):
 def meeting_ics(mid: str, production: str):
     from fastapi.responses import Response
     from . import meetings as M
-    c = _c()
+    c = _c(production=production)
     name = next((p["name"] for p in S.productions(c) if p["id"] == production), "")
     return Response(_run(M.ics, c, mid, name), media_type="text/calendar",
                     headers={"Content-Disposition": 'attachment; filename="meeting.ics"'})

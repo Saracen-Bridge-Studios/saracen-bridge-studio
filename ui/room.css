@@ -35,6 +35,7 @@
 
 /* top bar: the production switcher sits where the breadcrumbs are */
 .prod-wrap { position: relative; }
+.crumbs:has(.prod-wrap) { overflow: visible; }   /* the switcher menu drops below the top bar (it was clipped before 1.0.8.1) */
 .prod-switch { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--gold-line);
   background: var(--ink-2); color: var(--fg); font-size: 14px; cursor: pointer; }
 .prod-switch .lbl { font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-4); }
