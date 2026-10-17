@@ -75,13 +75,15 @@ def confirmations(c, item: str) -> set:
     return {x["user"] for x in c.snapshot.get("confirmations", []) if x["item"] == item}
 
 
-def pick_today(sh: dict) -> dict | None:
-    """Today's sheet, else the next one coming, else the latest posted."""
+def pick_today(sh: dict, user: str | None = None) -> dict | None:
+    """Today's sheet, else the next one coming, else the latest posted; the sheets this person is on come first."""
     today = time.strftime("%Y-%m-%d")
     latest = [v[0] for v in sh.values()]
     if not latest:
         return None
-    dated = sorted([s for s in latest if s.get("date")], key=lambda s: s["date"])
+    mine = [s for s in latest if user and user in (s.get("people") or [])]
+    latest = mine or latest
+    dated = sorted([s for s in latest if s.get("date")], key=lambda s: (s["date"], -s["seq"]))   # same day: the newest
     for s in dated:
         if s["date"] >= today:
             return s
@@ -106,7 +108,7 @@ def view(c, production: str, sheet: dict, people: dict) -> dict:
 
 
 def today(c, production: str, people: dict, space_names: dict) -> dict | None:
-    s = pick_today(sheets(c, production))
+    s = pick_today(sheets(c, production), c.me)
     return view(c, production, s, people) if s else None
 
 

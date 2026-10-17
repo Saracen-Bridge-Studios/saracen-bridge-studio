@@ -43,7 +43,8 @@ CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, 
 CREATE TABLE IF NOT EXISTS confirmations (item TEXT, version INTEGER, user TEXT, ts INTEGER, seq INTEGER,
   PRIMARY KEY (item, version, user));
 CREATE TABLE IF NOT EXISTS tokens (hash TEXT PRIMARY KEY, device TEXT, expires INTEGER);
-CREATE TABLE IF NOT EXISTS challenges (device TEXT PRIMARY KEY, challenge TEXT, expires INTEGER);
+DROP TABLE IF EXISTS challenges;
+CREATE TABLE challenges (device TEXT, challenge TEXT, expires INTEGER, PRIMARY KEY (device, challenge));
 CREATE TABLE IF NOT EXISTS push_subs (device TEXT PRIMARY KEY, sub TEXT);
 CREATE TABLE IF NOT EXISTS audit (n INTEGER PRIMARY KEY AUTOINCREMENT, seq INTEGER, ts INTEGER, actor TEXT,
   device TEXT, action TEXT, production TEXT, target TEXT, prev TEXT, hash TEXT);

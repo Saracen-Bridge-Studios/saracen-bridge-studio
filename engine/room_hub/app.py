@@ -132,23 +132,23 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         if not d or d["status"] in ("revoked", "declined"):
             raise HTTPException(404, "Unknown device.")
         ch = rc.b64e(os.urandom(24))
-        with store.lock:
-            store.x("INSERT OR REPLACE INTO challenges (device, challenge, expires) VALUES (?,?,?)",
-                    (d["id"], ch, int(time.time()) + 120))
+        with store.lock:                          # several sign-ins may be in flight for one device
+            store.x("DELETE FROM challenges WHERE expires < ?", (int(time.time()),))
+            store.x("INSERT INTO challenges (device, challenge, expires) VALUES (?,?,?)", (d["id"], ch, int(time.time()) + 120))
         return {"challenge": ch}
 
     @app.post("/api/auth/token")
     def token(body: dict = Body(...)):
         did = body.get("device", "")
-        c = store.one("SELECT * FROM challenges WHERE device=?", (did,))
+        c = store.one("SELECT * FROM challenges WHERE device=? AND challenge=?", (did, body.get("challenge", "")))
         d = store.one("SELECT * FROM devices WHERE id=?", (did,))
-        if not c or not d or c["expires"] < time.time() or c["challenge"] != body.get("challenge"):
+        if not c or not d or c["expires"] < time.time():
             raise HTTPException(401, "Sign-in expired. Try again.")
         if not rc.verify(d["ed"], rc.canon({"t": "auth", "device": did, "challenge": c["challenge"]}), body.get("sig", "")):
             raise HTTPException(401, "Sign-in signature didn't check out.")
         tok = rc.b64e(os.urandom(32))
         with store.lock:
-            store.x("DELETE FROM challenges WHERE device=?", (did,))
+            store.x("DELETE FROM challenges WHERE device=? AND challenge=?", (did, c["challenge"]))
             store.x("DELETE FROM tokens WHERE expires < ?", (int(time.time()),))
             store.x("INSERT INTO tokens (hash, device, expires) VALUES (?,?,?)",
                     (_h(tok), did, int(time.time()) + TOKEN_HOURS * 3600))
@@ -900,6 +900,30 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
                     and (sp["id"], sp["epoch"]) in {(s, e) for s in mine for e in mine[s]}}
             person = [{"production": p} for p in sorted(dirs - named) if not v.productions[p]["archived"]]
         return {"wrap": wrap[:500], "rotate": rotate, "personal": personal, "person": person}
+
+    # ------------------------------------------------------------------ Web Push (the phone app)
+    @app.get("/api/push/key")
+    def push_key():
+        if not app.state.push:
+            raise HTTPException(409, "Notifications aren't set up on this hub.")
+        return {"key": app.state.push.public}
+
+    @app.post("/api/push/subscribe")
+    def push_subscribe(body: dict = Body(...), ctx: Ctx = Depends(approved)):
+        sub = body.get("subscription") or {}
+        ep, keys = sub.get("endpoint", ""), sub.get("keys") or {}
+        if not ep.startswith("https://") or not keys.get("p256dh") or not keys.get("auth"):
+            raise HTTPException(400, "That isn't a push subscription.")
+        with store.lock:
+            store.x("INSERT OR REPLACE INTO push_subs (device, sub) VALUES (?, ?)",
+                    (ctx.device["id"], json.dumps({"endpoint": ep, "keys": {"p256dh": keys["p256dh"], "auth": keys["auth"]}})))
+        return {"ok": True}
+
+    @app.post("/api/push/unsubscribe")
+    def push_unsubscribe(ctx: Ctx = Depends(approved)):
+        with store.lock:
+            store.x("DELETE FROM push_subs WHERE device=?", (ctx.device["id"],))
+        return {"ok": True}
 
     # ------------------------------------------------------------------ audit log (executives)
     @app.get("/api/audit")

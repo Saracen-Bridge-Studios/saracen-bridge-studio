@@ -8,7 +8,7 @@ Tiers are set per production; executive is company-wide.
 | executive | every production, space, file and private message (reads outside their own spaces are logged) | everyone |
 | producer | every space in their productions except other people's private messages | executives, producers, keys |
 | key | their department, heads of department, spaces opened to them | producers, keys, their department's crew |
-| crew | their department's channel and posts shared with it | their head of department, their department |
+| crew | their department's channel and posts shared with it | their head of department, their department (the 2nd AD also cast) |
 | cast | their own day, the cast channel, posts shared with cast | the 2nd AD, producers |
 | guest | only spaces shared with them | people in those spaces |
 
@@ -141,6 +141,8 @@ class View:
             return o in ("producer", "key")
         if t == "key":
             return o in ("producer", "key") or (o == "crew" and same_dept)
+        if me["second_ad"] and o == "cast":            # the 2nd AD looks after cast (pickups, sides)
+            return True
         if t == "crew":
             return o in ("key", "crew") and same_dept
         if t == "cast":

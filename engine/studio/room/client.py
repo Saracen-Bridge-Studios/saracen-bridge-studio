@@ -54,6 +54,7 @@ class RoomClient:
                               "CREATE TABLE IF NOT EXISTS wraps (k TEXT PRIMARY KEY, body TEXT);"
                               "CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);")
         self._token: tuple[str, float] | None = None
+        self._sign_lock = threading.Lock()
         self.snapshot: dict = {}
         self.keys: dict[tuple[str, int], bytes] = {}
         self.items: dict[str, dict] = {}
@@ -111,6 +112,10 @@ class RoomClient:
         return r.json() if r.headers.get("content-type", "").startswith("application/json") else r.content
 
     def _bearer(self) -> str:
+        with self._sign_lock:                     # the live link and a page request may both need a token at once
+            return self._bearer_locked()
+
+    def _bearer_locked(self) -> str:
         if self._token and self._token[1] > time.time() + 60:
             return self._token[0]
         if not self.device:

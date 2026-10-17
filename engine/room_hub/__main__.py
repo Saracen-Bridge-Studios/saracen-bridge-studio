@@ -29,7 +29,7 @@ def founder_token(store) -> str:
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="room_hub")
-    ap.add_argument("command", choices=["init", "serve", "purge"])
+    ap.add_argument("command", choices=["init", "serve", "purge", "vapid"])
     ap.add_argument("--data", default=os.environ.get("ROOM_DATA", "room-data"))
     ap.add_argument("--host", default=os.environ.get("ROOM_HOST", "127.0.0.1"))
     ap.add_argument("--port", type=int, default=int(os.environ.get("ROOM_PORT", "8710")))
@@ -40,6 +40,10 @@ def main(argv=None):
     if a.command == "init":
         print("Founder token (use it once, in the Studio: Room › Set up this Room):")
         print(founder_token(Store(Path(a.data))))
+        return
+    if a.command == "vapid":
+        from .push import new_vapid_key
+        print("VAPID_PRIVATE_KEY=" + new_vapid_key())
         return
     if a.command == "purge":
         from .retention import purge
