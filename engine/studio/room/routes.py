@@ -31,6 +31,8 @@ def _run(fn, *a, **kw):
             return fn(*a, **kw)
     except RoomError as e:
         raise HTTPException(400, str(e)) from e
+    except ValueError as e:                    # a bad time, a malformed CSV
+        raise HTTPException(400, str(e)) from e
 
 
 def _token_from(link: str) -> str:
@@ -402,3 +404,75 @@ def execs(body: dict = Body(...)):
     _run(_c().make_exec, body["user"], bool(body.get("on", True)))
     S.bumped()
     return {"ok": True}
+
+
+# ------------------------------------------------------------------ call sheets
+@router.get("/callsheets")
+def callsheet_list(production: str):
+    from . import callsheets as CS
+    c = _c()
+    out = []
+    for lin, versions in CS.sheets(c, production).items():
+        s = versions[0]
+        conf = CS.confirmations(c, s["item"])
+        out.append({"lineage": lin, "item": s["item"], "day": s["day"], "date": s["date"], "version": s["version"],
+                    "unit_call": s["unit_call"], "location": s["location"], "expected": len(s.get("people") or []),
+                    "confirmed": len(conf & set(s.get("people") or [])), "posted": s["ts"]})
+    return sorted(out, key=lambda x: (x["date"] or "", x["posted"]), reverse=True)
+
+
+@router.get("/callsheets/{lineage}")
+def callsheet_get(lineage: str, production: str):
+    from . import callsheets as CS
+    c = _c()
+    versions = CS.sheets(c, production).get(lineage)
+    if not versions:
+        raise HTTPException(404, "Unknown call sheet.")
+    s = versions[0]
+    rows = CS.rows_for(c, production, lineage, s["version"])
+    return dict(s, rows=[dict(rows.get(u, {}), user=u) for u in s.get("people") or []],
+                history=[{"version": v["version"], "posted": v["ts"]} for v in versions])
+
+
+@router.post("/callsheets/pdf")
+async def callsheet_pdf(production: str = Form(...), file: UploadFile = File(...)):
+    from . import callsheets as CS
+    c = _c()
+    data = await file.read()
+    if len(data) > 50 * 1024 * 1024:
+        raise HTTPException(413, "That PDF is over 50 MB.")
+    spaces = CS.audience(c, production)
+    if not spaces:
+        raise HTTPException(400, "There's no channel to share the PDF in yet.")
+    item = await run_in_threadpool(_run, c.upload, spaces[0], Path(file.filename or "callsheet.pdf").name, data,
+                                   share=spaces[1:])
+    return {"id": item["h"]["ref"], "name": item["payload"]["name"], "size": item["payload"]["size"]}
+
+
+@router.post("/callsheets")
+def callsheet_publish(body: dict = Body(...)):
+    from . import callsheets as CS
+    r = _run(CS.publish, _c(), body["production"], body, pdf_file=body.get("pdf"))
+    S.bumped()
+    return r
+
+
+@router.post("/callsheets/csv")
+def callsheet_csv(body: dict = Body(...)):
+    from . import callsheets as CS
+    c = _c()
+    return _run(CS.parse_csv, body.get("text", ""), S.people(c, body["production"]))
+
+
+@router.post("/callsheets/item/{item}/confirm")
+def callsheet_confirm(item: str):
+    from . import callsheets as CS
+    _run(CS.confirm, _c(), item)
+    S.bumped()
+    return {"ok": True}
+
+
+@router.post("/callsheets/item/{item}/remind")
+def callsheet_remind(item: str):
+    from . import callsheets as CS
+    return {"reminded": _run(CS.remind, _c(), item)}

@@ -210,3 +210,24 @@ ul.plain.grants li { display: flex; align-items: flex-start; justify-content: sp
 @media (max-width: 1100px) { .acc-cols { grid-template-columns: 1fr; } .pend-row { grid-template-columns: 36px minmax(0, 1fr); } .pend-row .pw, .pend-row .pa { grid-column: 2; } }
 @media (max-width: 860px) { .room { grid-template-columns: 1fr; } .room-side { position: static; max-height: none; } }
 @media (prefers-reduced-motion: reduce) { .up .bar i { transition: none; } }
+
+/* call sheets */
+.cs-strip { display: grid; grid-template-columns: 1.1fr 1.6fr 1fr auto; gap: 20px; align-items: center; margin-bottom: 16px; padding: 18px 20px; border-radius: var(--r-lg);
+  border: 1px solid transparent; background: linear-gradient(180deg, var(--ink-3), var(--ink-2)) padding-box, linear-gradient(120deg, rgba(242, 192, 77, .55), rgba(242, 192, 77, .08) 60%) border-box; }
+.cs-strip .lbl, .cs-mine .lbl { font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-4); }
+.cs-strip .cs-a .lbl { color: var(--gold-400); }
+.cs-strip .big { font: 600 34px/1.05 var(--serif); color: var(--fg); margin-top: 2px; font-variant-numeric: lining-nums tabular-nums; }
+.cs-strip .sub { color: var(--fg-3); font-size: 12px; }
+.cs-strip .cs-b { font-size: 13.5px; }
+.cs-strip .cs-d { display: grid; gap: 6px; justify-items: stretch; }
+.ok-text { color: var(--ok); display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.ok-text svg.i { width: 16px; height: 16px; }
+.cs-mine { margin: 0 0 16px; padding: 16px 18px; border-radius: var(--r-lg); background: var(--ink-2); border: 1px solid var(--line); }
+.cs-step { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.cs-step .t { font: 600 16px var(--mono); color: var(--gold-300); }
+.cs-step b { display: block; font-weight: 600; }
+.cs-step small { display: block; color: var(--fg-3); font-size: 12px; }
+.cs-facts dl { margin: 0; }
+.cs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
+table.cs-edit td { padding: 6px 8px; }
+@media (max-width: 1200px) { .cs-strip { grid-template-columns: 1fr 1fr; } .cs-strip .cs-d { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; } }

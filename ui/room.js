@@ -228,7 +228,9 @@ function roomCenter(main) {
 function roomBoard(body) {
   const v = RM.v;
   const notes = RM.space === "board" ? v.board : v.board.filter(n => n.space_ids.includes(RM.space));
-  const strip = RM.space === "board" && v.callsheet && typeof callsheetStrip === "function" ? callsheetStrip(v.callsheet) : null;
+  const personal = RM.sv && RM.sv.kind === "personal";
+  const strip = (RM.space === "board" || personal) && v.callsheet && typeof callsheetStrip === "function"
+    ? [callsheetStrip(v.callsheet), personal ? callsheetRows(v.callsheet) : null] : null;
   const canPost = !v.archived && (RM.space === "board" ? (v.spaces.some(s => s.member) || !!v.my_day) : !!(RM.sv && RM.sv.member));
   put(body, strip,
     el("div", { class: "board-grid" },

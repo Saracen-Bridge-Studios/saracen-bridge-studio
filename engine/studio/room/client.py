@@ -535,7 +535,7 @@ class RoomClient:
         return d
 
     def upload(self, space: str, name: str, data, *, lineage: str | None = None, progress=None, note: str = "",
-               size: int | None = None) -> dict:
+               size: int | None = None, share: list[str] | None = None) -> dict:
         """Encrypt a file into parts and send them. data: bytes, a Path or an open binary file. Parts are encrypted
         into this device's outbox first (ciphertext only), so an interrupted upload resumes without the original.
         A file with the same name in the space becomes its next version."""
@@ -568,7 +568,7 @@ class RoomClient:
         if isinstance(data, Path):
             src.close()
         up = {"id": fid, "space": space, "name": name, "key": _seal(fkey), "lineage": f["lineage"], "version": f["version"],
-              "size": size, "chunks": n, "note": note, "sha256": h.hexdigest()}
+              "size": size, "chunks": n, "note": note, "sha256": h.hexdigest(), "share": [x for x in (share or []) if x != space]}
         self.state.setdefault("uploads", {})[fid] = up
         self._save_state()
         return self.resume_upload(fid, progress=progress)
@@ -587,7 +587,7 @@ class RoomClient:
                 progress("sending", i + 1, n)
         manifest = {"name": up["name"], "size": up["size"], "file_key": rc.b64e(_open(up["key"])), "chunks": n,
                     "version": up["version"], "lineage": up["lineage"], "sha256": up["sha256"], "note": up.get("note", "")}
-        item = self.post([up["space"]], "file", manifest, ref=file_id)
+        item = self.post([up["space"]] + list(up.get("share") or []), "file", manifest, ref=file_id)
         self.state.get("uploads", {}).pop(file_id, None)
         self._save_state()
         for p in box.glob("*"):

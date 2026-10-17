@@ -697,9 +697,11 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         return {"id": fid, "lineage": lineage, "version": version}
 
     def _file(fid: str, ctx: Ctx, write=False):
+        """A file is visible to anyone who can see its space, or any space its manifest was shared with."""
         f = store.one("SELECT * FROM files WHERE id=?", (fid,))
         v = ctx.view()
-        if not f or not v.can_see_space(f["space"]):
+        shared = [r["space"] for r in store.q("SELECT space FROM item_spaces WHERE item=?", (f["item"],))] if f and f["item"] else []
+        if not f or not (v.can_see_space(f["space"]) or any(v.can_see_space(s) for s in shared)):
             raise HTTPException(404, "Unknown file.")
         if write and f["created_by"] != ctx.device["id"]:
             raise HTTPException(403, "Only the device uploading a file can send its parts.")
@@ -742,7 +744,8 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         p = store.chunk_path(fid, i)
         if not 0 <= i < f["chunks"] or not p.exists():
             raise HTTPException(404, "That part hasn't arrived yet.")
-        if i == 0 and not v.is_member(f["space"]):
+        shared = [r["space"] for r in store.q("SELECT space FROM item_spaces WHERE item=?", (f["item"],))] if f["item"] else []
+        if i == 0 and not (v.is_member(f["space"]) or any(v.is_member(s) for s in shared)):
             with store.tx(users=set()) as seq:
                 store.audit(seq, ctx.user, ctx.device["id"], "opened a file in a space they aren't in",
                             v.spaces[f["space"]]["production"], {"file": fid})
