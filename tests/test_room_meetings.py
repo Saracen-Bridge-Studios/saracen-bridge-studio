@@ -23,6 +23,10 @@ class FakeLiveKit:
         self.calls.append((method, body))
         if method == "ListParticipants":
             return httpx.Response(200, json={"participants": [{"identity": u} for u in self.here.get(body["room"], [])]})
+        if method == "ListRooms":
+            assert claims["video"]["roomList"]
+            return httpx.Response(200, json={"rooms": [{"name": r, "num_participants": len(self.here.get(r, []))}
+                                                       for r in body["names"] if r in self.here]})
         return httpx.Response(200, json={})
 
 
@@ -99,3 +103,23 @@ def test_a_calendar_invite_for_a_scheduled_meeting(w):
     mid = next(m["id"] for m in M.listing(w.dp, w.shade, {}) if m["title"] == "ZZBOARDROOMZZ")
     ics = M.ics(w.dp, mid, "SHADE")
     assert "DTSTART:20261020T180000Z" in ics and "DTEND:20261020T190000Z" in ics and "SUMMARY:ZZBOARDROOMZZ (SHADE)" in ics
+
+
+def test_listings_say_how_many_are_in_a_call_but_not_who(w):
+    cam = space_named(w.dp, w.shade, "ZZCAMERAZZ")
+    mid = next(m["id"] for m in M.listing(w.dp, w.shade, {}) if m["kind"] == "huddle")
+    w.fake.here[mid] = [w.dp.me, w.gaffer.me]
+    rows = {m["id"]: m for m in w.gaffer._req("GET", "/api/meetings", params={"production": w.shade})}
+    assert rows[mid]["here"] == 2 and set(rows[mid]) == {"id", "item", "kind", "created", "here"}
+    assert any(c[0] == "ListRooms" for c in w.fake.calls) and cam
+
+
+def test_a_media_server_that_is_down_gets_a_plain_answer(tmp_path):
+    def down(request):
+        raise httpx.ConnectError("refused", request=request)
+    world = shade(tmp_path, livekit={"url": "http://livekit.test", "key": "devkey", "secret": "secret",
+                                     "http": httpx.Client(transport=httpx.MockTransport(down))})
+    cam = space_named(world.dp, world.shade, "ZZCAMERAZZ")
+    with pytest.raises(Exception, match="media server isn't answering"):
+        M.start(world.dp, world.shade, [cam], "huddle", "Huddle")
+    assert world.dp._req("GET", "/api/meetings", params={"production": world.shade}) == []

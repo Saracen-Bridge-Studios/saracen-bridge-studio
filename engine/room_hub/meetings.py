@@ -43,8 +43,11 @@ class LiveKit:
                           self.secret, algorithm="HS256")
 
     def call(self, method: str, room: str, body: dict) -> dict:
-        r = self.http.post(f"{self.url.replace('ws://', 'http://').replace('wss://', 'https://')}/twirp/livekit.RoomService/{method}",
-                           json=body, headers={"Authorization": "Bearer " + self.token("room-hub", room, publish=False, admin=True)})
+        try:
+            r = self.http.post(f"{self.url.replace('ws://', 'http://').replace('wss://', 'https://')}/twirp/livekit.RoomService/{method}",
+                               json=body, headers={"Authorization": "Bearer " + self.token("room-hub", room, publish=False, admin=True)})
+        except httpx.HTTPError:
+            raise HTTPException(502, "The media server isn't answering, so calls are unavailable until it's back.") from None
         if r.status_code >= 400:
             raise HTTPException(502, f"The media server said {r.status_code}: {r.text[:160]}")
         return r.json() if r.content else {}
@@ -57,6 +60,16 @@ class LiveKit:
             return self.call("ListParticipants", room, {"room": room}).get("participants", [])
         except HTTPException:
             return []
+
+    def counts(self, rooms: list[str]) -> dict[str, int]:
+        """How many people are in each of these rooms right now (one call; empty if the media server can't say)."""
+        if not rooms:
+            return {}
+        try:
+            got = self.call("ListRooms", "", {"names": rooms}).get("rooms", [])
+        except HTTPException:
+            return {}
+        return {r.get("name"): int(r.get("num_participants") or 0) for r in got}
 
     def permit(self, room: str, identity: str, publish: bool):
         return self.call("UpdateParticipant", room, {"room": room, "identity": identity, "permission": {
@@ -180,4 +193,8 @@ def install(app, store, approved, View):
             spaces = [r["space"] for r in store.q("SELECT space FROM item_spaces WHERE item=?", (m["item"],))]
             if any(v.can_see_space(s) for s in spaces):
                 out.append({"id": m["id"], "item": m["item"], "kind": m["kind"], "created": m["created"]})
+        if out and (app.state.livekit or {}).get("url"):
+            here = lk().counts([m["id"] for m in out])        # a count only: who is in a call stays out of listings
+            for m in out:
+                m["here"] = here.get(m["id"], 0)
         return out

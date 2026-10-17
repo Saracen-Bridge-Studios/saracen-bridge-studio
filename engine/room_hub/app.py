@@ -945,15 +945,32 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             return
         user, last = d["user"], store.seq
         await ws.send_json({"seq": last})
+
+        async def reader():
+            # Clients send nothing after the token; reading is how a closed link (or the hub shutting down) is noticed,
+            # so the loop below ends instead of holding the connection and blocking a clean stop of the service.
+            try:
+                while True:
+                    await ws.receive_text()
+            except Exception:  # noqa: BLE001 - any end of the link
+                return
+        gone = asyncio.create_task(reader())
+        quiet = 0.0
         try:
-            while True:
+            while not gone.done():
                 await asyncio.sleep(0.5)
+                quiet += 0.5
                 m = max(marks.get(user, 0), marks.get("*", 0))
                 if m > last:
-                    last = m
+                    last, quiet = m, 0.0
                     await ws.send_json({"seq": m})
+                elif quiet >= 25:          # keep idle links open through proxies and phone networks
+                    quiet = 0.0
+                    await ws.send_json({"ping": 1})
         except (WebSocketDisconnect, RuntimeError):
-            return
+            pass
+        finally:
+            gone.cancel()
 
     # ------------------------------------------------------------------ the phone app (served by the hub)
     static = Path(__file__).with_name("static")

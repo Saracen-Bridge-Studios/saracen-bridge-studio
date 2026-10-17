@@ -433,14 +433,19 @@ async function meetTab(body, p) {
   put(body, el("div", { class: "eyebrow" }, "MEETINGS"), el("p", { class: "muted" }, "Loading…"));
   let list = [];
   try { list = await api("GET", `/api/meetings?production=${encodeURIComponent(p)}`); } catch (e) { put(body, el("p", { class: "muted" }, e.message)); return; }
-  const rows = list.map(m => Object.assign({}, m, (R.items.get(m.item) || {}).payload || {})).filter(m => m.title);
+  const ppl = people(p), n = names(p), inCall = MEET.room && MEET.info ? MEET.info.id : "";
+  const where = m => { const it = R.items.get(m.item), sp = it && it.h.spaces.length === 1 && space(it.h.spaces[0][0]); return sp ? (sp.kind === "dm" ? "" : "# ") + spaceName(sp, ppl, n) : ""; };
+  /* huddles show only while someone is in one; the call you're in shows at the top, not again in the list */
+  const rows = list.map(m => Object.assign({}, m, (R.items.get(m.item) || {}).payload || {}))
+    .filter(m => m.title && m.id !== inCall && (m.kind === "meeting" || m.here > 0));
+  const here = m => m.here > 0 ? ` · ${m.here} in it` : "";
   put(body, el("div", { class: "eyebrow" }, "MEETINGS"),
     MEET.room ? meetingNow() : null,
-    rows.length ? rows.map(m => el("div", { class: "card" }, el("b", {}, m.kind === "huddle" ? "Huddle" : m.title),
-      el("div", { class: "muted small" }, m.starts ? new Date(m.starts).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Now"),
+    rows.length ? rows.map(m => el("div", { class: "card" }, el("b", {}, m.kind === "huddle" ? `${where(m) || "Private"} huddle` : m.title),
+      el("div", { class: "muted small" }, (m.starts ? new Date(m.starts).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Now") + here(m)),
       el("div", { class: "row" }, el("button", { type: "button", class: "btn primary", onclick: () => joinMeeting(m.id) }, m.kind === "huddle" ? "Join" : "Join to watch"),
         m.starts ? el("button", { type: "button", class: "btn", onclick: () => ics(m) }, "Add to my calendar") : null)))
-      : el("p", { class: "muted" }, "No meetings right now."),
+      : el("p", { class: "muted" }, MEET.room ? "No other meetings right now." : "No meetings right now."),
     el("div", { class: "card mic" }, el("b", {}, "Microphone found automatically"), el("div", { class: "muted small" }, "Your phone's microphone, or your earbuds when they're connected.")));
 }
 function ics(m) {
@@ -470,7 +475,9 @@ async function joinMeeting(mid) {
     const kp = new L.ExternalE2EEKeyProvider(); await kp.setKey(C.b64d(it.payload.media_key).buffer);
     const room = new L.Room({ encryption: { keyProvider: kp, worker: new Worker("/app/vendor/livekit-client.e2ee.worker.js") },
       audioCaptureDefaults: { deviceId: "default", noiseSuppression: true, echoCancellation: true, autoGainControl: true } });
-    MEET.room = room; MEET.info = Object.assign({}, t, { title: it.payload.title, hand: false });
+    const sp = it.h.spaces.length === 1 && space(it.h.spaces[0][0]);
+    const label = t.kind === "huddle" ? `${sp ? (sp.kind === "dm" ? "" : "# ") + spaceName(sp, people(R.prod), names(R.prod)) : "Private"} huddle` : it.payload.title;
+    MEET.room = room; MEET.info = Object.assign({}, t, { id: mid, title: label, hand: false });
     const sink = document.getElementById("audio-sink") || document.body.appendChild(el("div", { id: "audio-sink", hidden: true }));
     room.on(L.RoomEvent.TrackSubscribed, track => { if (track.kind === "audio") sink.append(track.attach()); })
       .on(L.RoomEvent.ParticipantPermissionsChanged, async (prev, pp) => { if (pp === room.localParticipant) { MEET.info.on_stage = !!(pp.permissions && pp.permissions.canPublish); if (MEET.info.on_stage) { await room.localParticipant.setMicrophoneEnabled(true).catch(() => null); toast("You're on stage", "Your microphone is on."); } if (R.tab === "meet") home(); } })
