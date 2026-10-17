@@ -611,7 +611,8 @@ function buildNav(route) {
   const link = (href, label, ic, n) => el("a", { href, "aria-current": route === href ? "page" : null }, el("span", { class: "ic" }, icon(ic)), el("span", {}, label), n ? el("span", { class: "n" }, n) : null);
   put(nav, link("#/", "Home", "home"),
     CAT.groups.map(g => [el("div", { class: "grp" }, g), CAT.tools.filter(t => t.group === g).map(t => link(`#/tool/${t.id}`, t.name, ICONS[t.id] ? t.id : "file"))]),
-    el("div", { class: "grp" }, "Studio"), link("#/library", "Library", "library"), link("#/settings", "Settings", "settings"));
+    el("div", { class: "grp" }, "Studio"), link("#/room", "Room", "users", typeof roomBadge === "function" ? roomBadge() : null),
+    link("#/library", "Library", "library"), link("#/settings", "Settings", "settings"));
 }
 const prettyModel = m => String(m || "").replace(/\.gguf$/i, "").replace(/[-_](it|instruct)([-_].*)?$/i, "").split(/[-_:\s]+/).filter(Boolean)
   .map((w, i) => /^\d+(\.\d+)?[bkm]$/i.test(w) || /^e\d+b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
@@ -673,7 +674,7 @@ async function pollJobs() {
 
 async function route() {
   const h = location.hash || "#/";
-  buildNav(h.startsWith("#/run/") || h.startsWith("#/library") ? "#/library" : h);
+  buildNav(h.startsWith("#/run/") || h.startsWith("#/library") ? "#/library" : h.startsWith("#/room") ? "#/room" : h);
   engineChip();
   const [, kind, a, b] = h.split("/");
   const page = app(); page.classList.remove("page-enter"); void page.offsetWidth; page.classList.add("page-enter");
@@ -684,6 +685,7 @@ async function route() {
     if (kind === "tool") return await tool(a);
     if (kind === "library") return await library(a);
     if (kind === "settings") return await settings();
+    if (kind === "room") return await roomRoute(a, b);
     if (kind === "run") return await runView(a, b);
     await home();
   } catch (e) { put(app(), errBox(e)); }

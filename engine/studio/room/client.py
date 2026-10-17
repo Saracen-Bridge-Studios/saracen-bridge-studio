@@ -278,7 +278,7 @@ class RoomClient:
             self._kv("snapshot", self.snapshot, save=True)
             self.state["seq"] = s["seq"]
             self._save_state()
-        if upkeep:
+        if upkeep and not getattr(self, "_in_upkeep", False):
             self.upkeep()
         return self.snapshot
 
@@ -332,6 +332,13 @@ class RoomClient:
 
     # ------------------------------------------------------------------ upkeep: keys for others, rotation, personal spaces
     def upkeep(self, rounds: int = 3):
+        self._in_upkeep = True
+        try:
+            self._upkeep(rounds)
+        finally:
+            self._in_upkeep = False
+
+    def _upkeep(self, rounds: int):
         for _ in range(rounds):
             t = self.snapshot.get("tasks") or {}
             did = False
@@ -468,7 +475,7 @@ class RoomClient:
             return r["id"]
         self.keys[(sid, 1)] = key
         self.db.execute("INSERT OR REPLACE INTO wraps (k, body) VALUES (?, ?)", (f"{sid}|1", json.dumps(w)))
-        self.sync(upkeep=False)
+        self.sync()                       # and share the new key with everyone entitled to it straight away
         if name and kind != "directory":
             self.post([self.directory_space(production)["id"]], "space", {"name": name}, subject=sid, production=production)
         return sid
@@ -476,7 +483,8 @@ class RoomClient:
     def add_department(self, production: str, name: str) -> str:
         dep = rc.new_id("dep_")
         self.post([self.directory_space(production)["id"]], "department", {"name": name}, subject=dep, production=production)
-        self.create_space(production, name, audience={"tiers": ["key", "crew"], "departments": [dep]})
+        self.create_space(production, name, audience={"tiers": ["key", "crew"], "departments": [dep]},
+                          members=[self.me] if self.is_exec else None)
         return dep
 
     def set_person(self, production: str, user: str, person: dict):
@@ -521,49 +529,70 @@ class RoomClient:
         return self._req("GET", "/api/audit")
 
     # ------------------------------------------------------------------ files
-    def upload(self, space: str, name: str, data: bytes | Path, *, lineage: str | None = None, progress=None,
-               note: str = "") -> dict:
-        """Encrypt and send a file in parts. A file with the same name in the space becomes its next version.
-        Interrupted uploads resume: call again with resume=<file id> (see resume_upload)."""
-        raw = Path(data).read_bytes() if isinstance(data, Path) else data
+    def outbox(self) -> Path:
+        d = self.dir / "outbox"
+        d.mkdir(exist_ok=True)
+        return d
+
+    def upload(self, space: str, name: str, data, *, lineage: str | None = None, progress=None, note: str = "",
+               size: int | None = None) -> dict:
+        """Encrypt a file into parts and send them. data: bytes, a Path or an open binary file. Parts are encrypted
+        into this device's outbox first (ciphertext only), so an interrupted upload resumes without the original.
+        A file with the same name in the space becomes its next version."""
+        import io
+        if isinstance(data, (bytes, bytearray)):
+            src, size = io.BytesIO(data), len(data)
+        elif isinstance(data, Path):
+            src, size = open(data, "rb"), data.stat().st_size
+        else:
+            src = data
+            if size is None:
+                raise RoomError("The file's size is needed.")
         if lineage is None:
             for f in self.files(space):
                 if f["name"] == name:
                     lineage = f["lineage"]
                     break
-        n = max(1, -(-len(raw) // rc.CHUNK))
-        f = self._req("POST", "/api/files", json={"space": space, "lineage": lineage, "chunks": n, "size": len(raw)})
-        fkey = rc.new_key()
-        pending = {"id": f["id"], "space": space, "name": name, "key": rc.b64e(fkey), "lineage": f["lineage"],
-                   "version": f["version"], "size": len(raw), "chunks": n, "note": note}
-        self.state.setdefault("uploads", {})[f["id"]] = dict(pending, key=_seal(fkey))
+        n = max(1, -(-size // rc.CHUNK))
+        f = self._req("POST", "/api/files", json={"space": space, "lineage": lineage, "chunks": n, "size": size})
+        fid, fkey = f["id"], rc.new_key()
+        box = self.outbox() / fid
+        box.mkdir(exist_ok=True)
+        h = hashlib.sha256()
+        for i in range(n):
+            part = src.read(rc.CHUNK) if i < n - 1 else src.read()
+            h.update(part)
+            (box / f"{i:06d}").write_bytes(rc.encrypt_chunk(fkey, part, fid, i, n))
+            if progress:
+                progress("encrypting", i + 1, n)
+        if isinstance(data, Path):
+            src.close()
+        up = {"id": fid, "space": space, "name": name, "key": _seal(fkey), "lineage": f["lineage"], "version": f["version"],
+              "size": size, "chunks": n, "note": note, "sha256": h.hexdigest()}
+        self.state.setdefault("uploads", {})[fid] = up
         self._save_state()
-        return self._send_parts(pending, raw, progress)
+        return self.resume_upload(fid, progress=progress)
 
-    def resume_upload(self, file_id: str, data: bytes | Path, progress=None) -> dict:
-        up = dict(self.state.get("uploads", {}).get(file_id) or {})
+    def resume_upload(self, file_id: str, progress=None) -> dict:
+        up = self.state.get("uploads", {}).get(file_id)
         if not up:
             raise RoomError("Nothing to resume.")
-        up["key"] = rc.b64e(_open(up["key"]))
-        raw = Path(data).read_bytes() if isinstance(data, Path) else data
-        return self._send_parts(up, raw, progress)
-
-    def _send_parts(self, up: dict, raw: bytes, progress) -> dict:
-        fid, n, fkey = up["id"], up["chunks"], rc.b64d(up["key"])
-        have = set(self._req("GET", f"/api/files/{fid}")["present"])
+        box, n = self.outbox() / file_id, up["chunks"]
+        have = set(self._req("GET", f"/api/files/{file_id}")["present"])
         for i in range(n):
-            if i in have:
-                continue
-            blob = rc.encrypt_chunk(fkey, raw[i * rc.CHUNK:(i + 1) * rc.CHUNK], fid, i, n)
-            self._req("PUT", f"/api/files/{fid}/chunks/{i}", content=blob,
-                      headers={"Content-Type": "application/octet-stream"})
+            if i not in have:
+                self._req("PUT", f"/api/files/{file_id}/chunks/{i}", content=(box / f"{i:06d}").read_bytes(),
+                          headers={"Content-Type": "application/octet-stream"})
             if progress:
-                progress(i + 1, n)
-        manifest = {"name": up["name"], "size": up["size"], "file_key": up["key"], "chunks": n, "version": up["version"],
-                    "lineage": up["lineage"], "sha256": hashlib.sha256(raw).hexdigest(), "note": up.get("note", "")}
-        item = self.post([up["space"]], "file", manifest, ref=fid)
-        self.state.get("uploads", {}).pop(fid, None)
+                progress("sending", i + 1, n)
+        manifest = {"name": up["name"], "size": up["size"], "file_key": rc.b64e(_open(up["key"])), "chunks": n,
+                    "version": up["version"], "lineage": up["lineage"], "sha256": up["sha256"], "note": up.get("note", "")}
+        item = self.post([up["space"]], "file", manifest, ref=file_id)
+        self.state.get("uploads", {}).pop(file_id, None)
         self._save_state()
+        for p in box.glob("*"):
+            p.unlink()
+        box.rmdir()
         return item
 
     def files(self, space: str | None = None) -> list[dict]:
@@ -571,16 +600,21 @@ class RoomClient:
         for it in self.items.values():
             if it["h"]["kind"] == "file" and it["payload"] and (space is None or space in {s for s, _ in it["h"]["spaces"]}):
                 out.append(dict(it["payload"], id=it["h"]["ref"], item=it["h"]["id"], author=it["author"], ts=it["h"]["ts"],
-                                spaces=[s for s, _ in it["h"]["spaces"]]))
+                                seq=it["seq"], spaces=[s for s, _ in it["h"]["spaces"]]))
         return sorted(out, key=lambda f: (f["lineage"], f["version"]))
 
-    def download(self, file_id: str) -> bytes:
+    def download_iter(self, file_id: str):
+        """The file's plaintext, part by part. Raises at the end if the whole doesn't match what was sent."""
         f = next((x for x in self.files() if x["id"] == file_id), None)
         if not f:
             raise RoomError("That file isn't visible to you.")
-        key, n = rc.b64d(f["file_key"]), f["chunks"]
-        parts = [rc.decrypt_chunk(key, self._req("GET", f"/api/files/{file_id}/chunks/{i}"), file_id, i, n) for i in range(n)]
-        data = b"".join(parts)
-        if hashlib.sha256(data).hexdigest() != f["sha256"]:
+        key, n, h = rc.b64d(f["file_key"]), f["chunks"], hashlib.sha256()
+        for i in range(n):
+            part = rc.decrypt_chunk(key, self._req("GET", f"/api/files/{file_id}/chunks/{i}"), file_id, i, n)
+            h.update(part)
+            yield part
+        if h.hexdigest() != f["sha256"]:
             raise RoomError("The file didn't arrive intact.")
-        return data
+
+    def download(self, file_id: str) -> bytes:
+        return b"".join(self.download_iter(file_id))

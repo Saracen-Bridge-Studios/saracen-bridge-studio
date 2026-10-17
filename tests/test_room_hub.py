@@ -217,7 +217,7 @@ def test_a_removed_device_cannot_read_anything_new(w):
 def test_files_are_versioned_resumable_and_private(w):
     office = space_named(w.pat, w.shade, "Production office")
     data = bytes(range(256)) * (rc.CHUNK // 256 + 1000)   # two parts
-    # an upload that stops after its first part resumes where it left off
+    # an upload that stops after its first part resumes where it left off, from the encrypted outbox
     calls = []
     orig = w.pat._req
 
@@ -232,7 +232,9 @@ def test_files_are_versioned_resumable_and_private(w):
     w.pat._req = orig
     fid = next(iter(w.pat.state["uploads"]))
     assert w.pat._req("GET", f"/api/files/{fid}")["present"] == [0]
-    w.pat.resume_upload(fid, data)
+    assert b"\x00\x01\x02\x03" * 4 not in b"".join(p.read_bytes() for p in (w.pat.outbox() / fid).glob("*"))
+    w.pat.resume_upload(fid)
+    assert not (w.pat.outbox() / fid).exists()
     v2 = w.pat.upload(office, "Schedule.xlsx", data + b"more")
     assert v2["payload"]["version"] == 2 and v2["payload"]["lineage"] == fid
     assert w.pat.download(fid) == data
@@ -244,7 +246,8 @@ def test_files_are_versioned_resumable_and_private(w):
 
 # ------------------------------------------------------------------ oversight and the audit log
 def test_executive_reads_outside_their_spaces_are_logged(w):
-    cam = space_named(w.tim, w.shade, "ZZCAMERAZZ")
+    cam = w.pat.create_space(w.shade, "ZZLOCATIONSZZ", audience={"tiers": ["key"]})   # a producer's space: Tim isn't in it
+    w.tim.sync()
     dm = w.lea.dm(w.shade, w.alex.me)
     w.lea.post([dm], "msg", {"text": "ZZPRIVATEZZ"})
     items = w.tim.open_space(dm)

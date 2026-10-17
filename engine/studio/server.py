@@ -982,6 +982,10 @@ def favicon():
     return Response(status_code=204)
 
 
+from .room.routes import router as _room_router   # noqa: E402 - the Room (1.0.8)
+app.include_router(_room_router)
+
+
 @app.get("/")
 def index():
     return FileResponse(UI_DIR / "index.html")
