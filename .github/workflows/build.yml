@@ -1,0 +1,57 @@
+name: build-installers
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - run: pip install -r requirements-dev.txt
+      - run: pyinstaller packaging/studio.spec --noconfirm
+      - name: Smoke test the packaged app
+        shell: pwsh
+        run: |
+          $env:STUDIO_HOME = Join-Path $env:RUNNER_TEMP "studio_smoke"
+          $p = Start-Process dist\SaracenBridgeStudio\SaracenBridgeStudio.exe -ArgumentList "--headless","--port","8798" -PassThru
+          try { python packaging\smoke.py http://127.0.0.1:8798; if ($LASTEXITCODE -ne 0) { throw "Smoke test failed" } }
+          finally { Stop-Process $p -ErrorAction SilentlyContinue }
+      - run: choco install innosetup -y --no-progress
+      - name: Fetch and verify the WebView2 bootstrapper
+        shell: pwsh
+        run: |
+          $wv = "packaging\redist\MicrosoftEdgeWebview2Setup.exe"
+          if (-not (Test-Path $wv)) { Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $wv }
+          $sig = Get-AuthenticodeSignature $wv
+          if ($sig.Status -ne "Valid" -or $sig.SignerCertificate.Subject -notmatch "Microsoft Corporation") { throw "WebView2 bootstrapper signature check failed" }
+      - run: iscc packaging\installer.iss
+      - uses: actions/upload-artifact@v4
+        with: { name: SaracenBridgeStudio-Windows, path: dist/installer/*.exe }
+
+  macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.x" }
+      - run: pip install -r requirements-dev.txt
+      - run: pyinstaller packaging/studio.spec --noconfirm
+      - run: cd dist && zip -qry SaracenBridgeStudio-macOS.zip "Saracen Bridge Studio.app"
+      - uses: actions/upload-artifact@v4
+        with: { name: SaracenBridgeStudio-macOS, path: dist/SaracenBridgeStudio-macOS.zip }

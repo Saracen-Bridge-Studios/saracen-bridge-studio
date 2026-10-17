@@ -1,0 +1,10 @@
+Gemma 4 model weights
+=====================
+
+The Gemma 4 model file in the models folder (when installed) was downloaded from Google's official repository on
+Hugging Face (https://huggingface.co/google) and is licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+
+Gemma is a trademark of Google LLC. Saracen Bridge Studio is not affiliated with or endorsed by Google.
+
+The model runs entirely on this computer through llama.cpp (MIT licence, see LICENSE-llama.cpp.txt).

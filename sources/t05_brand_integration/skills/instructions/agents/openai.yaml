@@ -1,0 +1,4 @@
+interface:
+  default_prompt: Analyse this script and map exact brand opportunities
+  display_name: 5. Saracen Bridge Brand Integration Agent
+  short_description: 'Finds script-specific brand targets, builds outreach pipelines, '

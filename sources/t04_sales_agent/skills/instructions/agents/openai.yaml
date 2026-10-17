@@ -1,0 +1,4 @@
+interface:
+  default_prompt: Create Sales Estimate for this Film
+  display_name: 4. Saracen Bridge - Sales Agent
+  short_description: Saracen Bridge Internal Sales Agent Estimates

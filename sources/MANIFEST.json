@@ -1,0 +1,952 @@
+[
+ {
+  "path": "sources/captures/FPM_capture_SHADE_audit_v3.xlsx",
+  "sha256": "265284ee3398d03d6aa382e9dd1e15e100c3bdb8030b44dc175cf856de1d6da0",
+  "bytes": 136077,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ],
+  "kind": "behaviour_capture"
+ },
+ {
+  "path": "sources/captures/FPM_capture_SHADE_viability_report.docx",
+  "sha256": "6da498423df43728fbad338e4b5da4c16f561fa0aef2ffee36a07c3d3a625bf6",
+  "bytes": 3341059,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ],
+  "kind": "behaviour_capture"
+ },
+ {
+  "path": "sources/captures/FPM_chat_reconstructed_spec.md",
+  "sha256": "15a1ea02f607df5df0382ce163f2fe5ce646c31436315e5c078487f1c1790b1b",
+  "bytes": 566445,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ],
+  "kind": "behaviour_capture"
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/.codex-plugin/plugin.json",
+  "sha256": "6baeb9e888f694bcae4989e3b87960df1a1047956b9769bfc98d0210295bcadd",
+  "bytes": 942,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/SKILL.md",
+  "sha256": "3219cf09b589e81e7e3df29c153280c172212166644067c46bbe6c5e9a4b091f",
+  "bytes": 4863,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/agents/openai.yaml",
+  "sha256": "cf7c8e8da37e26d2dbf69ec7f1c18e7518bd2067ba22c3e5c66e2be3e6021b2c",
+  "bytes": 156,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "17e5d7dbcff51779884cb315b7556b47f60f6f6a5baa8b81fee33ed29af31fdc",
+  "bytes": 1523,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/references/SHADE_Spain_Finance_Model_NonStop_50pct_Guarantee_v2.xlsx",
+  "sha256": "f2bebab186637c6d24eddc5582d2258a8133ba3b2214d947f0b7ceee281288a8",
+  "bytes": 110745,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/references/Saracen_Bridge_Film_Finance_Suite_v1.xlsx",
+  "sha256": "0f96174cf1ad5a9125ea4dfc0bcbf3542b0a205b76e1d0de4364390424dae602",
+  "bytes": 177859,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/fpm_finance_plan_modeller/skills/instructions/references/Saracen_Bridge_Finance_Model_Formatting_Knowledge_v1.md",
+  "sha256": "f3cc9af0912f14bf6a891b3a1d5fe89dbf240b4b1a7e3bcb8b6700d0597d69e0",
+  "bytes": 14952,
+  "used_by": [
+   "fpm_finance_plan_modeller"
+  ]
+ },
+ {
+  "path": "sources/shared/00_Governance_Greenlight_and_Evidence_Standard.md",
+  "sha256": "129f6877d55d1e018fef9be78fc82ce49ed8c775b264499a6bad801661431a18",
+  "bytes": 12127,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/01_Core_Underwriting_Risk_and_Red_Flags.md",
+  "sha256": "7d105102457592d1769b0ab14ac5e867923651a399797063748e3a9579405327",
+  "bytes": 20948,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/02_Legal_Closing_and_Conditions_Precedent.md",
+  "sha256": "56506fe5234fc744c64fc5ee255f46a1215b717d23ed8bf1d37b12857b74df3e",
+  "bytes": 11540,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/02_Shared_Incentive_Model_Integration_Protocol.md",
+  "sha256": "d0a634cd295a2a615498714fdca7492257b74ab651a284dd9f43a49feec4ca75",
+  "bytes": 6261,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/shared/03_Debt_Collateral_Counterparties_Lender_Terms_and_Monitoring.md",
+  "sha256": "38e7dd5c2f6ac0d09763967167e2cbaf2a30312f5cd5b1382b6169daa0ee9710",
+  "bytes": 19175,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/04_Equity_Capital_Stack_and_Waterfalls.md",
+  "sha256": "3a4aae196364291d0b7dd3bc9eee391ae5d39a28c8df3ad4806e206c51cec176",
+  "bytes": 15617,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/05_Sales_Distribution_Tax_CoProduction_and_Revenue_Control.md",
+  "sha256": "d3e0371a0300281cf8315c2c35a6be280910625c732916aa6d18128e40e68901",
+  "bytes": 18116,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/06_Production_Budget_Insurance_and_Completion_Bond_Readiness.md",
+  "sha256": "0abf29cdc70b852c57beff7263c574a2f370f00b44f8ca8de6d0c63c54b3bfc1",
+  "bytes": 16746,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/07_Comparable_Film_Methodology.md",
+  "sha256": "7bf8459106397355f240c3d2aa642f11ec5e2820e6c7e17d0f96d5fb76d11a22",
+  "bytes": 4632,
+  "used_by": [
+   "t08_film_finance_greenlight",
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/shared/09_Saracen_Bridge_Production_Incentives_GPT_Knowledge_v1_0.md",
+  "sha256": "3fc7d03b83da007f801b0781b2d173a7b7eaf6e134efd5ebdf1ab0a36498a4bf",
+  "bytes": 169178,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/shared/10_Saracen_Bridge_Production_Incentive_Model_Stage_2_Audited_v1_1.xlsx",
+  "sha256": "b3e00ea508d40972bba55eb71d2ef354f32bb83dce90d2f02b1d6aff3d9782cb",
+  "bytes": 156329,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/shared/Saracen Bridge Analytics (2).png",
+  "sha256": "8da2c60c2442afb1aa855a61aa66c39b322d5a5ce762050019ba7a143516052f",
+  "bytes": 836274,
+  "used_by": [
+   "t02_script_coverage",
+   "t04_sales_agent",
+   "t07_bfi_certification",
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/shared/Saracen_Bridge_Analytics_Bespoke_GPT_Instructions.md",
+  "sha256": "4024a1e20196497658aed3f67a64bc1c0ec3aed242d13247956419838b9fa9a7",
+  "bytes": 7013,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t01_look_book",
+   "t02_script_coverage",
+   "t03_schedule_budget",
+   "t05_brand_integration",
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/shared/Saracen_Bridge_Analytics_Logo_High_Resolution.png",
+  "sha256": "455d9a616052b460a1f7cd93dba62e271900fa1829108e6345574dfaed0078c2",
+  "bytes": 2938726,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t01_look_book",
+   "t03_schedule_budget",
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/shared/Saracen_Bridge_Analytics_Master_Report_Template.docx",
+  "sha256": "a1cdb205c5fe555a61439470ef09bfc653935ea5af5153ab43fd7f4921d02280",
+  "bytes": 3333129,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/shared/Saracen_Bridge_Analytics_Master_Report_Template.dotx",
+  "sha256": "d5c16af76d80e5678ee9cd6f0ee6eed0136f704154a8c3bcdc191c17b3bf99bf",
+  "bytes": 3333134,
+  "used_by": [
+   "t01_look_book",
+   "t02_script_coverage",
+   "t03_schedule_budget",
+   "t04_sales_agent",
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/shared/gpt-icon.png",
+  "sha256": "8476b7463dd2b4e771267ade83ab227d8be9cc3928fdded3a8f39656948c9a23",
+  "bytes": 158267,
+  "used_by": [
+   "fpm_finance_plan_modeller",
+   "t01_look_book",
+   "t02_script_coverage",
+   "t03_schedule_budget",
+   "t04_sales_agent",
+   "t05_brand_integration",
+   "t06_location_incentive",
+   "t07_bfi_certification",
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/t01_look_book/.codex-plugin/plugin.json",
+  "sha256": "1db3f7b83a590e012f798a1ecb8d5ebed428d27ebfb223ab07cf3cf0e8d0204a",
+  "bytes": 1461,
+  "used_by": [
+   "t01_look_book"
+  ]
+ },
+ {
+  "path": "sources/t01_look_book/skills/instructions/SKILL.md",
+  "sha256": "b479a17cb205725dbb732d7db3783cd62be8efb8713a540b4014a4b43824df9b",
+  "bytes": 8066,
+  "used_by": [
+   "t01_look_book"
+  ]
+ },
+ {
+  "path": "sources/t01_look_book/skills/instructions/agents/openai.yaml",
+  "sha256": "d736f4762a742ed3afa742ace40659974017d6dbd92b21641d9db41488b8f767",
+  "bytes": 276,
+  "used_by": [
+   "t01_look_book"
+  ]
+ },
+ {
+  "path": "sources/t01_look_book/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "436a755846b2132eee7374bfed0644d7e9afc4c7c90de5b7e0c5091871f94cf0",
+  "bytes": 503,
+  "used_by": [
+   "t01_look_book"
+  ]
+ },
+ {
+  "path": "sources/t02_script_coverage/.codex-plugin/plugin.json",
+  "sha256": "ce438dfdc46b4e0f1c115455ff56fc488fd6080a4ab0d745d34102a9b922c660",
+  "bytes": 1295,
+  "used_by": [
+   "t02_script_coverage"
+  ]
+ },
+ {
+  "path": "sources/t02_script_coverage/skills/instructions/SKILL.md",
+  "sha256": "e16ae965e414f6572dfbf1cffc4a4b9cb597b1a77abdd587f8299b434b19339e",
+  "bytes": 8001,
+  "used_by": [
+   "t02_script_coverage"
+  ]
+ },
+ {
+  "path": "sources/t02_script_coverage/skills/instructions/agents/openai.yaml",
+  "sha256": "a5b0901cd6fd21f3373a594d0aa1555e60ffbbf8875ad5cbaa46c75333f5e89a",
+  "bytes": 287,
+  "used_by": [
+   "t02_script_coverage"
+  ]
+ },
+ {
+  "path": "sources/t02_script_coverage/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "5b0de8501fde0c97c8c3b3ce9bd6450f90c0ffe58a7d7436e6d907754039c852",
+  "bytes": 469,
+  "used_by": [
+   "t02_script_coverage"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/.codex-plugin/plugin.json",
+  "sha256": "f26e7f5d9cbd11626ceb32d9c4f907442ab007b3711673e375368d5a0c405975",
+  "bytes": 1080,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/SKILL.md",
+  "sha256": "31de22a61fa06196e8a02faba01acbb12a272d85fb389b6a9f3abf7b832067e6",
+  "bytes": 8116,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/agents/openai.yaml",
+  "sha256": "bbb9bed7f62b3f27635dde67d10e5a71c7eef19a6b593bef900b9d6182bddcaa",
+  "bytes": 244,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "3993213350bd66ca99624d7ce8dbe6cf0ef3b7f4fa0c1b22edb5ed59d793173d",
+  "bytes": 1664,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/references/11fcab37-fb65-41c8-9b71-dab9d1f067ad.png",
+  "sha256": "aea1c398647788c6b708183f5732c3f4e32ddc44ab284c4045152f353ca3bc7d",
+  "bytes": 3040,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/references/SB_Filmustage_Budget_Mapping_Specification_v1_0 (1).xlsx",
+  "sha256": "a676e965865158d637dbb570acfc2c50f1d9a1e0db96d83394ccbb7e144ca3e6",
+  "bytes": 37221,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/references/SB_Global_Production_Rate_Database_v1_2.xlsx",
+  "sha256": "3005fcfaf9b5a610f0073e625c627e17eb94128e41f1b03d9a37b2e7e070d70c",
+  "bytes": 754515,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t03_schedule_budget/skills/instructions/references/SB_Master_Feature_Film_Chart_of_Accounts_v1_0 (1).xlsx",
+  "sha256": "f3a946978d56469d360b198ddd43b37aa90565f2421aba4a45e61aad95bb8295",
+  "bytes": 30170,
+  "used_by": [
+   "t03_schedule_budget"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/.codex-plugin/plugin.json",
+  "sha256": "2905e89664385132b208580da681a71d57530755f726bc65a4d8f919da458390",
+  "bytes": 749,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/SKILL.md",
+  "sha256": "844dad7cf0fe20033d54ccc4bdc46b06cc01c7df39a629ebad77c2a5a4f059c3",
+  "bytes": 8062,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/agents/openai.yaml",
+  "sha256": "70ed56c8daec83b0e5284b0f959a9677671e24f9bdc2754ff4d1c3f7090051da",
+  "bytes": 180,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "0b1b830d028caebcaa418ab0b4cf530c4482631749ffe6aeb9e47e74bcd40dbf",
+  "bytes": 1581,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/09_Saracen_Bridge_Sales_Valuation_Project_Intake.docx",
+  "sha256": "de8d431a20dbcffe33ce2c1cb5f16fdb9f167cc8138566639c5195d9a8d77906",
+  "bytes": 49221,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/International Sales Valuation Methodology.pdf",
+  "sha256": "64c0296db512adc45ad279334d1a328d11489fc43eecdc229aca7e7e41e6063b",
+  "bytes": 75027,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/Saracen_Bridge_Actor_Value_Database_v2_2_Three_Actor_Update.xlsx",
+  "sha256": "cfde5bff74225b4e992f9f929393dbdd80154a5cf75e930110accc795efc4c80",
+  "bytes": 581769,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/Saracen_Bridge_Director_Value_Database_V4_3_Fully_Reverified_with_Fee_Model.xlsx",
+  "sha256": "2ec209108d217ace2c4c44c4428e05c12aacb1cc8b7f79c7f7d71ba76dd995ca",
+  "bytes": 2242335,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/Saracen_Bridge_Sales_Research_and_Source_Policy_v1.0.docx",
+  "sha256": "72bfb8f1358a11b74f5ce46e90f0e90d759fef9dc137f7faeeaec1db859230d7",
+  "bytes": 45412,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/Saracen_Bridge_Sales_Valuation_Engine_v4_1_Integrated_Imports.xlsx",
+  "sha256": "13f706017a47c39b72dfb27ad5355c297519a11061eec0775ef67bb3efcdfafc",
+  "bytes": 685553,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t04_sales_agent/skills/instructions/references/Saracen_Bridge_Sales_Valuation_Integration_Specification_v1.0.docx",
+  "sha256": "6e198672a4bc53acf459cbf4cac341cbe7b163c011ce3e62196cd7c7a880fb21",
+  "bytes": 49372,
+  "used_by": [
+   "t04_sales_agent"
+  ]
+ },
+ {
+  "path": "sources/t05_brand_integration/.codex-plugin/plugin.json",
+  "sha256": "e958ee2835c61538c1e1e634ec16c965889ac1db96a9be0980ac8230993d7a14",
+  "bytes": 1050,
+  "used_by": [
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/t05_brand_integration/skills/instructions/SKILL.md",
+  "sha256": "f0ca9c86dfa3e0ff662fc20878ac0fbdf79b627b9149dd6fec73adafb65abd13",
+  "bytes": 8130,
+  "used_by": [
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/t05_brand_integration/skills/instructions/agents/openai.yaml",
+  "sha256": "16675a451858addd138a800fa6a922bf9025f5295dfd780e249b368867b0a73d",
+  "bytes": 229,
+  "used_by": [
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/t05_brand_integration/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "2074d3d0d69f42e1db6ad8fab384a8faf41b815d20723742b8a16b7870bc225e",
+  "bytes": 686,
+  "used_by": [
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/t05_brand_integration/skills/instructions/references/Saracen_Bridge_Brand_Integration_Database_Next_10_Options.xlsx",
+  "sha256": "fa4473a8c1d5e9b653614f4a7b88f9c4f4943e3a5de3e8fd62e901e1e0890c2e",
+  "bytes": 426620,
+  "used_by": [
+   "t05_brand_integration"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/.codex-plugin/plugin.json",
+  "sha256": "1ba5a7fab549dbd32269138ed2f322d89ecde3fe077acda47f46b7a36405c4de",
+  "bytes": 1408,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/SKILL.md",
+  "sha256": "941749f52f074d9f27899db0d5069e3d8e4a726854cf916c679d11e0d19ca2c9",
+  "bytes": 8055,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/agents/openai.yaml",
+  "sha256": "3d66921c309011678667b14b001d755aad927994a8d89921c7ead3c574d929fc",
+  "bytes": 268,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "41c9664d8d8f68231b314dcb6cfc32df72bad86419ade7732b522666629befbd",
+  "bytes": 1450,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/02_Knowledge_Manifest_and_Precedence.md",
+  "sha256": "246abe0f6b05b35f1fe32e049eb063a0781e2de4f7b00c776773f06c60c09974",
+  "bytes": 4230,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/03_Methodology_and_Data_Dictionary.md",
+  "sha256": "b718e22e45430d200b1f8f77091f142981c9c7917e6261520508672267674417",
+  "bytes": 7184,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/04_Priority_Jurisdiction_Scope_and_Coverage.md",
+  "sha256": "7381ff65ea05bb95a4237ebfd2159c771fc59c5983c2f94f8d8d389c3e39ab87",
+  "bytes": 17157,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/05A_Incentive_Programmes_Spain.md",
+  "sha256": "47fb5f08fb3d5a2af09b4f57c7672c6d8ae1ccda2fc25cc0428b22db9b7ac3a5",
+  "bytes": 15878,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/05B_Incentive_Programmes_UK_Ireland_and_Europe.md",
+  "sha256": "611b8dd41b3bf93c78c9f1587ed48d25611ad5ca61e8bfba2e99ea6e7b61dd1d",
+  "bytes": 34206,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/05C_Incentive_Programmes_Australia_and_Canada.md",
+  "sha256": "6ae0fe240c82ae05a1d4d6f3ed3addcf6caf59287c20e0d40ad9a376c9596743",
+  "bytes": 71599,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/05D_Incentive_Programmes_US_and_Dominican_Republic.md",
+  "sha256": "3e5a470a6dbfa5e71eb05d1413389d79334a440f504b56d3043eddddd35c805b",
+  "bytes": 14431,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/06_Source_Register_and_Research_Gaps.md",
+  "sha256": "417e8cb8180a594b45ce72b3da20e5f06b4c8db1d90119aa4517216c7c8174c9",
+  "bytes": 33009,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/07_GMOT_Golden_Test.md",
+  "sha256": "e355acdfa096ae0bd43fbc97744221989cbd5def256f127245ae5a7add3decff",
+  "bytes": 3484,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t06_location_incentive/skills/instructions/references/Saracen_Bridge_Production_Incentive_Model_Stage_2.xlsx",
+  "sha256": "fa74813650091646c265f87f13f28dc34aa5daf8e2890794bbf5c14d597e71cd",
+  "bytes": 105391,
+  "used_by": [
+   "t06_location_incentive"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/.codex-plugin/plugin.json",
+  "sha256": "5dd9c18a71fa0e9bdb8b630b4eda831fda339ba730c684a37e27b56de20283bb",
+  "bytes": 1323,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/SKILL.md",
+  "sha256": "95b2317258969be9d5915af18b490ec629e6c6a661d1a99ddef4da9d5f648ef5",
+  "bytes": 7959,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/agents/openai.yaml",
+  "sha256": "3ddf5c340f2643d9f7b0fe977b591069986d5532723e74ccb1dd46347c85f817",
+  "bytes": 225,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "e2b60a1cf0f5179683787aa467f825913fdb76c3023fbb289c64e2ae4bc21b99",
+  "bytes": 2366,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/01_Current_BFI_Film_Cultural_Test_Guidance-july-2026.docx",
+  "sha256": "8ab56d3397efed6b185030f1500c40bef07e01fd684d72a0605f41d0e8c4c86e",
+  "bytes": 49259,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/02_BFI_Summary_of_Cultural_Test_Points-july-2026.docx",
+  "sha256": "83ab5aa37dd6a19b6e11631273fde5dad6325329fc126cb87dcee18ab51c41eb",
+  "bytes": 41831,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/03_BFI_Supporting_Document_Requirements-july-2026.docx",
+  "sha256": "5eeafdab342004785e4cab15f776d4963f6cb6e68b8028cdd9a2e8d8afa4bd2c",
+  "bytes": 43778,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/04_BFI_Interim_Certification_Guidance-july-2026.docx",
+  "sha256": "908a3948006a7aebd3d6a25c7e955b1a69724efd66fbb55c133317b564713be8",
+  "bytes": 44587,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/05_BFI_Final_Certification_Guidance-july-2026.docx",
+  "sha256": "c740696a28b1fbf8f001d1447ff47259d9f8cf990e7320914191ee98139c319a",
+  "bytes": 46605,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/06_Current_Standard_AVEC_Guidance-july-2026.docx",
+  "sha256": "0d5623532771c0bcfad5785ea47adf8608effaee68e2d77f160d9e64f9e4c70b",
+  "bytes": 47585,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/07_Current_Enhanced_AVEC_IFTC_Guidance-july-2026.docx",
+  "sha256": "039b2097be5758e8d244dc779f923c16ee576bdc1ce552171a6c61d745d43ccc",
+  "bytes": 48075,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/08_BFI_Auditors_Report_Template_and_Instructions-july-2026.docx",
+  "sha256": "b0dc17a3418555d3a1e0e48fe16e93aded0dd09f67aae114e0711c9b428b8048",
+  "bytes": 47327,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/09_BFI_Statutory_Declaration_Template-july-2026.docx",
+  "sha256": "db4316fb7bcf16dddbb423ca403d67fa75867d0545d62a34aac8b520aac57999",
+  "bytes": 44107,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/10_BFI_Application_Checklist_and_Portal_Guidance-july-2026.docx",
+  "sha256": "45c064b6a8f0f144f6583e6a885639859ea29977ab6dfedefd95cd00c54c0248",
+  "bytes": 49568,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/11_Saracen_Bridge_Internal_BFI_Intake_Questionnaire-july-2026.docx",
+  "sha256": "7ba81d3769c9e51d3a4308e0217d4f7a3f9cc2ebc6ba4164be8ed890a85684fb",
+  "bytes": 47956,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/12_Saracen_Bridge_Cultural_Test_Evidence_Matrix_Template-july-2026.docx",
+  "sha256": "aec0f0bd5af095418f4785396d8cf18af28b497925402343e20889e7bcfdac89",
+  "bytes": 45357,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t07_bfi_certification/skills/instructions/references/13_BFI_Application_Answer_Pack- july-2026.docx",
+  "sha256": "34ee258fba905ada2abe8cbb9d1ecf641e4caa3d9c39837667a2d786ed882a37",
+  "bytes": 47311,
+  "used_by": [
+   "t07_bfi_certification"
+  ]
+ },
+ {
+  "path": "sources/t08_film_finance_greenlight/.codex-plugin/plugin.json",
+  "sha256": "8bea224053ec2b7eb5449ca2a8992b88588576fd2c5f26981c200ed3c32f6157",
+  "bytes": 1005,
+  "used_by": [
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/t08_film_finance_greenlight/skills/instructions/SKILL.md",
+  "sha256": "bf6df1b60ff29de703a14c40fe0453f18e1d9402643f132b2ff7f48769e8d474",
+  "bytes": 8140,
+  "used_by": [
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/t08_film_finance_greenlight/skills/instructions/agents/openai.yaml",
+  "sha256": "f1641c60b0bd4b4250bff5052c45024077db80df37d473c1b8b14d172fd292e1",
+  "bytes": 215,
+  "used_by": [
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/t08_film_finance_greenlight/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "4e875264cb96e4a89a8a0a2020ddb57dc72d196525828b0784211d77af1d901f",
+  "bytes": 1735,
+  "used_by": [
+   "t08_film_finance_greenlight"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/.app.json",
+  "sha256": "6796ccc2f504228c96d13ad9e43029c20142382779ba1498e6a8d095531cca7b",
+  "bytes": 231,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/.codex-plugin/plugin.json",
+  "sha256": "e368cfbf391dda428b3d7fb39d6e0921dc837f1dae88cc39ae84855605247078",
+  "bytes": 1590,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/skills/instructions/SKILL.md",
+  "sha256": "2c7e8b146f2a3c2af3604215b920945dbaa9da64c91e0e6c43ec593e4e5361b2",
+  "bytes": 7571,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/skills/instructions/agents/openai.yaml",
+  "sha256": "f36f68d17c020c181520f07b29f262a238ba9534984a7c7e34842a9267297d12",
+  "bytes": 252,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/skills/instructions/lookup/knowledge-index.json",
+  "sha256": "0a4f90a5a8a9e28fab24dcfb628fd8aa5544275b0bd5a38c696d82cce4bc6ec0",
+  "bytes": 1568,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/skills/instructions/references/08_Saracen_Bridge_Reporting_Standard.md",
+  "sha256": "655c865304928bec0d41f8d9dcbc3ce48f813189b96ac171e04036ad50e8af79",
+  "bytes": 4132,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t09_film_finance_dataroom/skills/instructions/references/09_Saracen_Bridge_Master_Report_Template.md",
+  "sha256": "e9af367b5f15aaa53cff30d8dd42c87ba45033b004492f9f76d31af0b58a7779",
+  "bytes": 6374,
+  "used_by": [
+   "t09_film_finance_dataroom"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/.codex-plugin/plugin.json",
+  "sha256": "2da9389289af2a97a80c0272ab8ae5e58ace93228029324881ba8b7e3c3d253d",
+  "bytes": 1410,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/plugin.json",
+  "sha256": "a1cd66e849fe95e09bedbc4785519cbf717d6379242994732762353bafe8f000",
+  "bytes": 1551,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/SKILL.md",
+  "sha256": "f73f9d304f8274167d3d73a25050c781d9f2fb8788a231f2ad22566d5a3628aa",
+  "bytes": 6003,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/agents/openai.yaml",
+  "sha256": "f7cc51fec48d62baad547836d2795f686e75e7c84a3097c124559fe9f5b83d4d",
+  "bytes": 255,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/assets/TKE_SB_Project_Input_Workbook.xlsx",
+  "sha256": "6c8e1e9c9b8d39aa9c85a8d75df63f9cb6678064b44d2ba2290ef92289dc65be",
+  "bytes": 45287,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/assets/TKE_SB_Static_Master_v1.docx",
+  "sha256": "81b53632bbdc8eaff51c7ca2de409922351b39aadc85b0b85a495421979f6a55",
+  "bytes": 62272,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/assets/asset_lock.json",
+  "sha256": "981ff2a319a75b9c1c17255df7c1b149f9caebfb700ef99ffd664be031ded50c",
+  "bytes": 301,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/assets/field_map.json",
+  "sha256": "48c730704fda5642592372f206a60ec064a4c38fce48e688a37a37a9552d860f",
+  "bytes": 108414,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/references/input-and-evidence.md",
+  "sha256": "8f7f533f97f42dcf40935beac1a5a572a3ed7f053aab43ad0dd3c83814bad6ac",
+  "bytes": 2531,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/references/validation-and-review.md",
+  "sha256": "901b193951ae4e58fe6657ed17c31c28461aefffa4286fe12ad706d54f4a0a6e",
+  "bytes": 3380,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/scripts/populate_static.py",
+  "sha256": "3b39608b606424eeecc23a91613f9bf9bd7d4d0963bfd3022168be4f7bae427e",
+  "bytes": 6570,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/scripts/run_workflow.py",
+  "sha256": "e14c8d359e61a3478f954da1ad08ac03acd470cf15c9733bd65440f4df8d0194",
+  "bytes": 10094,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ },
+ {
+  "path": "sources/t10_agreement_builder/skills/populate-production-agreement/scripts/test_workflow.py",
+  "sha256": "497b43fa464251ff7c7247d3e44498f7600abd9a579a61756125b7991149b616",
+  "bytes": 7609,
+  "used_by": [
+   "t10_agreement_builder"
+  ]
+ }
+]

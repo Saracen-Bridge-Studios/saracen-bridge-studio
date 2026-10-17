@@ -1,0 +1,296 @@
+{
+  "_doc": "How the standalone engine runs each Saracen Bridge tool. model_tasks = reading/drafting by the local model (output is a Proposal the user confirms). engine = deterministic code (all figures). status: built | wrap | todo.",
+  "shared_services": {
+    "script_parser": {
+      "used_by": [
+        "t01_look_book",
+        "t02_script_coverage",
+        "t03_schedule_budget",
+        "t05_brand_integration",
+        "t07_bfi_certification"
+      ],
+      "status": "built (deterministic)",
+      "note": "Scene index (number, heading, INT/EXT, time of day, location, speaking cast per scene), cast by dialogue, page count. Element tagging (props, wardrobe, VFX) needs the model. Scanned PDFs need OCR (warned, not yet built).",
+      "module": "studio.script",
+      "tests": "tests/test_tools_api.py (Fountain, FDX, PDF)"
+    },
+    "incentive_engine": {
+      "module": "studio.incentive",
+      "status": "built",
+      "tests": "tests/test_incentive_regressions.py (Jon's R01-R12)"
+    },
+    "finance_engine": {
+      "module": "studio.finance",
+      "status": "built (core)",
+      "tests": "tests/test_shade_finance.py"
+    },
+    "report_renderer": {
+      "template": "sources/shared/Saracen_Bridge_Analytics_Master_Report_Template.docx",
+      "status": "todo",
+      "note": "Fill template, update TOC/fields, render to PDF, page check (captured GPT behaviour)."
+    },
+    "workbook_renderer": {
+      "status": "todo",
+      "note": "13-tab finance workbook from engine output; recalc via LibreOffice before save (register B-07/B-11)."
+    },
+    "change_control": {
+      "status": "todo",
+      "note": "Dependency graph marks downstream outputs stale on budget/schedule/route/FX/lender change (02 Protocol)."
+    },
+    "rules_refresh": {
+      "status": "todo",
+      "note": "User-triggered fetch of official sources, diff against tables, dated approval. The only outbound path."
+    },
+    "library": {
+      "module": "studio.store",
+      "status": "built",
+      "note": "Every run saved as a folder under %APPDATA%\\SaracenStudio\\runs with a SQLite index (library.db) for search and paging. Same file twice (SHA-256) is skipped, so re-dropping a folder resumes a stopped batch. Measured: 1,000 scripts, 23 s, list 15 ms."
+    },
+    "external_apps": {
+      "module": "studio.server /api/external",
+      "status": "built",
+      "note": "A.I.D.E.N. (storyboard) and F.R.A.T. (visual feedback) are separate programs; the Studio opens them by address or program path set in Settings."
+    }
+  },
+  "tools": [
+    {
+      "id": "t03_schedule_budget",
+      "name": "Schedule & Budget",
+      "inputs": [
+        "screenplay",
+        "location",
+        "cast tier",
+        "union",
+        "target dates"
+      ],
+      "model_tasks": [
+        "script breakdown -> scene index",
+        "element tagging",
+        "budget line -> workstream/eligibility proposal"
+      ],
+      "engine": [
+        "stripboard + shooting-day range",
+        "cast DOOD",
+        "budget from rate_* tables + coa_accounts",
+        "SB-BUD-INC-1.0 line mapping",
+        "SB-SCH-INC-1.0 milestone calendar"
+      ],
+      "data": [
+        "rate_crew",
+        "rate_cast",
+        "rate_non_labour",
+        "rate_regional_factors",
+        "rate_labour_rules",
+        "coa_accounts",
+        "fs_*"
+      ],
+      "outputs": [
+        "schedule",
+        "DOOD",
+        "budget lean/base/conservative",
+        "Filmustage export",
+        "incentive input export"
+      ],
+      "status": "breakdown, schedule (stripboard, day-out-of-days), budget on Jon's chart of accounts and rate cards, crew-rate lookup built (1.0.4); element tagging needs the model"
+    },
+    {
+      "id": "t06_location_incentive",
+      "name": "Location & Incentives",
+      "inputs": [
+        "line budget by workstream/jurisdiction",
+        "dates",
+        "entity route"
+      ],
+      "model_tasks": [
+        "none required for calculation"
+      ],
+      "engine": [
+        "studio.incentive.calculate per component",
+        "12-factor weighted score + RAG (Red<2.50, Amber<3.50)",
+        "coverage-gap classification"
+      ],
+      "data": [
+        "inc_programme_rules",
+        "inc_fx_financing",
+        "inc_coverage_gaps",
+        "inc_sources_audit"
+      ],
+      "outputs": [
+        "route comparison",
+        "incentive components with shared IDs"
+      ],
+      "status": "engine + route comparison UI built; 12-factor scoring todo",
+      "issues": [
+        "B-12 superseded data retired",
+        "G-20 unknown stays Unknown",
+        "G-21 GMOT test workbook missing"
+      ]
+    },
+    {
+      "id": "fpm_finance_plan_modeller",
+      "name": "Finance Plan",
+      "inputs": [
+        "budget top sheet",
+        "finance plan",
+        "incentive components",
+        "sales estimates",
+        "term sheets"
+      ],
+      "model_tasks": [
+        "term sheet -> source record + status proposal"
+      ],
+      "engine": [
+        "studio.finance.reconcile",
+        "size_package",
+        "residual_debt",
+        "double_count_errors",
+        "debt schedule",
+        "monthly cashflow",
+        "waterfall",
+        "MOIC/IRR",
+        "sensitivity"
+      ],
+      "outputs": [
+        "13-tab workbook",
+        "finance viability report"
+      ],
+      "status": "core + UI built; debt schedule/waterfall/workbook todo",
+      "issues": [
+        "G-27 capital-structure policy",
+        "G-36 gap <=20% / bond rule"
+      ]
+    },
+    {
+      "id": "t04_sales_agent",
+      "name": "Sales Estimates",
+      "inputs": [
+        "project intake",
+        "cast/director attachments",
+        "rights register",
+        "evidence"
+      ],
+      "model_tasks": [
+        "research summarisation -> evidence rows (dated, graded)",
+        "report narrative"
+      ],
+      "engine": [
+        "territory Ask/Expected Close/Take/Bankable (port of v4.1 engine)",
+        "attachment certainty ladder",
+        "deductions 12/5/1"
+      ],
+      "data": [
+        "sales_*",
+        "talent_actors",
+        "talent_directors",
+        "talent_director_scorecard",
+        "sales_attachment_certainty"
+      ],
+      "outputs": [
+        "producer report",
+        "lender report"
+      ],
+      "status": "talent lookups built; valuation engine port todo",
+      "issues": [
+        "G-12 territory list",
+        "G-14/G-28 advance rate",
+        "G-16 calibration cases"
+      ]
+    },
+    {
+      "id": "t02_script_coverage",
+      "name": "Script Coverage",
+      "model_tasks": [
+        "coverage analysis sections",
+        "logline/pitch"
+      ],
+      "engine": [
+        "weighted matrix 20/20/20/10/10/10/10"
+      ],
+      "status": "batch intake, library, weighted matrix built; written coverage needs model",
+      "issues": [
+        "G-02 verdict thresholds"
+      ]
+    },
+    {
+      "id": "t01_look_book",
+      "name": "Look Book",
+      "model_tasks": [
+        "deck page reading (vision model)",
+        "16-section analysis"
+      ],
+      "engine": [
+        "13-dimension score average"
+      ],
+      "status": "needs model (vision)",
+      "issues": [
+        "G-01"
+      ]
+    },
+    {
+      "id": "t05_brand_integration",
+      "name": "Brand Partners",
+      "model_tasks": [
+        "scene opportunity spotting",
+        "outreach drafts (draft only)"
+      ],
+      "engine": [
+        "fit score (avg of 5 x 20)",
+        "pipeline/outreach log"
+      ],
+      "data": [
+        "brand_accounts",
+        "brand_film_evidence"
+      ],
+      "status": "brand database + script intake built; opportunity spotting needs model",
+      "issues": [
+        "G-17 contacts not loaded"
+      ]
+    },
+    {
+      "id": "t07_bfi_certification",
+      "name": "BFI Certification",
+      "model_tasks": [
+        "A1-A3 script reading",
+        "B contribution narrative"
+      ],
+      "engine": [
+        "cultural test scorer (35 pts, pass 18, C cap 4+1)",
+        "consistency checks",
+        "upload pack naming"
+      ],
+      "data": [
+        "bfi_cultural_test"
+      ],
+      "status": "Cultural Test scorer built (studio.bfi); script reading needs model"
+    },
+    {
+      "id": "t08_t09_greenlight",
+      "name": "Greenlight & Closing",
+      "model_tasks": [
+        "contract reading -> CP evidence class"
+      ],
+      "engine": [
+        "decision hierarchy 55/80/90",
+        "CP state machine",
+        "weekly delta"
+      ],
+      "status": "decision rules built (studio.greenlight); 243-check matrix awaited from Jon",
+      "issues": [
+        "G-34 243-check matrix missing",
+        "G-35 score mapping"
+      ]
+    },
+    {
+      "id": "t10_agreement_builder",
+      "name": "Term Sheet",
+      "model_tasks": [
+        "evidence -> field proposals"
+      ],
+      "engine": [
+        "Jon's populate/run_workflow scripts (unchanged)"
+      ],
+      "status": "wrapped and running in-process (studio.agreement), incl. frozen app",
+      "tests": "tests/test_agreement_builder.py (33/33)"
+    }
+  ]
+}

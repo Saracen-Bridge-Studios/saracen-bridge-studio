@@ -1,0 +1,5 @@
+interface:
+  default_prompt: Audit this project's SharePoint data room and issue a greenlight
+    recommendation.
+  display_name: Saracen Bridge Film Finance Analyst
+  short_description: Audits film and television SharePoint/OneDrive data rooms agains

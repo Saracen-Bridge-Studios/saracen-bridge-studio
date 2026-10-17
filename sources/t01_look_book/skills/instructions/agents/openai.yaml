@@ -1,0 +1,6 @@
+interface:
+  default_prompt: Produce the report as a Word document using the Saracen Bridge Analytics
+    master report template.
+  display_name: 1. Saracen Bridge Look Book Analytics
+  short_description: 'Info Needed: Look Book / Visual Deck / Pitch Deck, Script or
+    pil'

@@ -1,0 +1,25 @@
+{
+  "interface": {
+    "displayName": "Saracen Bridge Production Agreement Builder",
+    "shortDescription": "Fill fixed production terms",
+    "longDescription": "Populate the bundled STATIC 1.0 production term sheet using its matching intake workbook, field map and deterministic scripts. Require supporting sources, distinguish proposed and confirmed terms, preserve fixed content, check selected financial relationships and produce completion and validation reports. Requires a code-enabled Work session with Python and lxml; use document and spreadsheet capabilities for intake preparation and visual review.",
+    "developerName": "Saracen Bridge Ltd",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Prepare a production term sheet from my project documents using the fixed master.",
+      "Check my project input workbook for missing terms and conflicting evidence.",
+      "Update my existing project draft while preserving the fixed master."
+    ]
+  },
+  "name": "saracen-bridge-production-agreement-builder",
+  "version": "0.1.0",
+  "description": "Populate fixed Saracen Bridge and Two Kingdoms production term sheets from traceable project evidence; preserve fixed clauses and formatting and report unresolved terms.",
+  "author": {
+    "name": "Jonathan Chadwick / Saracen Bridge Ltd"
+  },
+  "keywords": [],
+  "skills": "./skills"
+}

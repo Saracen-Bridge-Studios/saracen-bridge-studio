@@ -1,0 +1,232 @@
+{
+  "groups": [
+    "Development",
+    "Production",
+    "Sales & Marketing",
+    "Finance",
+    "Creative"
+  ],
+  "tools": [
+    {
+      "id": "coverage",
+      "num": "02",
+      "group": "Development",
+      "name": "Script Coverage",
+      "tagline": "Commercial coverage: Recommend / Consider / Pass",
+      "needs": [
+        "The screenplay or treatment: PDF, Final Draft (.fdx) or Fountain. That's all the Studio takes; it reads the script itself"
+      ],
+      "ready": [
+        "Script intake and breakdown (any number of scripts)",
+        "Scanned PDFs read by OCR, on this computer",
+        "Weighted scoring matrix (Jon's 20/20/20/10/10/10/10)"
+      ],
+      "needs_ai": [],
+      "ai_built": [
+        "Written coverage, all 11 sections of Jon's report, as a branded Word document (Quick or Deep reasoning)",
+        "Queue for any number of scripts, resumes after a restart"
+      ]
+    },
+    {
+      "id": "lookbook",
+      "num": "01",
+      "group": "Development",
+      "name": "Look Book Analytics",
+      "tagline": "Does the deck sell the project?",
+      "needs": [
+        "The look book or pitch deck: a PDF, or its pages as images",
+        "Optional, in \"Add what the deck doesn't say\": title, format, logline, attached cast and director, budget, comparables, your view"
+      ],
+      "ready": [
+        "Deck intake: a PDF, or images in page order, read page by page"
+      ],
+      "needs_ai": [],
+      "ai_built": [
+        "Jon's Look Book Sales Tool Analysis: all 16 sections, scores and verdict, as a branded Word document (Gemma looks at every page)"
+      ]
+    },
+    {
+      "id": "schedule",
+      "num": "03",
+      "group": "Production",
+      "name": "Scheduling & Budgeting",
+      "tagline": "Breakdown, day-out-of-days, shooting days, budget",
+      "needs": [
+        "The screenplay, for the breakdown and schedule",
+        "For the budget: the jurisdiction and region, and the figures a script can't give (fees, negotiated crew, the payroll load %)",
+        "A jurisdiction and role, for crew rates"
+      ],
+      "ready": [
+        "Script breakdown: scenes, INT/EXT, day/night, locations, cast by scene",
+        "Schedule: shooting days in lean, base and conservative cases, a stripboard by location, and day-out-of-days for every speaking role",
+        "Budget on Jon's chart of accounts from his 2026 rate cards (13 jurisdictions, regional factors), with an Excel workbook",
+        "Crew rate lookup (13 jurisdictions)"
+      ],
+      "needs_ai": [],
+      "ai_built": [
+        "Element tagging scene by scene (stunts, effects, vehicles, weapons, animals, background, special make-up, child performers, special equipment), priced into the budget from Jon's rate cards or marked to quote"
+      ]
+    },
+    {
+      "id": "incentives",
+      "num": "06",
+      "group": "Production",
+      "name": "Location & Incentives",
+      "tagline": "Net incentive by programme, with eligibility gates",
+      "needs": [
+        "Qualifying spend by location",
+        "Total production cost",
+        "Eligibility status",
+        "Programmes to compare"
+      ],
+      "ready": [
+        "76 audited programmes (69 active), gates, caps, tiers and tax effects"
+      ],
+      "needs_ai": [],
+      "ai_built": []
+    },
+    {
+      "id": "bfi",
+      "num": "07",
+      "group": "Production",
+      "name": "BFI Certification",
+      "tagline": "Cultural Test score: proposed vs conservative",
+      "needs": [
+        "Points claimed per criterion, proposed and conservative (keep your evidence for each claim)"
+      ],
+      "ready": [
+        "Cultural Test scorer: 35 points, pass mark 18, caps and golden points rule"
+      ],
+      "needs_ai": [],
+      "ai_built": [
+        "Script read for Section A: setting by script length, leads, subject, dialogue by spoken words; B case; Jon's answer pack (Excel), never marked ready"
+      ]
+    },
+    {
+      "id": "sales",
+      "num": "04",
+      "group": "Sales & Marketing",
+      "name": "Sales Estimates",
+      "tagline": "Territory Ask / Expected Close / Take",
+      "needs": [
+        "An actor's or director's name",
+        "For the territory valuation: the project's facts, the package, rights by territory, and evidence (deals, public comparables, or a documented worldwide anchor)"
+      ],
+      "ready": [
+        "Actor database (1,004): type a name, see fees and sales value",
+        "Director database (500) with fee bands",
+        "Attachment certainty ladder",
+        "Territory valuation: Jon's Sales Valuation Engine v4.1 run exactly as his workbook calculates (Ask, Expected Close and Take for 33 territories, net producer receipts, lender test), with the filled workbook to download"
+      ],
+      "needs_ai": [
+        "Evidence research: finding comparables, deals and buyer interest by territory to feed the engine"
+      ],
+      "ai_built": []
+    },
+    {
+      "id": "brand",
+      "num": "05",
+      "group": "Sales & Marketing",
+      "name": "Brand Integration",
+      "tagline": "Scene-by-scene brand opportunities and targets",
+      "needs": [
+        "A brand or company name, for the database",
+        "The screenplay, for intake (its brand targets come from your shortlist)"
+      ],
+      "ready": [
+        "110 brands with documented film-placement evidence",
+        "Shortlist: click brands to pick as many as you like, download it as a spreadsheet (CSV), and a script read here takes it as that film's brand targets"
+      ],
+      "needs_ai": [
+        "Brand placement in the cut, with F.R.A.T. (Visual Feedback): spotting brands on screen and suggesting which brand goes where"
+      ],
+      "ai_built": [
+        "Scene-by-scene opportunity register: scene and page, item, placement, targets from Jon's database, scores (Excel)",
+        "Ranked target brands and draft outreach to the top five (never sent)"
+      ]
+    },
+    {
+      "id": "finance",
+      "num": "08",
+      "group": "Finance",
+      "name": "Finance Plan",
+      "tagline": "Sources and uses, debt sizing, double-count checks",
+      "needs": [
+        "Gross budget and currency",
+        "Each finance source: amount, status, whether it is cash, and any package it sits inside"
+      ],
+      "ready": [
+        "Sources/uses reconciliation",
+        "Package and residual-debt sizing",
+        "Double-count and debt-cap checks"
+      ],
+      "needs_ai": [],
+      "ai_built": [
+        "Term sheets read into the plan: each instrument's party, amount, status and terms, checked against the document and reviewed before it's added"
+      ]
+    },
+    {
+      "id": "greenlight",
+      "num": "09",
+      "group": "Finance",
+      "name": "Greenlight & Closing",
+      "tagline": "Can it close today? Formal decision",
+      "needs": [
+        "Readiness scores",
+        "Critical blockers",
+        "Funding gap",
+        "Professional sign-offs"
+      ],
+      "ready": [
+        "Decision rules: 55 / 80 / 90 thresholds and sub-score minimums"
+      ],
+      "needs_ai": [
+        "Data-room audit against the 243-check closing matrix (matrix file awaited from Jon)"
+      ],
+      "ai_built": []
+    },
+    {
+      "id": "agreement",
+      "num": "10",
+      "group": "Finance",
+      "name": "Term Sheet Builder",
+      "tagline": "Fill the fixed production term sheet",
+      "needs": [
+        "Completed project input workbook"
+      ],
+      "ready": [
+        "Jon's fixed master, validation and population scripts"
+      ],
+      "needs_ai": [],
+      "ai_built": []
+    },
+    {
+      "id": "aiden",
+      "num": "",
+      "group": "Creative",
+      "name": "Storyboard",
+      "tagline": "Storyboards from your script, built into the Studio",
+      "external": true,
+      "needs": [],
+      "ready": [],
+      "needs_ai": [],
+      "ai_built": [],
+      "coming_soon": true,
+      "coming_soon_text": "Storyboard is being built into Saracen Bridge Studio: storyboards drawn from your script, in the same place as everything else."
+    },
+    {
+      "id": "frat",
+      "num": "",
+      "group": "Creative",
+      "name": "Visual Feedback",
+      "tagline": "Film and trailer feedback in F.R.A.T.",
+      "external": true,
+      "needs": [],
+      "ready": [],
+      "needs_ai": [],
+      "ai_built": [],
+      "coming_soon": true,
+      "coming_soon_text": "Visual Feedback is being built into Saracen Bridge Studio with F.R.A.T.: notes on your cut and trailer, and spotting brand placement on screen, with suggestions for which brand goes where."
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  default_prompt: Assess this film project for finance readiness.
+  display_name: Saracen Bridge Film Finance Analyst
+  short_description: Institutional greenlight, closing and finance-readiness underwri

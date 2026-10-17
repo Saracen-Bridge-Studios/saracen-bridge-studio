@@ -1,0 +1,24 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Saracen Bridge Internal Sales Agent Estimates",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Create Sales Estimate for this Film"
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "4. Saracen Bridge - Sales Agent",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Saracen Bridge Internal Sales Agent Estimates",
+    "shortDescription": "Saracen Bridge Internal Sales Agent Estimates"
+  },
+  "name": "gpt-131fd26bbddeb641a570d494a545863b",
+  "skills": "./skills/",
+  "version": "0.9.1+bundle.924560b0f1c7486fe5c1696b3a8b3ea4"
+}

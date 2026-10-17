@@ -1,0 +1,11 @@
+{
+  "title": "SHADE (example)",
+  "currency": "EUR",
+  "gross_budget": 8968893.79,
+  "_source": "From Jon's SHADE_Spain_Finance_Model_NonStop_50pct_Guarantee_v2.xlsx. Example only; replace with your project.",
+  "sources": [
+    {"id": "mg", "name": "LevelK / investor MG", "amount": 1315789.47, "status": "Draft / conditional", "cash": true},
+    {"id": "facility", "name": "Non-Stop incentive facility", "amount": 1617019.86, "status": "User instruction / to document", "cash": true, "parent": "nonstop"},
+    {"id": "inkind", "name": "Non-Stop in-kind deferred equity", "amount": 2867427.04, "status": "User instruction / to document", "cash": false, "parent": "nonstop"}
+  ]
+}

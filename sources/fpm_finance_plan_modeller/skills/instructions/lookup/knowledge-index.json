@@ -1,0 +1,40 @@
+{
+  "files": [
+    {
+      "name": "02_Shared_Incentive_Model_Integration_Protocol.md",
+      "path": "references/02_Shared_Incentive_Model_Integration_Protocol.md"
+    },
+    {
+      "name": "09_Saracen_Bridge_Production_Incentives_GPT_Knowledge_v1_0.md",
+      "path": "references/09_Saracen_Bridge_Production_Incentives_GPT_Knowledge_v1_0.md"
+    },
+    {
+      "name": "10_Saracen_Bridge_Production_Incentive_Model_Stage_2_Audited_v1_1.xlsx",
+      "path": "references/10_Saracen_Bridge_Production_Incentive_Model_Stage_2_Audited_v1_1.xlsx"
+    },
+    {
+      "name": "SHADE_Spain_Finance_Model_NonStop_50pct_Guarantee_v2.xlsx",
+      "path": "references/SHADE_Spain_Finance_Model_NonStop_50pct_Guarantee_v2.xlsx"
+    },
+    {
+      "name": "Saracen_Bridge_Analytics_Bespoke_GPT_Instructions.md",
+      "path": "references/Saracen_Bridge_Analytics_Bespoke_GPT_Instructions.md"
+    },
+    {
+      "name": "Saracen_Bridge_Analytics_Logo_High_Resolution.png",
+      "path": "references/Saracen_Bridge_Analytics_Logo_High_Resolution.png"
+    },
+    {
+      "name": "Saracen_Bridge_Analytics_Master_Report_Template.docx",
+      "path": "references/Saracen_Bridge_Analytics_Master_Report_Template.docx"
+    },
+    {
+      "name": "Saracen_Bridge_Film_Finance_Suite_v1.xlsx",
+      "path": "references/Saracen_Bridge_Film_Finance_Suite_v1.xlsx"
+    },
+    {
+      "name": "Saracen_Bridge_Finance_Model_Formatting_Knowledge_v1.md",
+      "path": "references/Saracen_Bridge_Finance_Model_Formatting_Knowledge_v1.md"
+    }
+  ]
+}

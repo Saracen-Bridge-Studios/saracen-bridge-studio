@@ -1,0 +1,6 @@
+interface:
+  default_prompt: Assess the best production, post-production and VFX locations for
+    the attached budget.
+  display_name: Production Location and Incentive Analyst
+  short_description: Finance-led assessment and comparison of production locations
+    an

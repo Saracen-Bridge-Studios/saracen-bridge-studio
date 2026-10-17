@@ -1,0 +1,26 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Finance-led assessment and comparison of production locations and incentives for film, television, post-production, VFX, animation, virtual production, SFX and qualifying AI/R&D activity.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Other",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Assess the best production, post-production and VFX locations for the attached budget.",
+      "Compare the net realisable incentive value of Spain, the UK, Ireland, Australia and Canada.",
+      "Identify the strongest split-location production structure for this project."
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "Production Location and Incentive Analyst",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Finance-led assessment and comparison of production locations and incentives for film, television, post-production, VFX, animation, virtual production, SFX and qualifying AI/R&D activity.",
+    "shortDescription": "Finance-led assessment and comparison of production locations and incentives for film, television, post-production, VFX, animation, virtual production, SFX and qualifying AI/R&D activity."
+  },
+  "name": "gpt-22026f19dc5335965ad0fc7841a26976",
+  "skills": "./skills/",
+  "version": "0.1.1+bundle.ae37589b74db0f9a9c8e9f29adfdeef0"
+}

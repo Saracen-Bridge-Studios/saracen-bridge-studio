@@ -1,0 +1,22 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Info Needed: Budget top sheet Finance plan Tax credit estimate Sales estimates Cashflow Any term sheets or signed agreements",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [],
+    "developerName": "Jon Chadwick",
+    "displayName": "Saracen Bridge Finance Plan Modeller",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Info Needed: Budget top sheet Finance plan Tax credit estimate Sales estimates Cashflow Any term sheets or signed agreements",
+    "shortDescription": "Info Needed: Budget top sheet Finance plan Tax credit estimate Sales estimates Cashflow Any term sheets or signed agreements"
+  },
+  "name": "gpt-9b2cd882216a358964120caa14fa52f8",
+  "skills": "./skills/",
+  "version": "0.7.1+bundle.84e86fc9353c199c74f9d4183755371c"
+}

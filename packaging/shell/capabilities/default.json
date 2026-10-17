@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The Studio page needs no native commands.",
+  "windows": ["main"],
+  "permissions": []
+}

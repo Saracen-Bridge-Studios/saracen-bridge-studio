@@ -1,0 +1,24 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Info Needed: Screenplay or treatment, Character breakdowns, Look Book or pitch deck, Budget estimate/production plan, Target audience, Comparable titles, Sales/Distribution notes, Any previous coverage",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "“Produce the report as a Word document using the Saracen Bridge Analytics master report template.”"
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "2. Saracen Bridge Script Coverage Analysis",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Info Needed: Screenplay or treatment, Character breakdowns, Look Book or pitch deck, Budget estimate/production plan, Target audience, Comparable titles, Sales/Distribution notes, Any previous coverage",
+    "shortDescription": "Info Needed: Screenplay or treatment, Character breakdowns, Look Book or pitch deck, Budget estimate/production plan, Target audience, Comparable titles, Sales/Distribution notes, Any previous coverage"
+  },
+  "name": "gpt-c1e22e0ce4851f4909ed62a9daaf1fe6",
+  "skills": "./skills/",
+  "version": "0.6.1+bundle.a06355e536e1d475682e01d5dd636418"
+}

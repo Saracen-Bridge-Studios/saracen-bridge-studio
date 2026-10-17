@@ -1,0 +1,3346 @@
+{
+  "master_version": "STATIC 1.0",
+  "master_file": "TKE_SB_Static_Master_v1.docx",
+  "fields": [
+    {
+      "id": "S00_001_PROJECT_TITLE",
+      "section": "0",
+      "sheet": "Project",
+      "placeholder": "[PROJECT TITLE]",
+      "context": "Project: [PROJECT TITLE]    |    Date: [DATE]    |    Version: [VERSION]",
+      "type": "Text",
+      "paragraph": 2
+    },
+    {
+      "id": "S00_002_DATE",
+      "section": "0",
+      "sheet": "Project",
+      "placeholder": "[DATE]",
+      "context": "Project: [PROJECT TITLE]    |    Date: [DATE]    |    Version: [VERSION]",
+      "type": "Text",
+      "paragraph": 2
+    },
+    {
+      "id": "S00_003_VERSION",
+      "section": "0",
+      "sheet": "Project",
+      "placeholder": "[VERSION]",
+      "context": "Project: [PROJECT TITLE]    |    Date: [DATE]    |    Version: [VERSION]",
+      "type": "Text",
+      "paragraph": 2
+    },
+    {
+      "id": "S01_001_FEATURE_SERIES_OTHER_EPISODE",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[FEATURE / SERIES / OTHER; EPISODE COUNT AND LENGTH]",
+      "context": "[FEATURE / SERIES / OTHER; EPISODE COUNT AND LENGTH]",
+      "type": "Text",
+      "paragraph": 11
+    },
+    {
+      "id": "S01_002_GENRE",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[GENRE]",
+      "context": "[GENRE] / [LANGUAGE OR LANGUAGES]",
+      "type": "Text",
+      "paragraph": 13
+    },
+    {
+      "id": "S01_003_LANGUAGE_OR_LANGUAGES",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[LANGUAGE OR LANGUAGES]",
+      "context": "[GENRE] / [LANGUAGE OR LANGUAGES]",
+      "type": "Text",
+      "paragraph": 13
+    },
+    {
+      "id": "S01_004_LEGAL_NAME_REGISTRATION_NUMB",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[LEGAL NAME, REGISTRATION NUMBER, JURISDICTION AND ADDRESS]",
+      "context": "[LEGAL NAME, REGISTRATION NUMBER, JURISDICTION AND ADDRESS]",
+      "type": "Text",
+      "paragraph": 15
+    },
+    {
+      "id": "S01_005_BUDGET_CURRENCY",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[BUDGET CURRENCY]",
+      "context": "[BUDGET CURRENCY] [AMOUNT], subject to the final approved line budget, schedule an",
+      "type": "Text",
+      "paragraph": 17
+    },
+    {
+      "id": "S01_006_AMOUNT",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[AMOUNT]",
+      "context": "[BUDGET CURRENCY] [AMOUNT], subject to the final approved line budget, schedule and complet",
+      "type": "Amount",
+      "paragraph": 17
+    },
+    {
+      "id": "S01_007_TERRITORIES",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[TERRITORIES]",
+      "context": "[TERRITORIES]; [SHOOT DAYS]; [PREP, SHOOT, POST AND DELIVERY DATES]",
+      "type": "Text",
+      "paragraph": 19
+    },
+    {
+      "id": "S01_008_SHOOT_DAYS",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[SHOOT DAYS]",
+      "context": "[TERRITORIES]; [SHOOT DAYS]; [PREP, SHOOT, POST AND DELIVERY DATES]",
+      "type": "Text",
+      "paragraph": 19
+    },
+    {
+      "id": "S01_009_PREP_SHOOT_POST_AND_DELIVERY",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[PREP, SHOOT, POST AND DELIVERY DATES]",
+      "context": "[TERRITORIES]; [SHOOT DAYS]; [PREP, SHOOT, POST AND DELIVERY DATES]",
+      "type": "Text",
+      "paragraph": 19
+    },
+    {
+      "id": "S01_010_NAME",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[NAME]",
+      "context": "[NAME]; [APPLICABLE GUILD / UNION STATUS]",
+      "type": "Text",
+      "paragraph": 21
+    },
+    {
+      "id": "S01_011_APPLICABLE_GUILD_UNION_STATU",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[APPLICABLE GUILD / UNION STATUS]",
+      "context": "[NAME]; [APPLICABLE GUILD / UNION STATUS]",
+      "type": "Text",
+      "paragraph": 21
+    },
+    {
+      "id": "S01_012_NAME_ROLE_STATUS",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[NAME / ROLE / STATUS]",
+      "context": "[NAME / ROLE / STATUS]; subject to availability and definitive agreements.",
+      "type": "Text",
+      "paragraph": 23
+    },
+    {
+      "id": "S01_013_NAMES_AND_COMPANIES",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[NAMES AND COMPANIES]",
+      "context": "[NAMES AND COMPANIES]; lead producer: [NAME]",
+      "type": "Text",
+      "paragraph": 25
+    },
+    {
+      "id": "S01_014_NAME",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[NAME]",
+      "context": "[NAMES AND COMPANIES]; lead producer: [NAME]",
+      "type": "Text",
+      "paragraph": 25
+    },
+    {
+      "id": "S01_015_NAMES_AND_COMPANIES",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[NAMES AND COMPANIES]",
+      "context": "[NAMES AND COMPANIES]; investor credits as agreed in section 7.",
+      "type": "Text",
+      "paragraph": 27
+    },
+    {
+      "id": "S01_016_CO_PRODUCER",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[CO PRODUCER]",
+      "context": "[CO PRODUCER]; [PRODUCTION SERVICES COMPANY]; ",
+      "type": "Text",
+      "paragraph": 29
+    },
+    {
+      "id": "S01_017_PRODUCTION_SERVICES_COMPANY",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[PRODUCTION SERVICES COMPANY]",
+      "context": "[CO PRODUCER]; [PRODUCTION SERVICES COMPANY]; ",
+      "type": "Text",
+      "paragraph": 29
+    },
+    {
+      "id": "S01_018_POST_COMPANY",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[POST COMPANY]",
+      "context": "[POST COMPANY]",
+      "type": "Text",
+      "paragraph": 31
+    },
+    {
+      "id": "S01_019_APPROVING_PARTY_PARTIES",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[APPROVING PARTY / PARTIES]",
+      "context": "[APPROVING PARTY / PARTIES], subject to the approval rights in section 16.",
+      "type": "Text",
+      "paragraph": 33
+    },
+    {
+      "id": "S01_020_DATE",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[DATE]",
+      "context": "The Approved Budget means the signed production budget dated [DATE], version [VERSION]. Fee calculations use the specific calculatio",
+      "type": "Text",
+      "paragraph": 35
+    },
+    {
+      "id": "S01_021_VERSION",
+      "section": "1",
+      "sheet": "Project",
+      "placeholder": "[VERSION]",
+      "context": " Budget means the signed production budget dated [DATE], version [VERSION]. Fee calculations use the specific calculation base stated for e",
+      "type": "Text",
+      "paragraph": 35
+    },
+    {
+      "id": "S02_001_RIGHTS_OWNER_LEAD_PRODUCER",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[RIGHTS OWNER / LEAD PRODUCER]",
+      "context": "The parties are the Production SPV, [RIGHTS OWNER / LEAD PRODUCER], [PACKAGE PRODUCER], [EXECUTIVE PRODUCER / ARRANGER], [PRODUCTIO",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_002_PACKAGE_PRODUCER",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[PACKAGE PRODUCER]",
+      "context": " parties are the Production SPV, [RIGHTS OWNER / LEAD PRODUCER], [PACKAGE PRODUCER], [EXECUTIVE PRODUCER / ARRANGER], [PRODUCTION SERVICES / CO PROD",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_003_EXECUTIVE_PRODUCER_ARRANGER",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[EXECUTIVE PRODUCER / ARRANGER]",
+      "context": "duction SPV, [RIGHTS OWNER / LEAD PRODUCER], [PACKAGE PRODUCER], [EXECUTIVE PRODUCER / ARRANGER], [PRODUCTION SERVICES / CO PRODUCTION PARTNER], [EQUITY INVESTOR",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_004_PRODUCTION_SERVICES_CO_PRODU",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[PRODUCTION SERVICES / CO PRODUCTION PARTNER]",
+      "context": " PRODUCER], [PACKAGE PRODUCER], [EXECUTIVE PRODUCER / ARRANGER], [PRODUCTION SERVICES / CO PRODUCTION PARTNER], [EQUITY INVESTORS], [LENDERS] and any additional signatories id",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_005_EQUITY_INVESTORS",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[EQUITY INVESTORS]",
+      "context": "UCER / ARRANGER], [PRODUCTION SERVICES / CO PRODUCTION PARTNER], [EQUITY INVESTORS], [LENDERS] and any additional signatories identified below. Reco",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_006_LENDERS",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[LENDERS]",
+      "context": "RODUCTION SERVICES / CO PRODUCTION PARTNER], [EQUITY INVESTORS], [LENDERS] and any additional signatories identified below. Record each par",
+      "type": "Text",
+      "paragraph": 37
+    },
+    {
+      "id": "S02_007_DOCUMENTS_AND_DATES_NONE",
+      "section": "2",
+      "sheet": "Parties",
+      "placeholder": "[DOCUMENTS AND DATES / NONE]",
+      "context": "Existing executed agreements identified as [DOCUMENTS AND DATES / NONE] remain effective. This term sheet does not supersede or vary an ",
+      "type": "Text",
+      "paragraph": 39
+    },
+    {
+      "id": "S03_001_PACKAGE_PRODUCER_COMPANY",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[PACKAGE PRODUCER COMPANY]",
+      "context": "[PACKAGE PRODUCER COMPANY] and [INDIVIDUALS] have acted as package producers. Company credi",
+      "type": "Text",
+      "paragraph": 42
+    },
+    {
+      "id": "S03_002_INDIVIDUALS",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[INDIVIDUALS]",
+      "context": "[PACKAGE PRODUCER COMPANY] and [INDIVIDUALS] have acted as package producers. Company credit: [CREDIT WORDING",
+      "type": "Text",
+      "paragraph": 42
+    },
+    {
+      "id": "S03_003_CREDIT_WORDING",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[CREDIT WORDING]",
+      "context": "d [INDIVIDUALS] have acted as package producers. Company credit: [CREDIT WORDING].",
+      "type": "Text",
+      "paragraph": 42
+    },
+    {
+      "id": "S03_004_RATE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Packaging / producer fee: [RATE]% of [CALCULATION BASE], subject to a floor of [CURRENCY / AMOUNT",
+      "type": "Rate points",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_005_CALCULATION_BASE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[CALCULATION BASE]",
+      "context": "Packaging / producer fee: [RATE]% of [CALCULATION BASE], subject to a floor of [CURRENCY / AMOUNT, OR NONE] and cap of [",
+      "type": "Text",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_006_CURRENCY_AMOUNT_OR_NONE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[CURRENCY / AMOUNT, OR NONE]",
+      "context": "oducer fee: [RATE]% of [CALCULATION BASE], subject to a floor of [CURRENCY / AMOUNT, OR NONE] and cap of [CURRENCY / AMOUNT, OR NONE]. Payable [PAYMENT MILEST",
+      "type": "Text",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_007_CURRENCY_AMOUNT_OR_NONE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[CURRENCY / AMOUNT, OR NONE]",
+      "context": "], subject to a floor of [CURRENCY / AMOUNT, OR NONE] and cap of [CURRENCY / AMOUNT, OR NONE]. Payable [PAYMENT MILESTONES] from [SOURCE], subject to the agre",
+      "type": "Text",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_008_PAYMENT_MILESTONES",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[PAYMENT MILESTONES]",
+      "context": "MOUNT, OR NONE] and cap of [CURRENCY / AMOUNT, OR NONE]. Payable [PAYMENT MILESTONES] from [SOURCE], subject to the agreed deferral in section 10, bud",
+      "type": "Text",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_009_SOURCE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[SOURCE]",
+      "context": " [CURRENCY / AMOUNT, OR NONE]. Payable [PAYMENT MILESTONES] from [SOURCE], subject to the agreed deferral in section 10, budget approval a",
+      "type": "Text",
+      "paragraph": 43
+    },
+    {
+      "id": "S03_010_CURRENCY_AMOUNT_OR_NONE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[CURRENCY / AMOUNT, OR NONE]",
+      "context": "Signing / option payment: [CURRENCY / AMOUNT, OR NONE] payable to [RECIPIENT] on [TRIGGER]. It is credited against [OPT",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_011_RECIPIENT",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[RECIPIENT]",
+      "context": "igning / option payment: [CURRENCY / AMOUNT, OR NONE] payable to [RECIPIENT] on [TRIGGER]. It is credited against [OPTION / RIGHTS / PRODUCER",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_012_TRIGGER",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[TRIGGER]",
+      "context": " payment: [CURRENCY / AMOUNT, OR NONE] payable to [RECIPIENT] on [TRIGGER]. It is credited against [OPTION / RIGHTS / PRODUCER FEE] and is ",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_013_OPTION_RIGHTS_PRODUCER_FEE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[OPTION / RIGHTS / PRODUCER FEE]",
+      "context": "ONE] payable to [RECIPIENT] on [TRIGGER]. It is credited against [OPTION / RIGHTS / PRODUCER FEE] and is [REFUNDABLE / NON REFUNDABLE ON SPECIFIED TERMS]. Any bin",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_014_REFUNDABLE_NON_REFUNDABLE_ON",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[REFUNDABLE / NON REFUNDABLE ON SPECIFIED TERMS]",
+      "context": ". It is credited against [OPTION / RIGHTS / PRODUCER FEE] and is [REFUNDABLE / NON REFUNDABLE ON SPECIFIED TERMS]. Any binding payment obligation must be fully documented in the ",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_015_DOCUMENT_DATE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[DOCUMENT / DATE]",
+      "context": "t be fully documented in the separately signed payment agreement [DOCUMENT / DATE], as required by section 2; this entry alone creates no payment o",
+      "type": "Text",
+      "paragraph": 44
+    },
+    {
+      "id": "S03_016_RATE",
+      "section": "3",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Backend: [RATE]% of the Producer/Talent Pool, or the defined residual after the ",
+      "type": "Rate points",
+      "paragraph": 45
+    },
+    {
+      "id": "S04_001_RATE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "dviser, subject to sections 4.4 and 4.5. Executive producer fee: [RATE]% of [CALCULATION BASE], payable by [LEGAL ENTITY] at [MILESTONES",
+      "type": "Rate points",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_002_CALCULATION_BASE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[CALCULATION BASE]",
+      "context": "ject to sections 4.4 and 4.5. Executive producer fee: [RATE]% of [CALCULATION BASE], payable by [LEGAL ENTITY] at [MILESTONES] from [SOURCE]. Identi",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_003_LEGAL_ENTITY",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[LEGAL ENTITY]",
+      "context": "xecutive producer fee: [RATE]% of [CALCULATION BASE], payable by [LEGAL ENTITY] at [MILESTONES] from [SOURCE]. Identify the inclusion or exclusi",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_004_MILESTONES",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[MILESTONES]",
+      "context": "fee: [RATE]% of [CALCULATION BASE], payable by [LEGAL ENTITY] at [MILESTONES] from [SOURCE]. Identify the inclusion or exclusion of financing ",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_005_SOURCE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[SOURCE]",
+      "context": "ALCULATION BASE], payable by [LEGAL ENTITY] at [MILESTONES] from [SOURCE]. Identify the inclusion or exclusion of financing costs, conting",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_006_NAMES",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[NAMES]",
+      "context": " agreed by Saracen in section 10 applies. Individual EP credits: [NAMES]. Company credit and approved logo use: [WORDING / TERMS]. Any se",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_007_WORDING_TERMS",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[WORDING / TERMS]",
+      "context": "idual EP credits: [NAMES]. Company credit and approved logo use: [WORDING / TERMS]. Any separate TKE executive producer appointment, fee, credits a",
+      "type": "Text",
+      "paragraph": 49
+    },
+    {
+      "id": "S04_008_RATE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Backend: [RATE]% of the Producer/Talent Pool, payable only at the Net Profits ti",
+      "type": "Rate points",
+      "paragraph": 51
+    },
+    {
+      "id": "S04_009_REQUIRED_WRITTEN_CONSENTS_IN",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[REQUIRED WRITTEN CONSENTS, INCLUDING THE AFFECTED PARTICIPANT]",
+      "context": "fined, capped and non controlling. It may not be diluted without [REQUIRED WRITTEN CONSENTS, INCLUDING THE AFFECTED PARTICIPANT]. Any separate corporate equity interest or control right must be",
+      "type": "Text",
+      "paragraph": 51
+    },
+    {
+      "id": "S04_010_DOCUMENT_DATE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[DOCUMENT / DATE]",
+      "context": "redits and offsets in a separately executed engagement agreement [DOCUMENT / DATE]. Combined fee cap: [AMOUNT / FORMULA / NONE]; fees included: [EX",
+      "type": "Text",
+      "paragraph": 53
+    },
+    {
+      "id": "S04_011_AMOUNT_FORMULA_NONE",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT / FORMULA / NONE]",
+      "context": "ecuted engagement agreement [DOCUMENT / DATE]. Combined fee cap: [AMOUNT / FORMULA / NONE]; fees included: [EXACT CATEGORIES]; fees excluded, including the",
+      "type": "Text",
+      "paragraph": 53
+    },
+    {
+      "id": "S04_012_EXACT_CATEGORIES",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[EXACT CATEGORIES]",
+      "context": "TE]. Combined fee cap: [AMOUNT / FORMULA / NONE]; fees included: [EXACT CATEGORIES]; fees excluded, including the treatment of the EP fee: [EXACT CA",
+      "type": "Text",
+      "paragraph": 53
+    },
+    {
+      "id": "S04_013_EXACT_CATEGORIES",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[EXACT CATEGORIES]",
+      "context": "TEGORIES]; fees excluded, including the treatment of the EP fee: [EXACT CATEGORIES]. No cap or retainer offset applies to the EP fee unless Saracen ",
+      "type": "Text",
+      "paragraph": 53
+    },
+    {
+      "id": "S04_014_INVESTMENT_STRUCTURE_TARGET_",
+      "section": "4",
+      "sheet": "Fees",
+      "placeholder": "[INVESTMENT STRUCTURE / TARGET RECIPIENTS / APPLICABLE EXEMPTION OR APPROVER AND APPROVAL DETAILS]",
+      "context": " a lawful approval or exemption route before circulation. Record [INVESTMENT STRUCTURE / TARGET RECIPIENTS / APPLICABLE EXEMPTION OR APPROVER AND APPROVAL DETAILS] in the transaction compliance record. Where approval is required",
+      "type": "Text",
+      "paragraph": 59
+    },
+    {
+      "id": "S05_001_LEAD_PRODUCER_COMPANY",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[LEAD PRODUCER / COMPANY]",
+      "context": "[LEAD PRODUCER / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 65
+    },
+    {
+      "id": "S05_002_CREDIT",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[CREDIT]",
+      "context": "[LEAD PRODUCER / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 65
+    },
+    {
+      "id": "S05_003_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Rate points",
+      "paragraph": 66
+    },
+    {
+      "id": "S05_004_BASE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 66
+    },
+    {
+      "id": "S05_005_FLOOR_CAP",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[FLOOR / CAP]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 66
+    },
+    {
+      "id": "S05_006_PAYMENT_MILESTONES",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[PAYMENT MILESTONES]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Text",
+      "paragraph": 67
+    },
+    {
+      "id": "S05_007_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Rate points",
+      "paragraph": 67
+    },
+    {
+      "id": "S05_008_PRODUCER_2_COMPANY",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[PRODUCER 2 / COMPANY]",
+      "context": "[PRODUCER 2 / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 68
+    },
+    {
+      "id": "S05_009_CREDIT",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[CREDIT]",
+      "context": "[PRODUCER 2 / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 68
+    },
+    {
+      "id": "S05_010_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Rate points",
+      "paragraph": 69
+    },
+    {
+      "id": "S05_011_BASE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 69
+    },
+    {
+      "id": "S05_012_FLOOR_CAP",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[FLOOR / CAP]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 69
+    },
+    {
+      "id": "S05_013_PAYMENT_MILESTONES",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[PAYMENT MILESTONES]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Text",
+      "paragraph": 70
+    },
+    {
+      "id": "S05_014_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Rate points",
+      "paragraph": 70
+    },
+    {
+      "id": "S05_015_CO_PRODUCER_COMPANY",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[CO PRODUCER / COMPANY]",
+      "context": "[CO PRODUCER / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 71
+    },
+    {
+      "id": "S05_016_CREDIT",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[CREDIT]",
+      "context": "[CO PRODUCER / COMPANY]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 71
+    },
+    {
+      "id": "S05_017_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Rate points",
+      "paragraph": 72
+    },
+    {
+      "id": "S05_018_BASE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 72
+    },
+    {
+      "id": "S05_019_FLOOR_CAP",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[FLOOR / CAP]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 72
+    },
+    {
+      "id": "S05_020_PAYMENT_MILESTONES",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[PAYMENT MILESTONES]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Text",
+      "paragraph": 73
+    },
+    {
+      "id": "S05_021_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Rate points",
+      "paragraph": 73
+    },
+    {
+      "id": "S05_022_ADDITIONAL_PARTICIPANT",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[ADDITIONAL PARTICIPANT]",
+      "context": "[ADDITIONAL PARTICIPANT]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 74
+    },
+    {
+      "id": "S05_023_CREDIT",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[CREDIT]",
+      "context": "[ADDITIONAL PARTICIPANT]\n[CREDIT]",
+      "type": "Text",
+      "paragraph": 74
+    },
+    {
+      "id": "S05_024_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Rate points",
+      "paragraph": 75
+    },
+    {
+      "id": "S05_025_BASE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 75
+    },
+    {
+      "id": "S05_026_FLOOR_CAP",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[FLOOR / CAP]",
+      "context": "[RATE]% of [BASE]; [FLOOR / CAP]",
+      "type": "Text",
+      "paragraph": 75
+    },
+    {
+      "id": "S05_027_PAYMENT_MILESTONES",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[PAYMENT MILESTONES]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Text",
+      "paragraph": 76
+    },
+    {
+      "id": "S05_028_RATE",
+      "section": "5",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[PAYMENT MILESTONES]; [RATE]% of Producer/Talent Pool",
+      "type": "Rate points",
+      "paragraph": 76
+    },
+    {
+      "id": "S06_001_PRODUCTION_PARTNER",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[PRODUCTION PARTNER]",
+      "context": "[PRODUCTION PARTNER] proposes to provide [CURRENCY / AMOUNT], representing [RATE]% of",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_002_CURRENCY_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[CURRENCY / AMOUNT]",
+      "context": "[PRODUCTION PARTNER] proposes to provide [CURRENCY / AMOUNT], representing [RATE]% of the Approved Budget, through [INCENTIVE",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_003_RATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "N PARTNER] proposes to provide [CURRENCY / AMOUNT], representing [RATE]% of the Approved Budget, through [INCENTIVE MONETISATION], [INCE",
+      "type": "Rate points",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_004_INCENTIVE_MONETISATION",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[INCENTIVE MONETISATION]",
+      "context": " / AMOUNT], representing [RATE]% of the Approved Budget, through [INCENTIVE MONETISATION], [INCENTIVE CASHFLOW FACILITY], [PRODUCTION FEE REINVESTMENT] an",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_005_INCENTIVE_CASHFLOW_FACILITY",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[INCENTIVE CASHFLOW FACILITY]",
+      "context": "RATE]% of the Approved Budget, through [INCENTIVE MONETISATION], [INCENTIVE CASHFLOW FACILITY], [PRODUCTION FEE REINVESTMENT] and [OTHER APPROVED SOURCES]. Ide",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_006_PRODUCTION_FEE_REINVESTMENT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[PRODUCTION FEE REINVESTMENT]",
+      "context": "through [INCENTIVE MONETISATION], [INCENTIVE CASHFLOW FACILITY], [PRODUCTION FEE REINVESTMENT] and [OTHER APPROVED SOURCES]. Identify each source separately in",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_007_OTHER_APPROVED_SOURCES",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[OTHER APPROVED SOURCES]",
+      "context": "[INCENTIVE CASHFLOW FACILITY], [PRODUCTION FEE REINVESTMENT] and [OTHER APPROVED SOURCES]. Identify each source separately in the funding schedule, includ",
+      "type": "Text",
+      "paragraph": 81
+    },
+    {
+      "id": "S06_008_TERRITORY_SCHEME",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[TERRITORY / SCHEME]",
+      "context": "Incentive: [TERRITORY / SCHEME], claimed by [QUALIFYING ENTITY], on [ELIGIBLE SPEND BASE], at [R",
+      "type": "Text",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_009_QUALIFYING_ENTITY",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[QUALIFYING ENTITY]",
+      "context": "Incentive: [TERRITORY / SCHEME], claimed by [QUALIFYING ENTITY], on [ELIGIBLE SPEND BASE], at [RATE]% subject to [CAPS / ELIGIBI",
+      "type": "Text",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_010_ELIGIBLE_SPEND_BASE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[ELIGIBLE SPEND BASE]",
+      "context": "entive: [TERRITORY / SCHEME], claimed by [QUALIFYING ENTITY], on [ELIGIBLE SPEND BASE], at [RATE]% subject to [CAPS / ELIGIBILITY / AUDIT / CERTIFICATI",
+      "type": "Text",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_011_RATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "E], claimed by [QUALIFYING ENTITY], on [ELIGIBLE SPEND BASE], at [RATE]% subject to [CAPS / ELIGIBILITY / AUDIT / CERTIFICATION REQUIREM",
+      "type": "Rate points",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_012_CAPS_ELIGIBILITY_AUDIT_CERTI",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[CAPS / ELIGIBILITY / AUDIT / CERTIFICATION REQUIREMENTS]",
+      "context": "LIFYING ENTITY], on [ELIGIBLE SPEND BASE], at [RATE]% subject to [CAPS / ELIGIBILITY / AUDIT / CERTIFICATION REQUIREMENTS]. Estimated gross benefit: [AMOUNT]; estimated net proceeds after",
+      "type": "Text",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_013_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": " / AUDIT / CERTIFICATION REQUIREMENTS]. Estimated gross benefit: [AMOUNT]; estimated net proceeds after agreed deductions: [AMOUNT]; expec",
+      "type": "Amount",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_014_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "nefit: [AMOUNT]; estimated net proceeds after agreed deductions: [AMOUNT]; expected payment date: [DATE]. Confirm the treatment and bridge",
+      "type": "Amount",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_015_DATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[DATE]",
+      "context": "oceeds after agreed deductions: [AMOUNT]; expected payment date: [DATE]. Confirm the treatment and bridgeability through project specifi",
+      "type": "Text",
+      "paragraph": 82
+    },
+    {
+      "id": "S06_016_NAME",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[NAME]",
+      "context": "Incentive cashflow facility: lender [NAME]; principal [AMOUNT]; interest [RATE]% per annum on [INTEREST BAS",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_017_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "Incentive cashflow facility: lender [NAME]; principal [AMOUNT]; interest [RATE]% per annum on [INTEREST BASIS]; term [PERIOD]; ",
+      "type": "Amount",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_018_RATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "e cashflow facility: lender [NAME]; principal [AMOUNT]; interest [RATE]% per annum on [INTEREST BASIS]; term [PERIOD]; fees [DETAILS]; s",
+      "type": "Rate points",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_019_INTEREST_BASIS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[INTEREST BASIS]",
+      "context": "lender [NAME]; principal [AMOUNT]; interest [RATE]% per annum on [INTEREST BASIS]; term [PERIOD]; fees [DETAILS]; security [DETAILS]; repayment so",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_020_PERIOD",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[PERIOD]",
+      "context": "l [AMOUNT]; interest [RATE]% per annum on [INTEREST BASIS]; term [PERIOD]; fees [DETAILS]; security [DETAILS]; repayment source and priori",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_021_DETAILS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[DETAILS]",
+      "context": "erest [RATE]% per annum on [INTEREST BASIS]; term [PERIOD]; fees [DETAILS]; security [DETAILS]; repayment source and priority [DETAILS].",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_022_DETAILS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[DETAILS]",
+      "context": "num on [INTEREST BASIS]; term [PERIOD]; fees [DETAILS]; security [DETAILS]; repayment source and priority [DETAILS].",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_023_DETAILS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[DETAILS]",
+      "context": "ees [DETAILS]; security [DETAILS]; repayment source and priority [DETAILS].",
+      "type": "Text",
+      "paragraph": 83
+    },
+    {
+      "id": "S06_024_NAME",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[NAME]",
+      "context": "Monetisation adviser / broker: [NAME]. Discount and brokerage costs: [RATE / AMOUNT], calculated on [B",
+      "type": "Text",
+      "paragraph": 84
+    },
+    {
+      "id": "S06_025_RATE_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RATE / AMOUNT]",
+      "context": "tisation adviser / broker: [NAME]. Discount and brokerage costs: [RATE / AMOUNT], calculated on [BASE], including [ITEMISED COSTS]. State whether",
+      "type": "Text",
+      "paragraph": 84
+    },
+    {
+      "id": "S06_026_BASE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[BASE]",
+      "context": "E]. Discount and brokerage costs: [RATE / AMOUNT], calculated on [BASE], including [ITEMISED COSTS]. State whether interest, fees and di",
+      "type": "Text",
+      "paragraph": 84
+    },
+    {
+      "id": "S06_027_ITEMISED_COSTS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[ITEMISED COSTS]",
+      "context": "rokerage costs: [RATE / AMOUNT], calculated on [BASE], including [ITEMISED COSTS]. State whether interest, fees and discounts are already included",
+      "type": "Text",
+      "paragraph": 84
+    },
+    {
+      "id": "S06_028_AMOUNT_RATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT / RATE]",
+      "context": "Production fee reinvestment: [AMOUNT / RATE]. Select and document one classification for each amount: [EQUITY",
+      "type": "Text",
+      "paragraph": 86
+    },
+    {
+      "id": "S06_029_EQUITY",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[EQUITY]",
+      "context": "/ RATE]. Select and document one classification for each amount: [EQUITY] or [VENDOR DEFERRAL]. Identify its recoupment tier, preferred re",
+      "type": "Text",
+      "paragraph": 86
+    },
+    {
+      "id": "S06_030_VENDOR_DEFERRAL",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[VENDOR DEFERRAL]",
+      "context": "ect and document one classification for each amount: [EQUITY] or [VENDOR DEFERRAL]. Identify its recoupment tier, preferred return if any, profit p",
+      "type": "Text",
+      "paragraph": 86
+    },
+    {
+      "id": "S06_031_LENDER_AMOUNT_CURRENCY_TERM_",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[LENDER, AMOUNT, CURRENCY, TERM, INTEREST BASIS, FEES, SECURITY, CONDITIONS AND PRIORITY]",
+      "context": "Senior / gap / other debt: [LENDER, AMOUNT, CURRENCY, TERM, INTEREST BASIS, FEES, SECURITY, CONDITIONS AND PRIORITY]. Recoverable VAT / IVA facility: [PROVIDER], [AMOUNT], [RATE]% p",
+      "type": "Text",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_032_PROVIDER",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[PROVIDER]",
+      "context": "URITY, CONDITIONS AND PRIORITY]. Recoverable VAT / IVA facility: [PROVIDER], [AMOUNT], [RATE]% per annum, expected term [MONTHS], against [E",
+      "type": "Text",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_033_AMOUNT",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "TIONS AND PRIORITY]. Recoverable VAT / IVA facility: [PROVIDER], [AMOUNT], [RATE]% per annum, expected term [MONTHS], against [ELIGIBLE RE",
+      "type": "Amount",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_034_RATE",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "PRIORITY]. Recoverable VAT / IVA facility: [PROVIDER], [AMOUNT], [RATE]% per annum, expected term [MONTHS], against [ELIGIBLE RECEIVABLE",
+      "type": "Rate points",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_035_MONTHS",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[MONTHS]",
+      "context": "facility: [PROVIDER], [AMOUNT], [RATE]% per annum, expected term [MONTHS], against [ELIGIBLE RECEIVABLES], subject to [RECOVERY / ELIGIBIL",
+      "type": "Text",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_036_ELIGIBLE_RECEIVABLES",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[ELIGIBLE RECEIVABLES]",
+      "context": "R], [AMOUNT], [RATE]% per annum, expected term [MONTHS], against [ELIGIBLE RECEIVABLES], subject to [RECOVERY / ELIGIBILITY CONDITIONS].",
+      "type": "Text",
+      "paragraph": 88
+    },
+    {
+      "id": "S06_037_RECOVERY_ELIGIBILITY_CONDITI",
+      "section": "6",
+      "sheet": "Funding",
+      "placeholder": "[RECOVERY / ELIGIBILITY CONDITIONS]",
+      "context": "pected term [MONTHS], against [ELIGIBLE RECEIVABLES], subject to [RECOVERY / ELIGIBILITY CONDITIONS].",
+      "type": "Text",
+      "paragraph": 88
+    },
+    {
+      "id": "S07_001_INVESTOR_ARRANGER_A",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[INVESTOR / ARRANGER A]",
+      "context": "[INVESTOR / ARRANGER A]",
+      "type": "Text",
+      "paragraph": 94
+    },
+    {
+      "id": "S07_002_CURRENCY_AMOUNT",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[CURRENCY / AMOUNT]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Text",
+      "paragraph": 95
+    },
+    {
+      "id": "S07_003_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Rate points",
+      "paragraph": 95
+    },
+    {
+      "id": "S07_004_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [EQUITY ACTUALLY FUNDED / OTHER BASE]; [EP / COMPANY CREDITS",
+      "type": "Rate points",
+      "paragraph": 96
+    },
+    {
+      "id": "S07_005_EQUITY_ACTUALLY_FUNDED_OTHER",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EQUITY ACTUALLY FUNDED / OTHER BASE]",
+      "context": "[RATE]% of [EQUITY ACTUALLY FUNDED / OTHER BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 96
+    },
+    {
+      "id": "S07_006_EP_COMPANY_CREDITS",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EP / COMPANY CREDITS]",
+      "context": "[RATE]% of [EQUITY ACTUALLY FUNDED / OTHER BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 96
+    },
+    {
+      "id": "S07_007_INVESTOR_ARRANGER_B",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[INVESTOR / ARRANGER B]",
+      "context": "[INVESTOR / ARRANGER B]",
+      "type": "Text",
+      "paragraph": 97
+    },
+    {
+      "id": "S07_008_CURRENCY_AMOUNT",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[CURRENCY / AMOUNT]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Text",
+      "paragraph": 98
+    },
+    {
+      "id": "S07_009_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Rate points",
+      "paragraph": 98
+    },
+    {
+      "id": "S07_010_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Rate points",
+      "paragraph": 99
+    },
+    {
+      "id": "S07_011_BASE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 99
+    },
+    {
+      "id": "S07_012_EP_COMPANY_CREDITS",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EP / COMPANY CREDITS]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 99
+    },
+    {
+      "id": "S07_013_INVESTOR_ARRANGER_C",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[INVESTOR / ARRANGER C]",
+      "context": "[INVESTOR / ARRANGER C]",
+      "type": "Text",
+      "paragraph": 100
+    },
+    {
+      "id": "S07_014_CURRENCY_AMOUNT",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[CURRENCY / AMOUNT]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Text",
+      "paragraph": 101
+    },
+    {
+      "id": "S07_015_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Rate points",
+      "paragraph": 101
+    },
+    {
+      "id": "S07_016_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Rate points",
+      "paragraph": 102
+    },
+    {
+      "id": "S07_017_BASE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 102
+    },
+    {
+      "id": "S07_018_EP_COMPANY_CREDITS",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EP / COMPANY CREDITS]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 102
+    },
+    {
+      "id": "S07_019_INVESTOR_ARRANGER_D",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[INVESTOR / ARRANGER D]",
+      "context": "[INVESTOR / ARRANGER D]",
+      "type": "Text",
+      "paragraph": 103
+    },
+    {
+      "id": "S07_020_CURRENCY_AMOUNT",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[CURRENCY / AMOUNT]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Text",
+      "paragraph": 104
+    },
+    {
+      "id": "S07_021_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[CURRENCY / AMOUNT]; [RATE]%",
+      "type": "Rate points",
+      "paragraph": 104
+    },
+    {
+      "id": "S07_022_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Rate points",
+      "paragraph": 105
+    },
+    {
+      "id": "S07_023_BASE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[BASE]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 105
+    },
+    {
+      "id": "S07_024_EP_COMPANY_CREDITS",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EP / COMPANY CREDITS]",
+      "context": "[RATE]% of [BASE]; [EP / COMPANY CREDITS]",
+      "type": "Text",
+      "paragraph": 105
+    },
+    {
+      "id": "S07_025_TRIGGERS_MILESTONES",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[TRIGGERS / MILESTONES]",
+      "context": "Fees are payable [TRIGGERS / MILESTONES] from [SOURCE], subject to the approved budget and bond requireme",
+      "type": "Text",
+      "paragraph": 107
+    },
+    {
+      "id": "S07_026_SOURCE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[SOURCE]",
+      "context": "Fees are payable [TRIGGERS / MILESTONES] from [SOURCE], subject to the approved budget and bond requirements where appl",
+      "type": "Text",
+      "paragraph": 107
+    },
+    {
+      "id": "S07_027_PARI_PASSU_PRO_RATA_AGREED_A",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[PARI PASSU PRO RATA / AGREED ALTERNATIVE]",
+      "context": "Equity investors recoup [PARI PASSU PRO RATA / AGREED ALTERNATIVE]. Preferred return: [RATE]% of [BASE], on a [ONE TIME / ANNUAL SI",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_028_RATE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[RATE]",
+      "context": "up [PARI PASSU PRO RATA / AGREED ALTERNATIVE]. Preferred return: [RATE]% of [BASE], on a [ONE TIME / ANNUAL SIMPLE / ANNUAL COMPOUND] ba",
+      "type": "Rate points",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_029_BASE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[BASE]",
+      "context": "SSU PRO RATA / AGREED ALTERNATIVE]. Preferred return: [RATE]% of [BASE], on a [ONE TIME / ANNUAL SIMPLE / ANNUAL COMPOUND] basis, accrui",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_030_ONE_TIME_ANNUAL_SIMPLE_ANNUA",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[ONE TIME / ANNUAL SIMPLE / ANNUAL COMPOUND]",
+      "context": "/ AGREED ALTERNATIVE]. Preferred return: [RATE]% of [BASE], on a [ONE TIME / ANNUAL SIMPLE / ANNUAL COMPOUND] basis, accruing from [DATE / TRIGGER] until [DATE / TRIGGER]. In",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_031_DATE_TRIGGER",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[DATE / TRIGGER]",
+      "context": "ONE TIME / ANNUAL SIMPLE / ANNUAL COMPOUND] basis, accruing from [DATE / TRIGGER] until [DATE / TRIGGER]. Investor profits are allocated [PRO RATA",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_032_DATE_TRIGGER",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[DATE / TRIGGER]",
+      "context": "E / ANNUAL COMPOUND] basis, accruing from [DATE / TRIGGER] until [DATE / TRIGGER]. Investor profits are allocated [PRO RATA TO FUNDED CAPITAL / OT",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_033_PRO_RATA_TO_FUNDED_CAPITAL_O",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[PRO RATA TO FUNDED CAPITAL / OTHER BASIS]",
+      "context": " TRIGGER] until [DATE / TRIGGER]. Investor profits are allocated [PRO RATA TO FUNDED CAPITAL / OTHER BASIS]. Equal information and approval rights apply subject to the expr",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_034_DETAILS_NONE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[DETAILS / NONE]",
+      "context": "proval rights apply subject to the expressly recorded exceptions [DETAILS / NONE].",
+      "type": "Text",
+      "paragraph": 108
+    },
+    {
+      "id": "S07_035_EXCLUSIVE_INCLUSIVE",
+      "section": "7",
+      "sheet": "Funding",
+      "placeholder": "[EXCLUSIVE / INCLUSIVE]",
+      "context": "Fees are [EXCLUSIVE / INCLUSIVE] of VAT or applicable indirect tax. State invoice requirements, p",
+      "type": "Text",
+      "paragraph": 110
+    },
+    {
+      "id": "S08_001_SENIOR_GAP_DEBT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[SENIOR / GAP DEBT]",
+      "context": "[SENIOR / GAP DEBT]",
+      "type": "Text",
+      "paragraph": 115
+    },
+    {
+      "id": "S08_002_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 116
+    },
+    {
+      "id": "S08_003_PROPOSED_COMMITTED_EXECUTED",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[PROPOSED / COMMITTED / EXECUTED]",
+      "context": "[PROPOSED / COMMITTED / EXECUTED]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 117
+    },
+    {
+      "id": "S08_004_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[PROPOSED / COMMITTED / EXECUTED]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 117
+    },
+    {
+      "id": "S08_005_NET_INCENTIVE_PROCEEDS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[NET INCENTIVE PROCEEDS]",
+      "context": "[NET INCENTIVE PROCEEDS]",
+      "type": "Text",
+      "paragraph": 118
+    },
+    {
+      "id": "S08_006_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 119
+    },
+    {
+      "id": "S08_007_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 120
+    },
+    {
+      "id": "S08_008_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 120
+    },
+    {
+      "id": "S08_009_CASH_EQUITY",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CASH EQUITY]",
+      "context": "[CASH EQUITY]",
+      "type": "Text",
+      "paragraph": 121
+    },
+    {
+      "id": "S08_010_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 122
+    },
+    {
+      "id": "S08_011_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 123
+    },
+    {
+      "id": "S08_012_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 123
+    },
+    {
+      "id": "S08_013_CASH_EQUITY",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CASH EQUITY]",
+      "context": "[CASH EQUITY]",
+      "type": "Text",
+      "paragraph": 124
+    },
+    {
+      "id": "S08_014_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 125
+    },
+    {
+      "id": "S08_015_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 126
+    },
+    {
+      "id": "S08_016_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 126
+    },
+    {
+      "id": "S08_017_CASH_EQUITY",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CASH EQUITY]",
+      "context": "[CASH EQUITY]",
+      "type": "Text",
+      "paragraph": 127
+    },
+    {
+      "id": "S08_018_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 128
+    },
+    {
+      "id": "S08_019_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 129
+    },
+    {
+      "id": "S08_020_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 129
+    },
+    {
+      "id": "S08_021_CASH_EQUITY",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CASH EQUITY]",
+      "context": "[CASH EQUITY]",
+      "type": "Text",
+      "paragraph": 130
+    },
+    {
+      "id": "S08_022_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 131
+    },
+    {
+      "id": "S08_023_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 132
+    },
+    {
+      "id": "S08_024_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 132
+    },
+    {
+      "id": "S08_025_CASH_EQUITY",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CASH EQUITY]",
+      "context": "[CASH EQUITY]",
+      "type": "Text",
+      "paragraph": 133
+    },
+    {
+      "id": "S08_026_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 134
+    },
+    {
+      "id": "S08_027_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 135
+    },
+    {
+      "id": "S08_028_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 135
+    },
+    {
+      "id": "S08_029_VENDOR_OTHER_DEFERRALS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[VENDOR / OTHER DEFERRALS]",
+      "context": "[VENDOR / OTHER DEFERRALS]",
+      "type": "Text",
+      "paragraph": 136
+    },
+    {
+      "id": "S08_030_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 137
+    },
+    {
+      "id": "S08_031_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 138
+    },
+    {
+      "id": "S08_032_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 138
+    },
+    {
+      "id": "S08_033_OTHER_SOURCE",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[OTHER SOURCE]",
+      "context": "[OTHER SOURCE]",
+      "type": "Text",
+      "paragraph": 139
+    },
+    {
+      "id": "S08_034_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "[AMOUNT]",
+      "type": "Amount",
+      "paragraph": 140
+    },
+    {
+      "id": "S08_035_STATUS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[STATUS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 141
+    },
+    {
+      "id": "S08_036_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[CONDITIONS]",
+      "context": "[STATUS]; [CONDITIONS]",
+      "type": "Text",
+      "paragraph": 141
+    },
+    {
+      "id": "S08_037_TOTAL",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[TOTAL]",
+      "context": "[TOTAL] / [BUDGET]",
+      "type": "Amount",
+      "paragraph": 143
+    },
+    {
+      "id": "S08_038_BUDGET",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[BUDGET]",
+      "context": "[TOTAL] / [BUDGET]",
+      "type": "Amount",
+      "paragraph": 143
+    },
+    {
+      "id": "S08_039_AMOUNT",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[AMOUNT]",
+      "context": "Shortfall or surplus: [AMOUNT]; treatment: [DETAILS]",
+      "type": "Amount",
+      "paragraph": 144
+    },
+    {
+      "id": "S08_040_DETAILS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[DETAILS]",
+      "context": "Shortfall or surplus: [AMOUNT]; treatment: [DETAILS]",
+      "type": "Text",
+      "paragraph": 144
+    },
+    {
+      "id": "S08_041_FX_RATE_DATE_HEDGING_BASIS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[FX RATE / DATE / HEDGING BASIS]",
+      "context": "tside the Approved Budget. Translate foreign currency sources at [FX RATE / DATE / HEDGING BASIS] and identify exposure and responsibility for shortfalls.",
+      "type": "Text",
+      "paragraph": 146
+    },
+    {
+      "id": "S08_042_ADDITIONAL_CONDITIONS",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[ADDITIONAL CONDITIONS]",
+      "context": "ond where required; agreed collection account and waterfall; and [ADDITIONAL CONDITIONS]. Satisfaction of conditions alone does not create a funding obli",
+      "type": "Text",
+      "paragraph": 147
+    },
+    {
+      "id": "S08_043_DATE",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[DATE]",
+      "context": "Commercial closing longstop: [DATE]; extension consent: [PARTIES]. Definitive documents shall state ",
+      "type": "Text",
+      "paragraph": 148
+    },
+    {
+      "id": "S08_044_PARTIES",
+      "section": "8",
+      "sheet": "Funding",
+      "placeholder": "[PARTIES]",
+      "context": "Commercial closing longstop: [DATE]; extension consent: [PARTIES]. Definitive documents shall state any staged commitment expiry, ",
+      "type": "Text",
+      "paragraph": 148
+    },
+    {
+      "id": "S09_001_RATE",
+      "section": "9",
+      "sheet": "Controls",
+      "placeholder": "[RATE]",
+      "context": "Minimum contingency: [RATE]% of [DEFINED PRODUCTION COST BASE], being [AMOUNT] in the Approv",
+      "type": "Rate points",
+      "paragraph": 150
+    },
+    {
+      "id": "S09_002_DEFINED_PRODUCTION_COST_BASE",
+      "section": "9",
+      "sheet": "Controls",
+      "placeholder": "[DEFINED PRODUCTION COST BASE]",
+      "context": "Minimum contingency: [RATE]% of [DEFINED PRODUCTION COST BASE], being [AMOUNT] in the Approved Budget. No reduction without [IN",
+      "type": "Text",
+      "paragraph": 150
+    },
+    {
+      "id": "S09_003_AMOUNT",
+      "section": "9",
+      "sheet": "Controls",
+      "placeholder": "[AMOUNT]",
+      "context": "um contingency: [RATE]% of [DEFINED PRODUCTION COST BASE], being [AMOUNT] in the Approved Budget. No reduction without [INVESTOR APPROVAL ",
+      "type": "Amount",
+      "paragraph": 150
+    },
+    {
+      "id": "S09_004_INVESTOR_APPROVAL_THRESHOLD",
+      "section": "9",
+      "sheet": "Controls",
+      "placeholder": "[INVESTOR APPROVAL THRESHOLD]",
+      "context": "SE], being [AMOUNT] in the Approved Budget. No reduction without [INVESTOR APPROVAL THRESHOLD] and completion guarantor approval where applicable. Use and repl",
+      "type": "Text",
+      "paragraph": 150
+    },
+    {
+      "id": "S09_005_APPROVAL_REPORTING_PROCEDURE",
+      "section": "9",
+      "sheet": "Controls",
+      "placeholder": "[APPROVAL / REPORTING PROCEDURE]",
+      "context": "approval where applicable. Use and replenishment are governed by [APPROVAL / REPORTING PROCEDURE].",
+      "type": "Text",
+      "paragraph": 150
+    },
+    {
+      "id": "S10_001_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": " reconcile. Producer and EP deferred fees rank at waterfall tier [NUMBER], after [SPECIFIED TIERS], unless an affected participant and the",
+      "type": "Number",
+      "paragraph": 153
+    },
+    {
+      "id": "S10_002_SPECIFIED_TIERS",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[SPECIFIED TIERS]",
+      "context": "ucer and EP deferred fees rank at waterfall tier [NUMBER], after [SPECIFIED TIERS], unless an affected participant and the required financiers expr",
+      "type": "Text",
+      "paragraph": 153
+    },
+    {
+      "id": "S10_003_AMOUNTS_PARTICIPANTS",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNTS / PARTICIPANTS]",
+      "context": "Approved talent deferrals are [AMOUNTS / PARTICIPANTS], payable after [SENIOR FINANCING TIER] and before [EQUITY TIER],",
+      "type": "Text",
+      "paragraph": 155
+    },
+    {
+      "id": "S10_004_SENIOR_FINANCING_TIER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[SENIOR FINANCING TIER]",
+      "context": "ved talent deferrals are [AMOUNTS / PARTICIPANTS], payable after [SENIOR FINANCING TIER] and before [EQUITY TIER], or at the alternative priority express",
+      "type": "Text",
+      "paragraph": 155
+    },
+    {
+      "id": "S10_005_EQUITY_TIER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[EQUITY TIER]",
+      "context": " PARTICIPANTS], payable after [SENIOR FINANCING TIER] and before [EQUITY TIER], or at the alternative priority expressly agreed in section 14. ",
+      "type": "Text",
+      "paragraph": 155
+    },
+    {
+      "id": "S10_006_PRODUCTION_SERVICES_PROVIDER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[PRODUCTION SERVICES PROVIDER]",
+      "context": "[PRODUCTION SERVICES PROVIDER] defers [RATE]% / [AMOUNT] of its production fee. [POST PRODUCTIO",
+      "type": "Text",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_007_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "[PRODUCTION SERVICES PROVIDER] defers [RATE]% / [AMOUNT] of its production fee. [POST PRODUCTION PROVIDER] de",
+      "type": "Rate points",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_008_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "[PRODUCTION SERVICES PROVIDER] defers [RATE]% / [AMOUNT] of its production fee. [POST PRODUCTION PROVIDER] defers [RATE]%",
+      "type": "Amount",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_009_POST_PRODUCTION_PROVIDER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[POST PRODUCTION PROVIDER]",
+      "context": "VICES PROVIDER] defers [RATE]% / [AMOUNT] of its production fee. [POST PRODUCTION PROVIDER] defers [RATE]% / [AMOUNT] of its post production fees. These amo",
+      "type": "Text",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_010_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "AMOUNT] of its production fee. [POST PRODUCTION PROVIDER] defers [RATE]% / [AMOUNT] of its post production fees. These amounts rank at w",
+      "type": "Rate points",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_011_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": " its production fee. [POST PRODUCTION PROVIDER] defers [RATE]% / [AMOUNT] of its post production fees. These amounts rank at waterfall tie",
+      "type": "Amount",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_012_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": "f its post production fees. These amounts rank at waterfall tier [NUMBER], subject to the classification in section 6.2. Any portion treat",
+      "type": "Number",
+      "paragraph": 158
+    },
+    {
+      "id": "S10_013_PRODUCER_EP",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[PRODUCER / EP]",
+      "context": "[PRODUCER / EP]",
+      "type": "Text",
+      "paragraph": 162
+    },
+    {
+      "id": "S10_014_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 163
+    },
+    {
+      "id": "S10_015_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Rate points",
+      "paragraph": 163
+    },
+    {
+      "id": "S10_016_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 163
+    },
+    {
+      "id": "S10_017_AMOUNT_MILESTONES",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT / MILESTONES]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Text",
+      "paragraph": 164
+    },
+    {
+      "id": "S10_018_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Number",
+      "paragraph": 164
+    },
+    {
+      "id": "S10_019_TALENT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[TALENT]",
+      "context": "[TALENT]",
+      "type": "Text",
+      "paragraph": 165
+    },
+    {
+      "id": "S10_020_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 166
+    },
+    {
+      "id": "S10_021_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Rate points",
+      "paragraph": 166
+    },
+    {
+      "id": "S10_022_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 166
+    },
+    {
+      "id": "S10_023_AMOUNT_MILESTONES",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT / MILESTONES]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Text",
+      "paragraph": 167
+    },
+    {
+      "id": "S10_024_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Number",
+      "paragraph": 167
+    },
+    {
+      "id": "S10_025_TALENT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[TALENT]",
+      "context": "[TALENT]",
+      "type": "Text",
+      "paragraph": 168
+    },
+    {
+      "id": "S10_026_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 169
+    },
+    {
+      "id": "S10_027_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Rate points",
+      "paragraph": 169
+    },
+    {
+      "id": "S10_028_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 169
+    },
+    {
+      "id": "S10_029_AMOUNT_MILESTONES",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT / MILESTONES]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Text",
+      "paragraph": 170
+    },
+    {
+      "id": "S10_030_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Number",
+      "paragraph": 170
+    },
+    {
+      "id": "S10_031_VENDOR",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[VENDOR]",
+      "context": "[VENDOR]",
+      "type": "Text",
+      "paragraph": 171
+    },
+    {
+      "id": "S10_032_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 172
+    },
+    {
+      "id": "S10_033_RATE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[RATE]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Rate points",
+      "paragraph": 172
+    },
+    {
+      "id": "S10_034_AMOUNT",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT]",
+      "context": "Total [AMOUNT]; deferred [RATE]% / [AMOUNT]",
+      "type": "Amount",
+      "paragraph": 172
+    },
+    {
+      "id": "S10_035_AMOUNT_MILESTONES",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[AMOUNT / MILESTONES]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Text",
+      "paragraph": 173
+    },
+    {
+      "id": "S10_036_NUMBER",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[NUMBER]",
+      "context": "Cash [AMOUNT / MILESTONES]; tier [NUMBER]",
+      "type": "Number",
+      "paragraph": 173
+    },
+    {
+      "id": "S10_037_DETAILS_NONE",
+      "section": "10",
+      "sheet": "Fees",
+      "placeholder": "[DETAILS / NONE]",
+      "context": "interest, premium, payment longstop, waiver or forgiveness terms [DETAILS / NONE]. No deferral or change in priority takes effect without the affe",
+      "type": "Text",
+      "paragraph": 176
+    },
+    {
+      "id": "S11_001_NAME_NOT_REQUIRED_AS_EXPRESS",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[NAME / NOT REQUIRED AS EXPRESSLY APPROVED]",
+      "context": "Completion guarantor: [NAME / NOT REQUIRED AS EXPRESSLY APPROVED]. Proposed cover: [COVERAGE BASIS], including [BUDGET / CONTINGEN",
+      "type": "Text",
+      "paragraph": 178
+    },
+    {
+      "id": "S11_002_COVERAGE_BASIS",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[COVERAGE BASIS]",
+      "context": "or: [NAME / NOT REQUIRED AS EXPRESSLY APPROVED]. Proposed cover: [COVERAGE BASIS], including [BUDGET / CONTINGENCY / OTHER COSTS], subject to the ",
+      "type": "Text",
+      "paragraph": 178
+    },
+    {
+      "id": "S11_003_BUDGET_CONTINGENCY_OTHER_COS",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[BUDGET / CONTINGENCY / OTHER COSTS]",
+      "context": "EXPRESSLY APPROVED]. Proposed cover: [COVERAGE BASIS], including [BUDGET / CONTINGENCY / OTHER COSTS], subject to the actual bond wording, exclusions and conditions. ",
+      "type": "Text",
+      "paragraph": 178
+    },
+    {
+      "id": "S11_004_PARTIES",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[PARTIES]",
+      "context": "wording, exclusions and conditions. Beneficiaries / loss payees: [PARTIES]. Premium and costs: [AMOUNT / BASIS].",
+      "type": "Text",
+      "paragraph": 178
+    },
+    {
+      "id": "S11_005_AMOUNT_BASIS",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[AMOUNT / BASIS]",
+      "context": "ions. Beneficiaries / loss payees: [PARTIES]. Premium and costs: [AMOUNT / BASIS].",
+      "type": "Text",
+      "paragraph": 178
+    },
+    {
+      "id": "S11_006_POLICIES_LIMITS_TERRITORIES",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[POLICIES / LIMITS / TERRITORIES]",
+      "context": "Required production insurance: [POLICIES / LIMITS / TERRITORIES]; insurer or broker [NAME]. Additional insured and loss payee pro",
+      "type": "Text",
+      "paragraph": 179
+    },
+    {
+      "id": "S11_007_NAME",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[NAME]",
+      "context": " insurance: [POLICIES / LIMITS / TERRITORIES]; insurer or broker [NAME]. Additional insured and loss payee provisions: [DETAILS]. Cover,",
+      "type": "Text",
+      "paragraph": 179
+    },
+    {
+      "id": "S11_008_DETAILS",
+      "section": "11",
+      "sheet": "Controls",
+      "placeholder": "[DETAILS]",
+      "context": " or broker [NAME]. Additional insured and loss payee provisions: [DETAILS]. Cover, approvals and any exclusions must be confirmed before th",
+      "type": "Text",
+      "paragraph": 179
+    },
+    {
+      "id": "S12_001_NAME",
+      "section": "12",
+      "sheet": "Controls",
+      "placeholder": "[NAME]",
+      "context": "Collection Account Manager: [NAME]. All Gross Receipts, as defined in the definitive agreements, sh",
+      "type": "Text",
+      "paragraph": 181
+    },
+    {
+      "id": "S12_002_DETAILS_NONE",
+      "section": "12",
+      "sheet": "Controls",
+      "placeholder": "[DETAILS / NONE]",
+      "context": " VAT, loan or other receipts payable directly to secured lenders [DETAILS / NONE].",
+      "type": "Text",
+      "paragraph": 181
+    },
+    {
+      "id": "S12_003_AGREED_CONTROLS_APPROVAL_THR",
+      "section": "12",
+      "sheet": "Controls",
+      "placeholder": "[AGREED CONTROLS / APPROVAL THRESHOLD]",
+      "context": "rights and changes to the collection instructions are subject to [AGREED CONTROLS / APPROVAL THRESHOLD].",
+      "type": "Text",
+      "paragraph": 182
+    },
+    {
+      "id": "S13_001_DETAILS",
+      "section": "13",
+      "sheet": "Recoupment",
+      "placeholder": "[DETAILS]",
+      "context": " the production and its rights, subject to the agreed exclusions [DETAILS]. Define separately the treatment of tax incentives, VAT refunds,",
+      "type": "Text",
+      "paragraph": 184
+    },
+    {
+      "id": "S14_001_TIER_01_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 01 CATEGORY]",
+      "context": "[TIER 01 CATEGORY]",
+      "type": "Text",
+      "paragraph": 193
+    },
+    {
+      "id": "S14_002_TIER_01_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 01 TERMS]",
+      "context": "[TIER 01 TERMS]",
+      "type": "Text",
+      "paragraph": 194
+    },
+    {
+      "id": "S14_003_TIER_02_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 02 CATEGORY]",
+      "context": "[TIER 02 CATEGORY]",
+      "type": "Text",
+      "paragraph": 196
+    },
+    {
+      "id": "S14_004_TIER_02_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 02 TERMS]",
+      "context": "[TIER 02 TERMS]",
+      "type": "Text",
+      "paragraph": 197
+    },
+    {
+      "id": "S14_005_TIER_03_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 03 CATEGORY]",
+      "context": "[TIER 03 CATEGORY]",
+      "type": "Text",
+      "paragraph": 199
+    },
+    {
+      "id": "S14_006_TIER_03_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 03 TERMS]",
+      "context": "[TIER 03 TERMS]",
+      "type": "Text",
+      "paragraph": 200
+    },
+    {
+      "id": "S14_007_TIER_04_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 04 CATEGORY]",
+      "context": "[TIER 04 CATEGORY]",
+      "type": "Text",
+      "paragraph": 202
+    },
+    {
+      "id": "S14_008_TIER_04_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 04 TERMS]",
+      "context": "[TIER 04 TERMS]",
+      "type": "Text",
+      "paragraph": 203
+    },
+    {
+      "id": "S14_009_TIER_05_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 05 CATEGORY]",
+      "context": "[TIER 05 CATEGORY]",
+      "type": "Text",
+      "paragraph": 205
+    },
+    {
+      "id": "S14_010_TIER_05_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 05 TERMS]",
+      "context": "[TIER 05 TERMS]",
+      "type": "Text",
+      "paragraph": 206
+    },
+    {
+      "id": "S14_011_TIER_06_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 06 CATEGORY]",
+      "context": "[TIER 06 CATEGORY]",
+      "type": "Text",
+      "paragraph": 208
+    },
+    {
+      "id": "S14_012_TIER_06_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 06 TERMS]",
+      "context": "[TIER 06 TERMS]",
+      "type": "Text",
+      "paragraph": 209
+    },
+    {
+      "id": "S14_013_TIER_07_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 07 CATEGORY]",
+      "context": "[TIER 07 CATEGORY]",
+      "type": "Text",
+      "paragraph": 211
+    },
+    {
+      "id": "S14_014_TIER_07_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 07 TERMS]",
+      "context": "[TIER 07 TERMS]",
+      "type": "Text",
+      "paragraph": 212
+    },
+    {
+      "id": "S14_015_TIER_08_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 08 CATEGORY]",
+      "context": "[TIER 08 CATEGORY]",
+      "type": "Text",
+      "paragraph": 214
+    },
+    {
+      "id": "S14_016_TIER_08_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 08 TERMS]",
+      "context": "[TIER 08 TERMS]",
+      "type": "Text",
+      "paragraph": 215
+    },
+    {
+      "id": "S14_017_TIER_09_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 09 CATEGORY]",
+      "context": "[TIER 09 CATEGORY]",
+      "type": "Text",
+      "paragraph": 217
+    },
+    {
+      "id": "S14_018_TIER_09_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 09 TERMS]",
+      "context": "[TIER 09 TERMS]",
+      "type": "Text",
+      "paragraph": 218
+    },
+    {
+      "id": "S14_019_TIER_10_CATEGORY",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 10 CATEGORY]",
+      "context": "[TIER 10 CATEGORY]",
+      "type": "Text",
+      "paragraph": 220
+    },
+    {
+      "id": "S14_020_TIER_10_TERMS",
+      "section": "14",
+      "sheet": "Recoupment",
+      "placeholder": "[TIER 10 TERMS]",
+      "context": "[TIER 10 TERMS]",
+      "type": "Text",
+      "paragraph": 221
+    },
+    {
+      "id": "S15_001_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "Producer/Talent Pool: fixed and capped at [RATE]% of Net Profits. Financier Pool: [RATE]% of Net Profits. The two",
+      "type": "Rate points",
+      "paragraph": 226
+    },
+    {
+      "id": "S15_002_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "ool: fixed and capped at [RATE]% of Net Profits. Financier Pool: [RATE]% of Net Profits. The two pools together equal 100%. Only pre app",
+      "type": "Rate points",
+      "paragraph": 226
+    },
+    {
+      "id": "S15_003_EXECUTIVE_PRODUCER_ARRANGER",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[EXECUTIVE PRODUCER / ARRANGER]",
+      "context": "[EXECUTIVE PRODUCER / ARRANGER]",
+      "type": "Text",
+      "paragraph": 229
+    },
+    {
+      "id": "S15_004_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% of the original whole Producer/Talent Pool",
+      "type": "Rate points",
+      "paragraph": 230
+    },
+    {
+      "id": "S15_005_LEAD_PRODUCER",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[LEAD PRODUCER]",
+      "context": "[LEAD PRODUCER]",
+      "type": "Text",
+      "paragraph": 231
+    },
+    {
+      "id": "S15_006_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "[RATE]%",
+      "type": "Rate points",
+      "paragraph": 232
+    },
+    {
+      "id": "S15_007_PRODUCER_CO_PRODUCER",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[PRODUCER / CO PRODUCER]",
+      "context": "[PRODUCER / CO PRODUCER]",
+      "type": "Text",
+      "paragraph": 233
+    },
+    {
+      "id": "S15_008_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "[RATE]%",
+      "type": "Rate points",
+      "paragraph": 234
+    },
+    {
+      "id": "S15_009_PACKAGE_PRODUCERS_TALENT_OTH",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[PACKAGE PRODUCERS / TALENT / OTHER]",
+      "context": "[PACKAGE PRODUCERS / TALENT / OTHER]",
+      "type": "Text",
+      "paragraph": 235
+    },
+    {
+      "id": "S15_010_RATE",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[RATE]",
+      "context": "[RATE]% or [DEFINED RESIDUAL]",
+      "type": "Rate points",
+      "paragraph": 236
+    },
+    {
+      "id": "S15_011_DEFINED_RESIDUAL",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[DEFINED RESIDUAL]",
+      "context": "[RATE]% or [DEFINED RESIDUAL]",
+      "type": "Text",
+      "paragraph": 236
+    },
+    {
+      "id": "S15_012_PARTICIPANTS_AND_PERCENTAGES",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[PARTICIPANTS AND PERCENTAGES TOTALLING 100% OF THAT POOL]",
+      "context": "at pool\u2019s percentage of Net Profits. Financier Pool allocations: [PARTICIPANTS AND PERCENTAGES TOTALLING 100% OF THAT POOL].",
+      "type": "Text",
+      "paragraph": 240
+    },
+    {
+      "id": "S15_013_INVESTOR_APPROVAL_THRESHOLD",
+      "section": "15",
+      "sheet": "Recoupment",
+      "placeholder": "[INVESTOR APPROVAL THRESHOLD]",
+      "context": "Neither pool may be expanded or diluted without [INVESTOR APPROVAL THRESHOLD], the consent of any participant whose contractual protection req",
+      "type": "Text",
+      "paragraph": 241
+    },
+    {
+      "id": "S16_001_PRODUCTION_PARTNER",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[PRODUCTION PARTNER]",
+      "context": "[PRODUCTION PARTNER] controls [INCENTIVE MONETISATION / FACILITY TIMING / SALES AGENT",
+      "type": "Text",
+      "paragraph": 245
+    },
+    {
+      "id": "S16_002_INCENTIVE_MONETISATION_FACIL",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[INCENTIVE MONETISATION / FACILITY TIMING / SALES AGENT COORDINATION / OTHER FUNCTIONS]",
+      "context": "[PRODUCTION PARTNER] controls [INCENTIVE MONETISATION / FACILITY TIMING / SALES AGENT COORDINATION / OTHER FUNCTIONS], subject to [CONSULTATION AND CONSENT RIGHTS] and the SPV\u2019s agre",
+      "type": "Text",
+      "paragraph": 245
+    },
+    {
+      "id": "S16_003_CONSULTATION_AND_CONSENT_RIG",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[CONSULTATION AND CONSENT RIGHTS]",
+      "context": "TIMING / SALES AGENT COORDINATION / OTHER FUNCTIONS], subject to [CONSULTATION AND CONSENT RIGHTS] and the SPV\u2019s agreed authority.",
+      "type": "Text",
+      "paragraph": 245
+    },
+    {
+      "id": "S16_004_RIGHTS_TERRITORY_TERM_PURPOS",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[RIGHTS / TERRITORY / TERM / PURPOSE]",
+      "context": "ry SPV assignment or licence for incentive purposes must specify [RIGHTS / TERRITORY / TERM / PURPOSE], the transferee, consideration, exploitation limits, security, r",
+      "type": "Text",
+      "paragraph": 246
+    },
+    {
+      "id": "S16_005_THRESHOLD_PARTIES",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[THRESHOLD / PARTIES]",
+      "context": "Approval by [THRESHOLD / PARTIES] is required for budget changes above [RATE]% / [AMOUNT], materia",
+      "type": "Text",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_006_RATE",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[RATE]",
+      "context": "al by [THRESHOLD / PARTIES] is required for budget changes above [RATE]% / [AMOUNT], material structural changes, new investor profit pa",
+      "type": "Rate points",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_007_AMOUNT",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[AMOUNT]",
+      "context": "ESHOLD / PARTIES] is required for budget changes above [RATE]% / [AMOUNT], material structural changes, new investor profit participants, ",
+      "type": "Amount",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_008_OTHER_RESERVED_MATTERS",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[OTHER RESERVED MATTERS]",
+      "context": " investor profit participants, material deferral adjustments and [OTHER RESERVED MATTERS]. Specify voting by [COMMITTED / FUNDED CAPITAL / OTHER BASIS], n",
+      "type": "Text",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_009_COMMITTED_FUNDED_CAPITAL_OTH",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[COMMITTED / FUNDED CAPITAL / OTHER BASIS]",
+      "context": "rral adjustments and [OTHER RESERVED MATTERS]. Specify voting by [COMMITTED / FUNDED CAPITAL / OTHER BASIS], notice periods, response deadlines and deadlock process [DETAIL",
+      "type": "Text",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_010_DETAILS",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[DETAILS]",
+      "context": " BASIS], notice periods, response deadlines and deadlock process [DETAILS].",
+      "type": "Text",
+      "paragraph": 248
+    },
+    {
+      "id": "S16_011_EXECUTIVE_PRODUCER_ARRANGER",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[EXECUTIVE PRODUCER / ARRANGER]",
+      "context": "[EXECUTIVE PRODUCER / ARRANGER] has executive producer, packaging and financing functions [SCOPE",
+      "type": "Text",
+      "paragraph": 252
+    },
+    {
+      "id": "S16_012_SCOPE",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[SCOPE]",
+      "context": "ANGER] has executive producer, packaging and financing functions [SCOPE], in consultation with [PARTIES]. Financial control and approval ",
+      "type": "Text",
+      "paragraph": 252
+    },
+    {
+      "id": "S16_013_PARTIES",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[PARTIES]",
+      "context": " packaging and financing functions [SCOPE], in consultation with [PARTIES]. Financial control and approval authority are [NONE / EXPRESSLY ",
+      "type": "Text",
+      "paragraph": 252
+    },
+    {
+      "id": "S16_014_NONE_EXPRESSLY_SPECIFIED_RIG",
+      "section": "16",
+      "sheet": "Controls",
+      "placeholder": "[NONE / EXPRESSLY SPECIFIED RIGHTS]",
+      "context": "ion with [PARTIES]. Financial control and approval authority are [NONE / EXPRESSLY SPECIFIED RIGHTS]. No participant may bind another or incur unapproved expenditure",
+      "type": "Text",
+      "paragraph": 252
+    },
+    {
+      "id": "S17_001_PARTY",
+      "section": "17",
+      "sheet": "Controls",
+      "placeholder": "[PARTY]",
+      "context": " to definitive agreements and financing requirements. Final cut: [PARTY], with meaningful consultation with [DIRECTOR / PRODUCERS] and su",
+      "type": "Text",
+      "paragraph": 254
+    },
+    {
+      "id": "S17_002_DIRECTOR_PRODUCERS",
+      "section": "17",
+      "sheet": "Controls",
+      "placeholder": "[DIRECTOR / PRODUCERS]",
+      "context": "uirements. Final cut: [PARTY], with meaningful consultation with [DIRECTOR / PRODUCERS] and subject to [DELIVERY / DISTRIBUTION / GUARANTOR REQUIREMENTS",
+      "type": "Text",
+      "paragraph": 254
+    },
+    {
+      "id": "S17_003_DELIVERY_DISTRIBUTION_GUARAN",
+      "section": "17",
+      "sheet": "Controls",
+      "placeholder": "[DELIVERY / DISTRIBUTION / GUARANTOR REQUIREMENTS]",
+      "context": "aningful consultation with [DIRECTOR / PRODUCERS] and subject to [DELIVERY / DISTRIBUTION / GUARANTOR REQUIREMENTS].",
+      "type": "Text",
+      "paragraph": 254
+    },
+    {
+      "id": "S17_004_AFFECTED_RIGHTS_AND_REQUIRED",
+      "section": "17",
+      "sheet": "Controls",
+      "placeholder": "[AFFECTED RIGHTS AND REQUIRED WRITTEN CONSENTS]",
+      "context": "Protection against dilution: [AFFECTED RIGHTS AND REQUIRED WRITTEN CONSENTS]. Credit placement, size, form, exclusions, publicity use and rem",
+      "type": "Text",
+      "paragraph": 255
+    },
+    {
+      "id": "S18_001_WEEKLY_OTHER",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[WEEKLY / OTHER]",
+      "context": "Production cost reports: [WEEKLY / OTHER]. Pre production and post production reports: [FORTNIGHTLY / OTHE",
+      "type": "Text",
+      "paragraph": 257
+    },
+    {
+      "id": "S18_002_FORTNIGHTLY_OTHER",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[FORTNIGHTLY / OTHER]",
+      "context": "s: [WEEKLY / OTHER]. Pre production and post production reports: [FORTNIGHTLY / OTHER]. Post delivery investor reports: [QUARTERLY / OTHER]. Reports go",
+      "type": "Text",
+      "paragraph": 257
+    },
+    {
+      "id": "S18_003_QUARTERLY_OTHER",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[QUARTERLY / OTHER]",
+      "context": " reports: [FORTNIGHTLY / OTHER]. Post delivery investor reports: [QUARTERLY / OTHER]. Reports go to [RECIPIENTS] and include actual costs, commitment",
+      "type": "Text",
+      "paragraph": 257
+    },
+    {
+      "id": "S18_004_RECIPIENTS",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[RECIPIENTS]",
+      "context": "st delivery investor reports: [QUARTERLY / OTHER]. Reports go to [RECIPIENTS] and include actual costs, commitments, variances, cashflow, fina",
+      "type": "Text",
+      "paragraph": 257
+    },
+    {
+      "id": "S18_005_FREQUENCY_DEADLINE",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[FREQUENCY / DEADLINE]",
+      "context": "Collection statements and participation accounts: [FREQUENCY / DEADLINE]. Inspection and audit rights: [NOTICE, FREQUENCY, PERIOD, COST A",
+      "type": "Text",
+      "paragraph": 258
+    },
+    {
+      "id": "S18_006_NOTICE_FREQUENCY_PERIOD_COST",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[NOTICE, FREQUENCY, PERIOD, COST ALLOCATION AND DISPUTE PROCEDURE]",
+      "context": "n accounts: [FREQUENCY / DEADLINE]. Inspection and audit rights: [NOTICE, FREQUENCY, PERIOD, COST ALLOCATION AND DISPUTE PROCEDURE]. Record retention: [PERIOD].",
+      "type": "Text",
+      "paragraph": 258
+    },
+    {
+      "id": "S18_007_PERIOD",
+      "section": "18",
+      "sheet": "Controls",
+      "placeholder": "[PERIOD]",
+      "context": "ERIOD, COST ALLOCATION AND DISPUTE PROCEDURE]. Record retention: [PERIOD].",
+      "type": "Text",
+      "paragraph": 258
+    },
+    {
+      "id": "S20_001_NAME_ADDRESS_ACCEPTANCE",
+      "section": "20",
+      "sheet": "Binding",
+      "placeholder": "[NAME / ADDRESS / ACCEPTANCE]",
+      "context": "gland and Wales shall identify an English or Welsh process agent [NAME / ADDRESS / ACCEPTANCE] before execution and maintain that appointment while binding obl",
+      "type": "Text",
+      "paragraph": 262
+    },
+    {
+      "id": "S22_001_YES_NO",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[YES / NO]",
+      "context": "Exclusivity election: [YES / NO]. Only if YES is selected and all particulars are completed, [RES",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_002_RESTRICTED_LEGAL_ENTITIES",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[RESTRICTED LEGAL ENTITIES]",
+      "context": " NO]. Only if YES is selected and all particulars are completed, [RESTRICTED LEGAL ENTITIES] grant [BENEFICIARY LEGAL ENTITIES] exclusivity for [NUMBER] days",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_003_BENEFICIARY_LEGAL_ENTITIES",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[BENEFICIARY LEGAL ENTITIES]",
+      "context": "all particulars are completed, [RESTRICTED LEGAL ENTITIES] grant [BENEFICIARY LEGAL ENTITIES] exclusivity for [NUMBER] days from [FIXED DATE OR DEFINED SIGNAT",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_004_NUMBER",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[NUMBER]",
+      "context": "GAL ENTITIES] grant [BENEFICIARY LEGAL ENTITIES] exclusivity for [NUMBER] days from [FIXED DATE OR DEFINED SIGNATURE TRIGGER], solely conc",
+      "type": "Number",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_005_FIXED_DATE_OR_DEFINED_SIGNAT",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[FIXED DATE OR DEFINED SIGNATURE TRIGGER]",
+      "context": " [BENEFICIARY LEGAL ENTITIES] exclusivity for [NUMBER] days from [FIXED DATE OR DEFINED SIGNATURE TRIGGER], solely concerning [DEFINED PROJECT RIGHTS / FINANCING SCOPE]. P",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_006_DEFINED_PROJECT_RIGHTS_FINAN",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[DEFINED PROJECT RIGHTS / FINANCING SCOPE]",
+      "context": "rom [FIXED DATE OR DEFINED SIGNATURE TRIGGER], solely concerning [DEFINED PROJECT RIGHTS / FINANCING SCOPE]. Prohibited activities: [SPECIFIC ACTIVITIES]. Existing discussi",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_007_SPECIFIC_ACTIVITIES",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[SPECIFIC ACTIVITIES]",
+      "context": "EFINED PROJECT RIGHTS / FINANCING SCOPE]. Prohibited activities: [SPECIFIC ACTIVITIES]. Existing discussions and permitted exceptions: [DETAILS / NONE]",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_008_DETAILS_NONE",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[DETAILS / NONE]",
+      "context": "IFIC ACTIVITIES]. Existing discussions and permitted exceptions: [DETAILS / NONE]. Early termination events: [OBJECTIVE EVENTS / NONE]. Exclusivit",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S22_009_OBJECTIVE_EVENTS_NONE",
+      "section": "22",
+      "sheet": "Binding",
+      "placeholder": "[OBJECTIVE EVENTS / NONE]",
+      "context": "ermitted exceptions: [DETAILS / NONE]. Early termination events: [OBJECTIVE EVENTS / NONE]. Exclusivity expires automatically at the stated end date unless",
+      "type": "Text",
+      "paragraph": 267
+    },
+    {
+      "id": "S23_001_PARTY_POSTAL_ADDRESS_EMAIL",
+      "section": "23",
+      "sheet": "Binding",
+      "placeholder": "[PARTY / POSTAL ADDRESS / EMAIL]",
+      "context": "Each party\u2019s notice address and designated email are [PARTY / POSTAL ADDRESS / EMAIL] in the completed party schedule. Notices must be in writing and ",
+      "type": "Text",
+      "paragraph": 277
+    },
+    {
+      "id": "S24_001_PRODUCTION_SPV",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[PRODUCTION SPV]",
+      "context": "[PRODUCTION SPV]\n[LEGAL NAME / REGISTRATION / ADDRESS]\nCapacity: [PRODUCER / RIGH",
+      "type": "Text",
+      "paragraph": 288
+    },
+    {
+      "id": "S24_002_LEGAL_NAME_REGISTRATION_ADDR",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[LEGAL NAME / REGISTRATION / ADDRESS]",
+      "context": "[PRODUCTION SPV]\n[LEGAL NAME / REGISTRATION / ADDRESS]\nCapacity: [PRODUCER / RIGHTS OWNER]",
+      "type": "Text",
+      "paragraph": 288
+    },
+    {
+      "id": "S24_003_PRODUCER_RIGHTS_OWNER",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[PRODUCER / RIGHTS OWNER]",
+      "context": "[PRODUCTION SPV]\n[LEGAL NAME / REGISTRATION / ADDRESS]\nCapacity: [PRODUCER / RIGHTS OWNER]",
+      "type": "Text",
+      "paragraph": 288
+    },
+    {
+      "id": "S24_004_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 289
+    },
+    {
+      "id": "S24_005_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 289
+    },
+    {
+      "id": "S24_006_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 289
+    },
+    {
+      "id": "S24_007_REGISTRATION_NUMBER_REGISTER",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / REGISTERED ADDRESS]",
+      "context": "Saracen Bridge Ltd\n[REGISTRATION NUMBER / REGISTERED ADDRESS]\nCapacity: Executive producer and commercial financing adviser, s",
+      "type": "Text",
+      "paragraph": 290
+    },
+    {
+      "id": "S24_008_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "__________________\nName: Jonathan Chadwick\nTitle: Director\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 291
+    },
+    {
+      "id": "S24_009_NONSTOP_FULL_REGISTERED_LEGA",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NONSTOP FULL REGISTERED LEGAL NAME]",
+      "context": "[NONSTOP FULL REGISTERED LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapaci",
+      "type": "Text",
+      "paragraph": 292
+    },
+    {
+      "id": "S24_010_REGISTRATION_NUMBER_JURISDIC",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]",
+      "context": "[NONSTOP FULL REGISTERED LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [PROJECT SPECIFIC PRODUCTION SERVICES / CO PRODUCER / ",
+      "type": "Text",
+      "paragraph": 292
+    },
+    {
+      "id": "S24_011_PROJECT_SPECIFIC_PRODUCTION_",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[PROJECT SPECIFIC PRODUCTION SERVICES / CO PRODUCER / OTHER AGREED ROLE]",
+      "context": "GISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [PROJECT SPECIFIC PRODUCTION SERVICES / CO PRODUCER / OTHER AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 292
+    },
+    {
+      "id": "S24_012_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 293
+    },
+    {
+      "id": "S24_013_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 293
+    },
+    {
+      "id": "S24_014_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 293
+    },
+    {
+      "id": "S24_015_REGISTRATION_NUMBER_REGISTER",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / REGISTERED ADDRESS]",
+      "context": "Two Kingdoms Entertainment Ltd\n[REGISTRATION NUMBER / REGISTERED ADDRESS]\nCapacity: [PROJECT SPECIFIC INVESTOR / EP / OTHER AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 294
+    },
+    {
+      "id": "S24_016_PROJECT_SPECIFIC_INVESTOR_EP",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[PROJECT SPECIFIC INVESTOR / EP / OTHER AGREED ROLE]",
+      "context": "ainment Ltd\n[REGISTRATION NUMBER / REGISTERED ADDRESS]\nCapacity: [PROJECT SPECIFIC INVESTOR / EP / OTHER AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 294
+    },
+    {
+      "id": "S24_017_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 295
+    },
+    {
+      "id": "S24_018_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 295
+    },
+    {
+      "id": "S24_019_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 295
+    },
+    {
+      "id": "S24_020_ADDITIONAL_PARTY_FULL_LEGAL_",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ADDITIONAL PARTY FULL LEGAL NAME]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapaci",
+      "type": "Text",
+      "paragraph": 296
+    },
+    {
+      "id": "S24_021_REGISTRATION_NUMBER_JURISDIC",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 296
+    },
+    {
+      "id": "S24_022_ACTUAL_AGREED_ROLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ACTUAL AGREED ROLE]",
+      "context": "GISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 296
+    },
+    {
+      "id": "S24_023_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 297
+    },
+    {
+      "id": "S24_024_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 297
+    },
+    {
+      "id": "S24_025_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 297
+    },
+    {
+      "id": "S24_026_ADDITIONAL_PARTY_FULL_LEGAL_",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ADDITIONAL PARTY FULL LEGAL NAME]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapaci",
+      "type": "Text",
+      "paragraph": 298
+    },
+    {
+      "id": "S24_027_REGISTRATION_NUMBER_JURISDIC",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 298
+    },
+    {
+      "id": "S24_028_ACTUAL_AGREED_ROLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ACTUAL AGREED ROLE]",
+      "context": "GISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 298
+    },
+    {
+      "id": "S24_029_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 299
+    },
+    {
+      "id": "S24_030_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 299
+    },
+    {
+      "id": "S24_031_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 299
+    },
+    {
+      "id": "S24_032_ADDITIONAL_PARTY_FULL_LEGAL_",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ADDITIONAL PARTY FULL LEGAL NAME]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapaci",
+      "type": "Text",
+      "paragraph": 300
+    },
+    {
+      "id": "S24_033_REGISTRATION_NUMBER_JURISDIC",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 300
+    },
+    {
+      "id": "S24_034_ACTUAL_AGREED_ROLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ACTUAL AGREED ROLE]",
+      "context": "GISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 300
+    },
+    {
+      "id": "S24_035_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 301
+    },
+    {
+      "id": "S24_036_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 301
+    },
+    {
+      "id": "S24_037_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 301
+    },
+    {
+      "id": "S24_038_ADDITIONAL_PARTY_FULL_LEGAL_",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ADDITIONAL PARTY FULL LEGAL NAME]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapaci",
+      "type": "Text",
+      "paragraph": 302
+    },
+    {
+      "id": "S24_039_REGISTRATION_NUMBER_JURISDIC",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]",
+      "context": "[ADDITIONAL PARTY FULL LEGAL NAME]\n[REGISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 302
+    },
+    {
+      "id": "S24_040_ACTUAL_AGREED_ROLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[ACTUAL AGREED ROLE]",
+      "context": "GISTRATION NUMBER / JURISDICTION / REGISTERED ADDRESS]\nCapacity: [ACTUAL AGREED ROLE]",
+      "type": "Text",
+      "paragraph": 302
+    },
+    {
+      "id": "S24_041_NAME",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[NAME]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 303
+    },
+    {
+      "id": "S24_042_TITLE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[TITLE]",
+      "context": "Signed: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 303
+    },
+    {
+      "id": "S24_043_DATE",
+      "section": "24",
+      "sheet": "Parties",
+      "placeholder": "[DATE]",
+      "context": "igned: _______________________\nName: [NAME]\nTitle: [TITLE]\nDate: [DATE]",
+      "type": "Text",
+      "paragraph": 303
+    }
+  ],
+  "fixed_package_sha256": "45b92d3f8671e887204fca9f41ca6b7eb1b678ad38976ad912287a3594f5e966"
+}

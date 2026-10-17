@@ -1,0 +1,26 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Institutional greenlight, closing and finance-readiness underwriting for film and TV.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Assess this film project for finance readiness.",
+      "Review these documents and identify financing gaps.",
+      "Underwrite the debt collateral for this project."
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "Saracen Bridge Film Finance Analyst",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Institutional greenlight, closing and finance-readiness underwriting for film and TV.",
+    "shortDescription": "Institutional greenlight, closing and finance-readiness underwriting for film and TV."
+  },
+  "name": "gpt-ab0a539ea4413da19ab5f0b3a051b6b4",
+  "skills": "./skills/",
+  "version": "0.12.1+bundle.ecf099fd05f37e2f868a5c1a54e46d2f"
+}

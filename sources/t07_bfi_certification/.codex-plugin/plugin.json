@@ -1,0 +1,26 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "A specialist UK Film Certification Executive supporting producers and Film Production Companies with applications to the British Film Institute for British film certification.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Other",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Start a new BFI interim certification assessment.",
+      "Review these documents and calculate the conservative Cultural Test score.",
+      "Compare this final production information against the interim BFI application."
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "Saracen Bridge BFI FILM CERTIFICATION AGENT",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "A specialist UK Film Certification Executive supporting producers and Film Production Companies with applications to the British Film Institute for British film certification.",
+    "shortDescription": "A specialist UK Film Certification Executive supporting producers and Film Production Companies with applications to the British Film Institute for British film certification."
+  },
+  "name": "gpt-f0f93317666f626a07a1336cd2ff6436",
+  "skills": "./skills/",
+  "version": "0.12.1+bundle.a7df80cdb08d5a13dad625c06bf259f7"
+}

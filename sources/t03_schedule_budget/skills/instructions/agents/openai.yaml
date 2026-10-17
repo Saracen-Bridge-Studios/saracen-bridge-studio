@@ -1,0 +1,5 @@
+interface:
+  default_prompt: Analyze this screenplay and build a preliminary schedule and budget
+  display_name: 3. Saracen Bridge Scheduling & Budgeting
+  short_description: Analyzes uploaded scripts to build defensible film schedules,
+    bu

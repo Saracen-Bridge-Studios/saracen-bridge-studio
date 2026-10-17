@@ -1,0 +1,26 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Analyzes uploaded scripts to build defensible film schedules, budgets, and risk scenarios.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Analyze this screenplay and build a preliminary schedule and budget",
+      "Create a scene breakdown and cast day-out-of-days from this script",
+      "Estimate shooting days and key production risks from this screenplay"
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "3. Saracen Bridge Scheduling & Budgeting",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Analyzes uploaded scripts to build defensible film schedules, budgets, and risk scenarios.",
+    "shortDescription": "Analyzes uploaded scripts to build defensible film schedules, budgets, and risk scenarios."
+  },
+  "name": "gpt-6a7a037b7b731791e44f69eb3f5d5736",
+  "skills": "./skills/",
+  "version": "0.21.1+bundle.cdf989e995894c0d6563de5b6263df36"
+}

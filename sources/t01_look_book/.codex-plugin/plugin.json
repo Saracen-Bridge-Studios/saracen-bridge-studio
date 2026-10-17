@@ -1,0 +1,24 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Info Needed: Look Book / Visual Deck / Pitch Deck, Script or pilot screenplay, Synopsis or treatment, Current logline and one-line pitch, Cast or director attachment / wish-list notes, Budget range or production scale note, Any existing sales, market or comparable notes",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Produce the report as a Word document using the Saracen Bridge Analytics master report template."
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "1. Saracen Bridge Look Book Analytics",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Info Needed: Look Book / Visual Deck / Pitch Deck, Script or pilot screenplay, Synopsis or treatment, Current logline and one-line pitch, Cast or director attachment / wish-list notes, Budget range or production scale note, Any existing sales, market or comparable notes",
+    "shortDescription": "Info Needed: Look Book / Visual Deck / Pitch Deck, Script or pilot screenplay, Synopsis or treatment, Current logline and one-line pitch, Cast or director attachment / wish-list notes, Budget range or production scale note, Any existing sal"
+  },
+  "name": "gpt-60858caf9b72b55ecebbf3e524717452",
+  "skills": "./skills/",
+  "version": "0.8.1+bundle.df2381baaafe462df663eac9af57c775"
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Production Agreement Builder"
+  short_description: "Populate fixed production agreements with evidence"
+  default_prompt: "Use $populate-production-agreement to populate the static production term sheet from project evidence."

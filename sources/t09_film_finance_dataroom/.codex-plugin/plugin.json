@@ -1,0 +1,25 @@
+{
+  "apps": "./.app.json",
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Audits film and television SharePoint/OneDrive data rooms against Saracen Bridge's institutional greenlight and closing framework, identifies missing or deficient evidence, tests financing, legal, insurance and bonding readiness, and produces decision-led closing reports.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "defaultPrompt": [
+      "Audit this project's SharePoint data room and issue a greenlight recommendation.",
+      "Compare this week's evidence with the previous audit and draft the weekly closing email.",
+      "Review this finance plan, collateral and conditions-precedent position for closing blockers."
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "Saracen Bridge Film Finance Analyst",
+    "longDescription": "Audits film and television SharePoint/OneDrive data rooms against Saracen Bridge's institutional greenlight and closing framework, identifies missing or deficient evidence, tests financing, legal, insurance and bonding readiness, and produces decision-led closing reports.",
+    "shortDescription": "Audits film and television SharePoint/OneDrive data rooms against Saracen Bridge's institutional greenlight and closing framework, identifies missing or deficient evidence, tests financing, legal, insurance and bonding readiness, and produc"
+  },
+  "name": "gpt-672013c89c35e35820953bda3c82ea97",
+  "skills": "./skills/",
+  "version": "0.1.1+bundle.f19ae2fc0cbf6a07cabe79d44b335e4a"
+}

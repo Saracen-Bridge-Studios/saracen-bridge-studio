@@ -1,0 +1,6 @@
+interface:
+  default_prompt: “Produce the report as a Word document using the Saracen Bridge
+    Analytics master report template.”
+  display_name: 2. Saracen Bridge Script Coverage Analysis
+  short_description: 'Info Needed: Screenplay or treatment, Character breakdowns,
+    Look'

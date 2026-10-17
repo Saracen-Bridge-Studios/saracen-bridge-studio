@@ -1,0 +1,342 @@
+{
+ "summary": {
+  "ask": 8104532.42289198,
+  "expected": 6665645.52179294,
+  "take": 5505558.81871314,
+  "net_producer_receipts": 5465829.32787021
+ },
+ "territories": [
+  {
+   "ask": 2706525,
+   "expected": 2226562.30637788,
+   "take": 1915200,
+   "bankable": 957600,
+   "confidence": "B",
+   "evidence_count": 3,
+   "status": "Complete",
+   "territory": "USA"
+  },
+  {
+   "ask": 284295.272727273,
+   "expected": 236912.727272727,
+   "take": 189530.181818182,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Canada"
+  },
+  {
+   "ask": 627062.536528346,
+   "expected": 545271.770894214,
+   "take": 518008.182349503,
+   "bankable": 259004.091174752,
+   "confidence": "C",
+   "evidence_count": 1,
+   "status": "Complete",
+   "territory": "UK / Ireland"
+  },
+  {
+   "ask": 469395.5,
+   "expected": 408170,
+   "take": 387761.5,
+   "bankable": 193880.75,
+   "confidence": "C",
+   "evidence_count": 1,
+   "status": "Complete",
+   "territory": "Germany"
+  },
+  {
+   "ask": 783281.25,
+   "expected": 566090.535429936,
+   "take": 378562.5,
+   "bankable": 37856.25,
+   "confidence": "C",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "France"
+  },
+  {
+   "ask": 213221.454545455,
+   "expected": 177684.545454545,
+   "take": 142147.636363636,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Italy"
+  },
+  {
+   "ask": 213221.454545455,
+   "expected": 177684.545454545,
+   "take": 142147.636363636,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Spain"
+  },
+  {
+   "ask": 142147.636363636,
+   "expected": 118456.363636364,
+   "take": 94765.0909090909,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Benelux"
+  },
+  {
+   "ask": 177684.545454545,
+   "expected": 148070.454545455,
+   "take": 118456.363636364,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Scandinavia"
+  },
+  {
+   "ask": 71073.8181818182,
+   "expected": 59228.1818181818,
+   "take": 47382.5454545455,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Switzerland"
+  },
+  {
+   "ask": 56859.0545454545,
+   "expected": 47382.5454545455,
+   "take": 37906.0363636364,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Austria"
+  },
+  {
+   "ask": 71073.8181818182,
+   "expected": 59228.1818181818,
+   "take": 47382.5454545455,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Poland"
+  },
+  {
+   "ask": 142147.636363636,
+   "expected": 118456.363636364,
+   "take": 94765.0909090909,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Eastern Europe (ex-Poland)"
+  },
+  {
+   "ask": 74035.2272727273,
+   "expected": 59228.1818181818,
+   "take": 41459.7272727273,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "CIS"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Greece"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Portugal"
+  },
+  {
+   "ask": 71073.8181818182,
+   "expected": 59228.1818181818,
+   "take": 47382.5454545455,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Turkey"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Israel"
+  },
+  {
+   "ask": 106610.727272727,
+   "expected": 88842.2727272727,
+   "take": 71073.8181818182,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Middle East (ex-Israel/Turkey)"
+  },
+  {
+   "ask": 49751.6727272727,
+   "expected": 41459.7272727273,
+   "take": 33167.7818181818,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "South Africa"
+  },
+  {
+   "ask": 411750,
+   "expected": 343125,
+   "take": 274500,
+   "bankable": 27450,
+   "confidence": "C",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Japan"
+  },
+  {
+   "ask": 142147.636363636,
+   "expected": 118456.363636364,
+   "take": 94765.0909090909,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "South Korea"
+  },
+  {
+   "ask": null,
+   "expected": null,
+   "take": null,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "NO VALUE",
+   "territory": "China"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Hong Kong"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Taiwan"
+  },
+  {
+   "ask": 71073.8181818182,
+   "expected": 59228.1818181818,
+   "take": 47382.5454545455,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "India"
+  },
+  {
+   "ask": 319832.181818182,
+   "expected": 266526.818181818,
+   "take": 213221.454545455,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Australia / New Zealand"
+  },
+  {
+   "ask": 106610.727272727,
+   "expected": 88842.2727272727,
+   "take": 71073.8181818182,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Brazil"
+  },
+  {
+   "ask": 106610.727272727,
+   "expected": 88842.2727272727,
+   "take": 71073.8181818182,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Mexico"
+  },
+  {
+   "ask": 142147.636363636,
+   "expected": 118456.363636364,
+   "take": 94765.0909090909,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Rest of Latin America"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Airlines"
+  },
+  {
+   "ask": 35536.9090909091,
+   "expected": 29614.0909090909,
+   "take": 23691.2727272727,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Ships / Non-Theatrical"
+  },
+  {
+   "ask": 296140.909090909,
+   "expected": 236912.727272727,
+   "take": 165838.909090909,
+   "bankable": 0,
+   "confidence": "D",
+   "evidence_count": 0,
+   "status": "Complete",
+   "territory": "Rest of World"
+  }
+ ],
+ "lender_result": "INSUFFICIENT",
+ "bankable": 1475791.09117475
+}

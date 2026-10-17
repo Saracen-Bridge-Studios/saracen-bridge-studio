@@ -1,0 +1,26 @@
+{
+  "author": {
+    "name": "Jon Chadwick"
+  },
+  "description": "Finds script-specific brand targets, builds outreach pipelines, and creates branded pitch materials.",
+  "interface": {
+    "capabilities": [
+      "skills"
+    ],
+    "category": "Education & Research",
+    "composerIcon": "./assets/gpt-icon.png",
+    "defaultPrompt": [
+      "Analyse this script and map exact brand opportunities",
+      "Build a contact database for the top targets",
+      "Draft personalised outreach for these brands"
+    ],
+    "developerName": "Jon Chadwick",
+    "displayName": "5. Saracen Bridge Brand Integration Agent",
+    "logo": "./assets/gpt-icon.png",
+    "longDescription": "Finds script-specific brand targets, builds outreach pipelines, and creates branded pitch materials.",
+    "shortDescription": "Finds script-specific brand targets, builds outreach pipelines, and creates branded pitch materials."
+  },
+  "name": "gpt-daa7a0e949ceb7fcdd60e0ba3ed11b79",
+  "skills": "./skills/",
+  "version": "0.7.1+bundle.05001c423b66fbac28a09513926fe32e"
+}
