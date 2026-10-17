@@ -5,11 +5,12 @@ Every change to the Studio gets an entry here, newest first, in the release that
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
 ## 1.1.0 (17 Oct 2026), whoever starts a production hosts it
-Setup `SETUPHASH`, SETUPSIZE. Replaces 1.0.8 the same day. Tested by a silent upgrade over 1.0.7 and the smoke on the installed app, including starting a production in the installed app (its Room and meetings server running under Windows), and a Studio joined to two hosts' productions. Not yet run on Tim's PC.
+Setup `00530167`, 82.4 MB (the call server adds 14 MB). Delivered to Tim's Downloads; replaces 1.0.8, which shouldn't be installed. Numbered 1.1.0 by Tim for the size of the change (built as 1.0.8.1 first). Tested by a silent upgrade over 1.0.7 and the 36-check smoke on the installed app, including the Room it hosts: starting a production, the Room coming back by itself when the Studio restarts, and a phone joining over the host's address (safety words matched) and holding an encrypted huddle with the Studio through the bundled call server. 200 tests pass under Windows Python (3 skipped), 203 under Linux. Not yet run on Tim's PC.
 - Changed: no web address or founder code. **Start a production** runs the Room on this PC: the person who starts a production is its host and its executive, sends the invites, approves each device and sets everyone's access. Invite links carry the host PC's network address. (S-88)
 - Added: a Studio can be in several hosts' productions at once (Jon's on Jon's PC, Colin's on Colin's): they appear together in one switcher, marked "on this PC" where they're hosted here, and every message, file, call sheet and meeting goes to the PC that holds that production. **Join with an invite** is in the switcher too. (S-88)
 - Added: the Studio carries the Room's server, its phone app and the meetings server (LiveKit 1.13.10, Apache-2.0), started with the Studio on a PC that hosts. (S-88, S-90)
 - Fixed: the production switcher's menu was cut off by the top bar, so it never showed. (S-89)
+- Fixed: the call server's single shared network port wouldn't open under Windows; it uses a small range of ports now. A phone on the host's plain network address gets a plain message that calls need a secure address, instead of a code error. (S-90)
 
 ## 1.0.8 (17 Oct 2026), the Room
 Setup `4fd0a424`, 68.3 MB. Delivered to Tim's Downloads; superseded by 1.1.0 before use. Tested by a silent upgrade over 1.0.7 and the 35-check smoke on the installed app (Room crypto bundled, Room pages, mic panel, a test Room server's health). 198 tests pass under Windows Python (3 skipped: Node and POSIX-only), 203 under Linux.
