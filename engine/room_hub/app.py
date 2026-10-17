@@ -26,7 +26,7 @@ VERSION = "1.0.8"
 TOKEN_HOURS = 12
 INVITE_DAYS = 14
 MAX_CHUNK = rc.CHUNK + 1024
-POST_KINDS = {"msg", "note", "note_update", "file", "callsheet", "callsheet_row", "reaction"}
+POST_KINDS = {"msg", "note", "note_update", "file", "callsheet", "callsheet_row", "reaction", "meeting", "huddle"}
 DIR_KINDS = {"person", "space", "department", "production"}
 
 
@@ -638,11 +638,12 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             note = set(mentions)
             if any(v.spaces[s]["kind"] == "dm" for s in spaces):
                 note |= readers
-            if h["kind"] == "callsheet" or h["kind"] == "callsheet_row":
+            if h["kind"] in ("callsheet", "callsheet_row", "meeting"):
                 note |= readers
             for u in note - {ctx.user}:
                 store.x("INSERT INTO notifications (user, production, kind, item, ts, seq) VALUES (?,?,?,?,?,?)",
-                        (u, p, "mention" if u in mentions else ("callsheet" if h["kind"].startswith("callsheet") else "dm"),
+                        (u, p, "mention" if u in mentions else ("callsheet" if h["kind"].startswith("callsheet")
+                                                                   else "meeting" if h["kind"] == "meeting" else "dm"),
                          h["id"], int(time.time()), seq))
             if h["kind"] == "file" and h.get("ref"):
                 store.x("UPDATE files SET item=?, status=CASE WHEN status='uploaded' THEN 'ready' ELSE status END, seq=? "

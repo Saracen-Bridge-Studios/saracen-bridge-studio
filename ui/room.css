@@ -231,3 +231,43 @@ ul.plain.grants li { display: flex; align-items: flex-start; justify-content: sp
 .cs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-top: 12px; }
 table.cs-edit td { padding: 6px 8px; }
 @media (max-width: 1200px) { .cs-strip { grid-template-columns: 1fr 1fr; } .cs-strip .cs-d { grid-column: 1 / -1; grid-auto-flow: column; justify-content: start; } }
+
+/* voice and meetings: speaking is a steady gold ring, never a pulse; the level meter is smoothed */
+.voice .vh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.voice .vh h2 { margin: 0 0 8px; }
+.voice .vr { font-size: 12.5px; color: var(--gold-300); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voice .mic { margin-top: 12px; padding: 12px; border-radius: var(--r); background: var(--ink-1); border: 1px solid var(--line); display: grid; gap: 4px; }
+.voice .mic-h { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.voice .mic-h .muted { margin-left: auto; }
+.voice .vb { margin-top: 12px; }
+.meter { display: grid; grid-template-columns: repeat(16, 1fr); gap: 3px; height: 14px; margin: 6px 0 2px; }
+.meter span { border-radius: 2px; background: var(--ink-4); transition: background-color .12s linear; }
+.meter span.on { background: var(--gold-400); }
+.meter span:nth-child(n+13).on { background: var(--gold-200); }
+@media (prefers-reduced-motion: reduce) { .meter span { transition: none; } }
+ul.plain.talkers li { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+ul.plain.talkers li.speaking .av, .tile-v.speaking { box-shadow: 0 0 0 2px var(--gold-400); }
+.meet-list { margin-top: 16px; display: grid; gap: 8px; }
+.meet-list .lbl { font: 500 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--fg-4); }
+.meet-row { display: grid; gap: 6px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.meet { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.meet-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.meet-head h1 { margin: 0; }
+.stage { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 16px 0; }
+.tile-v { position: relative; aspect-ratio: 16 / 10; border-radius: var(--r-lg); overflow: hidden; display: grid; place-items: center;
+  background: linear-gradient(160deg, var(--ink-5), var(--ink-2)); box-shadow: 0 0 0 1px var(--line-2); }
+.tile-v video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tile-v .big-ini { font: 600 28px var(--serif); color: var(--gold-300); }
+.tile-v .nm { position: absolute; left: 10px; bottom: 8px; font-size: 12.5px; color: var(--fg); text-shadow: 0 1px 2px rgba(0, 0, 0, .7); }
+.tile-v .tile-act { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; opacity: 0; transition: opacity .15s ease; }
+.tile-v:hover .tile-act, .tile-v:focus-within .tile-act { opacity: 1; }
+.aud h2 small { color: var(--gold-300); }
+.hand { color: var(--gold-300) !important; }
+.meet-chat { position: sticky; top: calc(var(--topbar) + 12px); display: grid; gap: 10px; }
+.meet-chat h2 { margin: 0; }
+.mc-list { display: grid; gap: 8px; max-height: 50vh; overflow-y: auto; font-size: 13.5px; }
+@media (max-width: 1100px) { .meet { grid-template-columns: 1fr; } .meet-chat { position: static; } }
+ul.plain.talkers .pn { flex: 1; min-width: 0; display: grid; font-size: 13px; }
+ul.plain.talkers .pn small { color: var(--fg-3); font-size: 11.5px; }
+.meet-chat > *, .meet-main { min-width: 0; }
+.meet-chat .composer { margin-top: 0; }

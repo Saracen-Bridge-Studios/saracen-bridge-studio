@@ -32,6 +32,7 @@ async function roomRoute(a, b) {
   if (RM.st.status === "pending") return roomJoining();
   if (a === "access") return roomAccess();
   if (a === "callsheet" && typeof callsheetEditor === "function") return callsheetEditor(b);
+  if (a === "meet" && typeof meetPage === "function") return meetPage(b);
   return roomMain(a, b);
 }
 
@@ -458,7 +459,8 @@ async function roomLive() {
       const typing = document.activeElement && document.activeElement.matches("input, textarea") && document.activeElement.value;
       const keep = typing ? document.activeElement.value : null;
       await roomLoad().catch(() => null);
-      if ((location.hash || "").startsWith("#/room/access")) continue;
+      /* only the Room's main page redraws itself; Members & access, call sheets and a meeting keep their own state */
+      if (!/^#\/room(\/p_[^/]+(\/s_[^/]+)?)?$/.test(location.hash || "#/room")) { if (typeof voiceRefresh === "function") voiceRefresh(); continue; }
       if (!document.querySelector(".scrim")) {
         roomDraw();
         if (keep) { const i = document.querySelector(".composer input"); if (i) { i.value = keep; i.focus(); } }

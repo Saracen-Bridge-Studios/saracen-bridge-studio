@@ -476,3 +476,75 @@ def callsheet_confirm(item: str):
 def callsheet_remind(item: str):
     from . import callsheets as CS
     return {"reminded": _run(CS.remind, _c(), item)}
+
+
+# ------------------------------------------------------------------ huddles and meetings
+@router.get("/meetings")
+def meetings_list(production: str):
+    from . import meetings as M
+    c = _c()
+    return _run(M.listing, c, production, S.people(c, production))
+
+
+@router.post("/huddle")
+def huddle(body: dict = Body(...)):
+    """Join the huddle in a space, starting it if nobody has yet."""
+    from . import meetings as M
+    c = _c()
+    sp = body["space"]
+    m = _run(M.huddle_for, c, sp)
+    mid = m["id"] if m else _run(M.start, c, c.space(sp)["production"], [sp], "huddle", "Huddle")
+    return _run(M.join, c, mid)
+
+
+@router.post("/meetings")
+def meeting_new(body: dict = Body(...)):
+    from . import meetings as M
+    c = _c()
+    title = (body.get("title") or "").strip()
+    spaces = [s for s in body.get("spaces") or [] if s]
+    if not title or not spaces:
+        raise HTTPException(400, "Give the meeting a title and pick who it's for.")
+    mid = _run(M.start, c, body["production"], spaces, "meeting", title, body.get("starts"), int(body.get("minutes") or 60),
+               body.get("agenda") or "")
+    S.bumped()
+    return {"id": mid}
+
+
+@router.post("/meetings/{mid}/join")
+def meeting_join(mid: str):
+    from . import meetings as M
+    return _run(M.join, _c(), mid)
+
+
+@router.get("/meetings/{mid}")
+def meeting_state(mid: str):
+    c = _c()
+    return _run(c._req, "GET", f"/api/meetings/{mid}")
+
+
+@router.post("/meetings/{mid}/stage")
+def meeting_stage(mid: str, body: dict = Body(...)):
+    return _run(_c()._req, "POST", f"/api/meetings/{mid}/stage", json={"user": body["user"], "on": bool(body.get("on", True))})
+
+
+@router.post("/meetings/{mid}/mute")
+def meeting_mute(mid: str, body: dict = Body(...)):
+    return _run(_c()._req, "POST", f"/api/meetings/{mid}/mute", json={"user": body["user"], "track": body["track"]})
+
+
+@router.post("/meetings/{mid}/end")
+def meeting_end(mid: str):
+    r = _run(_c()._req, "POST", f"/api/meetings/{mid}/end")
+    S.bumped()
+    return r
+
+
+@router.get("/meetings/{mid}/ics")
+def meeting_ics(mid: str, production: str):
+    from fastapi.responses import Response
+    from . import meetings as M
+    c = _c()
+    name = next((p["name"] for p in S.productions(c) if p["id"] == production), "")
+    return Response(_run(M.ics, c, mid, name), media_type="text/calendar",
+                    headers={"Content-Disposition": 'attachment; filename="meeting.ics"'})
