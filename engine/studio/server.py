@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.0.7"
+VERSION = "1.0.8"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 
@@ -93,7 +93,17 @@ def diagnostics():
         except Exception as e:  # noqa: BLE001
             specs[name] = f"error: {e}"
     out["ai_specs"] = specs
-    out["bundled_model"] = (lambda f: f[1].name if f else None)(llm.bundled_files())
+    try:                                      # the Room (1.0.8): libsodium, the safety-word list and the live link all bundled
+        import room_crypto as rc
+        import websockets.sync.client  # noqa: F401
+        a, b = rc.Device(), rc.Device()
+        key = rc.new_key()
+        w = rc.wrap_key(key, "s_check", 1, b.public(), a)
+        ok = rc.unwrap_key(w, b) == key and len(rc.WORDS) == 2048
+        out["room"] = {"crypto": ok, "words": len(rc.WORDS)}
+    except Exception as e:  # noqa: BLE001
+        out["room"] = {"crypto": f"error: {e}"}
+    out["bundled_model"] =(lambda f: f[1].name if f else None)(llm.bundled_files())
     out["ai"] = llm.status(store.load_settings())
     return out
 

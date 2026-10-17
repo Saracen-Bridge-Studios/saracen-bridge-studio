@@ -1,6 +1,8 @@
 """Smoke test a running Saracen Bridge Studio (packaged or not). Standard library only.
 
-    python packaging/smoke.py http://127.0.0.1:8798
+    python packaging/smoke.py http://127.0.0.1:8798 [https://room.example.com]
+
+The optional second address is a Room hub (1.0.8) to health-check. Never point this at port 8799.
 
 Checks every layer the installer must carry: UI, catalog, reference database, engine figures against Jon's
 workbooks, script intake for all three formats, and the agreement builder's bundled master.
@@ -16,6 +18,8 @@ import uuid
 from pathlib import Path
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8798").rstrip("/")
+if any(":8799" in a for a in sys.argv[1:]):
+    sys.exit("8799 is A.I.D.E.N.'s port on this machine: smoke tests use 8798.")
 FIX = Path(__file__).resolve().parent.parent / "tests" / "fixtures"
 
 
@@ -140,4 +144,27 @@ check("AI engine status answers", "connected" in diag["ai"], diag["ai"].get("des
 dl = call("/api/ai/download")
 check("Gemma download ready to resume", set(dl["options"]) == {"12b", "e4b"} and "state" in dl,
       f"{dl['state']}, wanted {dl.get('wanted') or 'none'}")
+room = call("/api/diagnostics").get("room", {})
+check("1.0.8 the Room's encryption is bundled (libsodium, safety words, live link)", room.get("crypto") is True, room)
+rs = call("/api/room/state")
+check("1.0.8 the Room answers before it's set up", isinstance(rs.get("status"), str) and "hub" in rs, rs.get("status"))
+idx = call("/", raw=True)
+rjs, mjs = call("/ui/room.js", raw=True), call("/ui/room-meet.js", raw=True)
+lk = call("/ui/vendor/livekit-client.umd.js", raw=True)
+check("1.0.8 Room pages, call sheets and meetings served",
+      all(s in idx for s in (b"room.js", b"room-callsheet.js", b"room-meet.js", b"livekit-client.umd.js"))
+      and b"roomRoute" in rjs and b"callsheetStrip" in call("/ui/room-callsheet.js", raw=True) and len(lk) > 200_000)
+check("1.0.8 voice: the mic picker finds the system default, follows it and asks kindly first",
+      all(s in mjs for s in (b"micLabel", b"enumerateDevices", b"devicechange", b"micConsent", b"noiseSuppression", b"echoCancellation",
+                             b'"Microphone"', b'"automatic"')))
+HUB = (sys.argv[2] if len(sys.argv) > 2 else "").rstrip("/")
+if HUB:                                               # a Room hub to check (the deploy kit's, or a test hub on the LAN)
+    with urllib.request.urlopen(HUB + "/api/health", timeout=30) as r:
+        hh = json.loads(r.read())
+    with urllib.request.urlopen(HUB + "/app/", timeout=30) as r:
+        app_html = r.read()
+    check("1.0.8 the Room hub answers and serves the phone app", hh.get("ok") is True and b"manifest.webmanifest" in app_html,
+          f"{HUB}: {hh.get('version')}")
+else:
+    print("SKIP 1.0.8 Room hub health (give the hub's address as a second argument to check it)")
 print("SMOKE OK")

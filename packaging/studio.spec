@@ -21,6 +21,10 @@ datas = [
 # Jon's instructions the 1.0.7 AI features read at run time (the first 1.0.7 build missed them: term sheets failed)
 for t in ("t05_brand_integration", "t07_bfi_certification", "fpm_finance_plan_modeller"):
     datas.append((str(ROOT / "sources" / t / "skills" / "instructions" / "SKILL.md"), f"sources/{t}/skills/instructions"))
+# The Room (1.0.8): the safety-word list the crypto library reads at run time; ui/vendor (LiveKit, MIT/Apache) rides in ui.
+# The hub (engine/room_hub) is a separate service and is not in the Studio.
+datas.append((str(ROOT / "engine" / "room_crypto" / "words.txt"), "room_crypto"))
+datas.append((str(ROOT / "engine" / "room_crypto" / "LICENSE-wordlist.txt"), "room_crypto"))
 datas += collect_data_files("docx", include_py_files=True)   # python-docx's own part templates (headers, footers): needed to render reports
 datas += collect_data_files("pypdfium2_raw") + collect_data_files("pypdfium2")      # PDFium renders look book pages
 # Optional built-in AI engine: packaging/llm/llama-server.exe (+ its DLLs) and packaging/llm/models/<model>.gguf.
@@ -32,6 +36,7 @@ if (ROOT / "packaging" / "ocr" / "tesseract.exe").exists():
     datas.append((str(ROOT / "packaging" / "ocr"), "ocr"))
 binaries = collect_dynamic_libs("pypdfium2_raw")
 hidden = collect_submodules("uvicorn") + collect_submodules("studio") + collect_submodules("pypdf") + ["multipart", "python_multipart"]
+hidden += collect_submodules("room_crypto") + collect_submodules("nacl") + collect_submodules("websockets")   # the Room (1.0.8)
 hidden += collect_submodules("pypdfium2") + collect_submodules("pypdfium2_raw") + ["PIL.JpegImagePlugin", "PIL.PngImagePlugin", "PIL.WebPImagePlugin"]
 # Jon's agreement-builder scripts ship as data and are imported at run time, so PyInstaller cannot see their imports.
 hidden += collect_submodules("lxml") + ["argparse", "collections", "copy", "decimal", "hashlib", "json", "zipfile"]
@@ -41,7 +46,7 @@ if sys.platform in ("win32", "darwin"):
 # rth_no_wmi runs first: Python's platform module can hang forever on a PC with a stuck WMI service (see the hook).
 # setuptools is a build tool the app never uses; bundled, its start-up hook ran platform.system() and hung there.
 a = Analysis([str(ROOT / "studio_launcher.py")], pathex=[str(ROOT / "engine")], datas=datas,
-             binaries=binaries, hiddenimports=hidden, excludes=["tkinter", "pytest", "setuptools", "pkg_resources", "_distutils_hack"],
+             binaries=binaries, hiddenimports=hidden, excludes=["tkinter", "pytest", "setuptools", "pkg_resources", "_distutils_hack", "room_hub"],
              runtime_hooks=[str(ROOT / "packaging" / "rth_no_wmi.py")], noarchive=False)
 pyz = PYZ(a.pure)
 # PyInstaller 6 treats the OCR folder's exe and DLLs as binaries and its dependency scan also puts a second copy of
