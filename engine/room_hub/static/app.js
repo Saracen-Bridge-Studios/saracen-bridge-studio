@@ -467,6 +467,8 @@ async function joinMeeting(mid) {
   const L = window.LivekitClient;
   if (!L) return toast("Meetings didn't load", "Check your connection and reopen the Room.");
   if (!L.isE2EESupported()) return toast("This browser can't encrypt calls", "The Room only holds encrypted calls. Update your browser or phone.");
+  if (!window.isSecureContext || !(window.crypto && crypto.subtle))   /* a host's plain network address (http) */
+    return toast("Calls need a secure address", "Your phone only encrypts calls on a secure (https) address, and this Room's address isn't one yet. The board, chat and call sheets work; join calls from a Studio for now.");
   try {
     const t = await api("POST", `/api/meetings/${mid}/token`), st = await api("GET", `/api/meetings/${mid}`);
     const it = R.items.get(st.item);
