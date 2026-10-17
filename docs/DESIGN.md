@@ -62,3 +62,10 @@ Ease-out `cubic-bezier(.23, 1, .32, 1)`; most transitions under 300 ms; entrance
 ## 5. Brand note
 
 Jon's house style says never to recolour or redraw the logo. The 3D crest keeps his shapes exactly (traced, not redrawn), but it adds a metal finish and a richer purple at Tim's request. It is the Studio's app mark only, and needs Jon's sign-off before it is used anywhere else (register S-35). The helper character is named Jon at Tim's request; he is an original cartoon, not a likeness, and Jon Chadwick should agree to lend his name (G-44). His original files are unchanged in `sources/` and `packaging/brand/`.
+
+## 6. The Room (1.0.8)
+
+- **Same room, same light.** The Room uses the Studio's tokens: ink surfaces, gold only for the selected control and the primary action, ivory for reading. The phone app carries the same palette and fonts (bundled), sized for a thumb: a bottom bar (Today, Board, Chat, Meet) and 44 px targets.
+- **Calm by rule (photosensitivity).** Speaking is a steady gold ring, never a pulse; the level meter is smoothed and updates every 500 ms under reduced motion; nothing flashes. Live updates redraw the board in place.
+- **Plain words for security.** "Encrypted" in the top bar; the oversight notice says executives can read every space and every read is logged; safety words appear as three large words on both screens; a call that can't be encrypted is refused with a sentence that says so.
+- **Starting and joining.** Two cards and no jargon: Join with an invite, or Start a production (it lives on this PC). The switcher lists every production the person is in, marks those hosted on this PC, and offers both actions.

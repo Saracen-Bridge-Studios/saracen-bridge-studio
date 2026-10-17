@@ -6,7 +6,7 @@ Nobody types an address: the invite link carries it.
 
 The hub runs inside the Studio process on its own listener (port 8710, all network interfaces, so the team can reach
 it). The Studio's own pages and API stay on 127.0.0.1. The hub holds ciphertext only, as before. Voice and meetings
-use LiveKit (Apache-2.0), started beside it when the Studio carries it. Never port 8799.
+use LiveKit (Apache-2.0), started beside it when the Studio carries it (TCP 7880-7881, UDP 50000-50100). Never port 8799.
 """
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from .. import refdata, store
 from .client import RoomError
 
 PORT = int(os.environ.get("ROOM_HOST_PORT", "8710"))
-LK_PORT, LK_TCP, LK_UDP = 7880, 7881, 7882
+LK_PORT, LK_TCP, LK_UDP = 7880, 7881, (50000, 50100)
 assert PORT != 8799, "8799 is reserved"
 
 _S: dict = {"server": None, "thread": None, "app": None, "lk": None, "error": "", "lock": threading.Lock()}
@@ -122,9 +122,16 @@ def _start_livekit(cfg: dict) -> dict | None:
     if not exe:
         return None
     conf = folder() / "livekit.yaml"
-    conf.write_text(f"port: {LK_PORT}\nrtc:\n  tcp_port: {LK_TCP}\n  udp_port: {LK_UDP}\n  use_external_ip: false\n"
-                    "logging:\n  level: warn\n")
-    env = dict(os.environ, LIVEKIT_KEYS=f"{cfg['lk_key']}: {cfg['lk_secret']}")
+    # A UDP port range rather than one shared UDP port: the shared-port mode failed to open its socket on the
+    # Windows test machine (winapi error 10045); the range works. Keys go in the file (kept in this user's folder).
+    conf.write_text(f"port: {LK_PORT}\nrtc:\n  tcp_port: {LK_TCP}\n  port_range_start: {LK_UDP[0]}\n"
+                    f"  port_range_end: {LK_UDP[1]}\n  use_external_ip: false\n"
+                    f"keys:\n  {cfg['lk_key']}: {cfg['lk_secret']}\nlogging:\n  level: warn\n")
+    try:
+        os.chmod(conf, 0o600)
+    except OSError:
+        pass
+    env = dict(os.environ)
     flags = 0x08000000 if sys.platform == "win32" else 0          # CREATE_NO_WINDOW
     log = open(folder() / "livekit.log", "ab")
     proc = subprocess.Popen([str(exe), "--config", str(conf)], env=env, stdout=log, stderr=log,
