@@ -92,6 +92,13 @@ fn main() {
             if let Ok(h) = w.hwnd() {
                 house_title_bar(h.0 as isize);
             }
+            // The Mac launcher runs in the background and starts this window app directly, so the window asks to
+            // come to the front itself (otherwise it can open behind whatever the user was using).
+            #[cfg(target_os = "macos")]
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Regular);
+                let _ = w.set_focus();
+            }
             let _ = w;
             Ok(())
         })
