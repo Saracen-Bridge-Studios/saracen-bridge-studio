@@ -1,4 +1,4 @@
-"""The Studio's local Room API (127.0.0.1 only): what ui/room.js calls. Each call goes through this PC's Room client,
+"""The Studio's local Room API (127.0.0.1 only): what ui/room.js calls. Each call goes through this computer's Room client,
 which encrypts before anything leaves for the hub."""
 from __future__ import annotations
 
@@ -20,11 +20,11 @@ router = APIRouter(prefix="/api/room")
 
 
 def _c(**hint):
-    """The Room this request is about (this PC may be in several hosts' Rooms): found from the production, space,
+    """The Room this request is about (this computer may be in several hosts' Rooms): found from the production, space,
     item, file or meeting it names; otherwise the one the page is on."""
     c = S.resolve(**hint) if hint else S.client()
     if c.state.get("status") != "approved":
-        raise HTTPException(409, "This PC isn't in the Room yet.")
+        raise HTTPException(409, "This computer isn't in the Room yet.")
     return c
 
 
@@ -90,14 +90,14 @@ def set_hub(body: dict = Body(...)):
 def found(body: dict = Body(...)):
     c = S.client(hub=body.get("hub") or None)
     if c.state.get("status"):
-        raise HTTPException(409, "This PC is already set up for a Room.")
+        raise HTTPException(409, "This computer is already set up for a Room.")
     _run(c.bootstrap, body["token"].strip(), body["name"].strip(), body.get("role", "Executive").strip())
     S.start_live()
     return {"ok": True}
 
 
 def _host_and_found(name: str) -> "S.RoomClient":
-    """Run the Room on this PC (if it isn't already) and make this PC's owner its first executive."""
+    """Run the Room on this computer (if it isn't already) and make this computer's owner its first executive."""
     try:
         H.start()
     except RoomError as e:
@@ -109,7 +109,7 @@ def _host_and_found(name: str) -> "S.RoomClient":
         raise HTTPException(400, "Enter your name first.")
     tok = H.founder_token()
     if not tok:
-        raise HTTPException(409, "This PC's Room already has its first executive. Join it with an invite instead.")
+        raise HTTPException(409, "This computer's Room already has its first executive. Join it with an invite instead.")
     c = S.client(hub=H.local())
     _run(c.bootstrap, tok, name, "Executive")
     S.start_live()
@@ -118,7 +118,7 @@ def _host_and_found(name: str) -> "S.RoomClient":
 
 @router.post("/host")
 def host_room(body: dict = Body(...)):
-    """Start a project on this PC: the Room runs here and everyone invited connects to this PC."""
+    """Start a project on this computer: the Room runs here and everyone invited connects to this computer."""
     name, prod = (body.get("name") or "").strip(), (body.get("production") or "").strip()
     if not prod:
         raise HTTPException(400, "Name the production.")
@@ -154,11 +154,11 @@ def join_progress():
 
 @router.post("/leave")
 def leave():
-    """Forget the Room on this PC (keys and cache). The executive should also remove the device."""
+    """Forget the Room on this computer (keys and cache). The executive should also remove the device."""
     c = next(iter(S.clients("pending") + S.clients("declined") + S.clients("revoked")), None)
     S.stop_live()
     with S._LOCK:
-        if c is not None and c.dir != S.folder():          # one host's Room this PC never got into
+        if c is not None and c.dir != S.folder():          # one host's Room this computer never got into
             S._CLIENTS.pop(str(c.dir), None)
             shutil.rmtree(c.dir, ignore_errors=True)
         elif not S.clients():
@@ -318,7 +318,7 @@ def new_production(body: dict = Body(...)):
     name = (body.get("name") or "").strip()
     if not name:
         raise HTTPException(400, "Name the production.")
-    c = _host_and_found((body.get("you") or S._me(S.client(), None).get("name") or "").strip())   # always on this PC
+    c = _host_and_found((body.get("you") or S._me(S.client(), None).get("name") or "").strip())   # always on this computer
     pid = _run(c.create_production, name[:120])
     S.bumped()
     return {"id": pid}

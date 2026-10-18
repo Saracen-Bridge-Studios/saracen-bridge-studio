@@ -3,13 +3,24 @@
   "productName": "Saracen Bridge Studio",
   "version": "0.4.0",
   "identifier": "com.saracenbridge.studio",
-  "build": { "frontendDist": "dist" },
+  "build": {
+    "frontendDist": "dist"
+  },
   "app": {
     "windows": [],
-    "security": { "csp": null }
+    "security": {
+      "csp": null
+    }
   },
   "bundle": {
     "active": false,
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.png", "icons/icon.ico"]
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ]
   }
 }

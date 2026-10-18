@@ -6,3 +6,5 @@ packaging/ocr/
 packaging/redist/*.exe
 *.pyc
 packaging/livekit/*.exe
+packaging/livekit/livekit-server
+packaging/macos/build/

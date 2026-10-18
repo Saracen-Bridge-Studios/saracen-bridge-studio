@@ -36,10 +36,13 @@ MIN_TEXT_PER_PAGE = 40              # fewer characters per page than this in the
 
 
 def tesseract() -> Path | None:
-    """The bundled tesseract.exe (installed app), or one given by STUDIO_TESSERACT, or one on PATH (development)."""
+    """The bundled OCR (installed app), or one given by STUDIO_TESSERACT, or Tesseract on PATH (development).
+    Windows bundles tesseract.exe; the Mac bundles studio-ocr, Apple's Vision text recognition answering in
+    Tesseract's TSV (packaging/macos/studio-ocr.swift)."""
     env = os.environ.get("STUDIO_TESSERACT")
     root = refdata.app_root()
-    bundled = [root / "ocr" / "tesseract.exe", root / "packaging" / "ocr" / "tesseract.exe"] if sys.platform == "win32" else []
+    bundled = ([root / "ocr" / "tesseract.exe", root / "packaging" / "ocr" / "tesseract.exe"] if sys.platform == "win32"
+               else [root / "ocr" / "studio-ocr"] if sys.platform == "darwin" else [])
     for cand in ([Path(env)] if env else []) + bundled:
         if cand.is_file():
             return cand

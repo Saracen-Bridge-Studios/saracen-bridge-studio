@@ -1,6 +1,6 @@
 "use strict";
 /* The Room (1.0.8): a private, encrypted team hub per production: board, chat, files, call sheets, voice and meetings.
-   The page talks only to the local Studio (/api/room/...), which holds this PC's keys and encrypts before anything
+   The page talks only to the local Studio (/api/room/...), which holds this computer's keys and encrypts before anything
    leaves for the hub. Design: docs/DESIGN.md (gold and ivory states, no plum on Room surfaces, no flashing). */
 
 Object.assign(ICONS, {
@@ -46,42 +46,42 @@ function roomSetup() {
   const prod = el("input", { type: "text", placeholder: "e.g. SHADE", "aria-label": "Production name", style: "width:100%" });
   const busy = async (btn, fn) => { btn.disabled = true; try { await fn(); } catch (e) { toast("bad", "Couldn't do that", e.message); } btn.disabled = false; };
   put(app(), el("h1", {}, "The Room"),
-    el("p", { class: "lede" }, "A private, encrypted hub for each production: a board, channels, files, call sheets and meetings. Everything is encrypted on this PC before it leaves, and only the people who can see a space can read it."),
+    el("p", { class: "lede" }, "A private, encrypted hub for each production: a board, channels, files, call sheets and meetings. Everything is encrypted on this computer before it leaves, and only the people who can see a space can read it."),
     el("div", { class: "room-setup" },
       el("div", { class: "card" }, el("h2", {}, icon("door"), "Join with an invite"),
-        el("p", { class: "muted small" }, "Someone at your production sent you a link. Paste it here, then an executive checks three safety words with you on a call before this PC gets in."),
+        el("p", { class: "muted small" }, "Someone at your production sent you a link. Paste it here, then an executive checks three safety words with you on a call before this computer gets in."),
         el("label", { class: "f" }, "Invite link", link), el("label", { class: "f", style: "margin-top:12px" }, "Your name", name),
         el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: e => busy(e.currentTarget, async () => {
           if (!link.value.trim()) throw new Error("Paste the invite link first.");
           await api.post("/api/room/join", { invite: link.value.trim(), name: name.value.trim() }); location.hash = "#/room/joining"; route(); }) }, "Join"))),
       el("div", { class: "card" }, el("h2", {}, icon("reel"), "Start a production"),
-        el("p", { class: "muted small" }, "The production lives on this PC. You invite people with a link, and they connect to it here. Nothing to install and no web address needed."),
+        el("p", { class: "muted small" }, "The production lives on this computer. You invite people with a link, and they connect to it here. Nothing to install and no web address needed."),
         el("label", { class: "f" }, "Your name", fname), el("label", { class: "f", style: "margin-top:12px" }, "Production", prod),
         el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: e => busy(e.currentTarget, async () => {
           if (!fname.value.trim() || !prod.value.trim()) throw new Error("Enter your name and the production's name.");
           const r = await api.post("/api/room/host", { name: fname.value.trim(), production: prod.value.trim() });
-          toast("ok", `${prod.value.trim()} is set up`, "It runs on this PC. Invite people from Members & access.");
+          toast("ok", `${prod.value.trim()} is set up`, "It runs on this computer. Invite people from Members & access.");
           RM.prod = r.id; RM.space = "board"; location.hash = `#/room/${r.id}`; route(); }) }, "Start")))));
 }
 
 async function roomJoining() {
   topbar(["Studio", "Room"]);
   const box = el("div", { class: "card room-words" });
-  put(app(), el("h1", {}, "Joining the Room"), el("p", { class: "lede" }, "An executive approves this PC after you both check the same three words."), box);
+  put(app(), el("h1", {}, "Joining the Room"), el("p", { class: "lede" }, "An executive approves this computer after you both check the same three words."), box);
   const tick = async () => {
     if (!onRoom()) return;
     let r;
     try { r = await api.get("/api/room/join"); } catch (e) { put(box, errBox(e)); return setTimeout(tick, 5000); }
     if (r.stage === "approved") { await roomOversightOnce(true); if (location.hash !== "#/room") { location.hash = "#/room"; return; } return route(); }
     if (r.stage === "declined" || r.stage === "none") {
-      put(box, el("h2", {}, "This PC wasn't approved"), el("p", {}, "The invite was declined or has expired. Ask for a new invite."),
+      put(box, el("h2", {}, "This computer wasn't approved"), el("p", {}, "The invite was declined or has expired. Ask for a new invite."),
         el("button", { type: "button", class: "btn", onclick: async () => { await api.post("/api/room/leave", {}); if (location.hash !== "#/room") location.hash = "#/room"; else route(); } }, "Start again"));
       return;
     }
     if (r.stage === "waiting") put(box, el("h2", {}, icon("clock"), "Waiting for an executive"),
       el("p", {}, "Call the executive who approves new devices. Ask them to open Room › Members & access and press Check next to your name. Your safety words appear here then."));
     else put(box, el("h2", {}, "Your safety words"), el("div", { class: "words" }, r.words.map(w => el("span", {}, w))),
-      el("p", {}, "Read these three words to the executive on the call. If their screen shows the same three words in the same order, they approve this PC."),
+      el("p", {}, "Read these three words to the executive on the call. If their screen shows the same three words in the same order, they approve this computer."),
       el("p", { class: "muted small" }, "If the words are different, say so and stop: someone may be trying to get in between you."));
     setTimeout(tick, 2500);
   };
@@ -139,7 +139,7 @@ function roomTopbar() {
   put(menu, el("div", { class: "pm-h" }, "Your productions"),
     v.productions.map(p => el("button", { type: "button", role: "menuitem", "aria-pressed": String(p.id === v.production),
       onclick: () => { menu.hidden = true; location.hash = `#/room/${p.id}`; } },
-      el("span", { class: "pm-n" }, p.name, p.archived ? el("small", {}, " · archived") : null, p.here ? el("small", {}, " · on this PC") : null), el("span", { class: "pm-c" }, plural(p.members, "person", "people")))),
+      el("span", { class: "pm-n" }, p.name, p.archived ? el("small", {}, " · archived") : null, p.here ? el("small", {}, " · on this computer") : null), el("span", { class: "pm-c" }, plural(p.members, "person", "people")))),
     el("button", { type: "button", class: "pm-new", onclick: () => { menu.hidden = true; roomNewProduction(); } }, icon("plus"), "Start a production"),
     el("button", { type: "button", class: "pm-new", onclick: () => { menu.hidden = true; roomJoinAnother(); } }, icon("door"), "Join with an invite"));
   if (!RM.menuOff) {          /* one listener for the page: a click outside an open menu closes it */
@@ -148,7 +148,7 @@ function roomTopbar() {
     document.addEventListener("click", RM.menuOff);
   }
   put(crumbs, el("div", { class: "prod-wrap" }, btn, menu),
-    el("span", { class: "enc", title: "Messages, files and names are encrypted on this PC before they reach the Room's server." }, icon("lock"),
+    el("span", { class: "enc", title: "Messages, files and names are encrypted on this computer before they reach the Room's server." }, icon("lock"),
       v.live ? "Encrypted" : "Encrypted · reconnecting"));
 }
 
@@ -156,7 +156,7 @@ function roomDraw() {
   const v = RM.v;
   roomTopbar();
   if (!v.production) {
-    put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, "Start a production on this PC, or join one with an invite. Each production has its own people, spaces, board, files and call sheets."),
+    put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, "Start a production on this computer, or join one with an invite. Each production has its own people, spaces, board, files and call sheets."),
       el("div", { class: "row" }, el("button", { type: "button", class: "btn primary", onclick: roomNewProduction }, icon("plus"), "Start a production"),
         el("button", { type: "button", class: "btn", onclick: roomJoinAnother }, icon("door"), "Join with an invite")));
     return;
@@ -416,7 +416,7 @@ async function roomNewDM() {
 
 async function roomNewProduction() {
   const name = el("input", { type: "text", placeholder: "e.g. SHADE", "aria-label": "Production name", style: "width:100%" });
-  const ok = await modal({ icon: "reel", title: "Start a production", body: [el("p", { class: "muted small" }, "It lives on this PC, and the people you invite connect to it here. It starts with a Production office, Heads of department and Cast channel."), el("label", { class: "f" }, "Name", name)], actions: [["Cancel", false], ["Start", true, true]] });
+  const ok = await modal({ icon: "reel", title: "Start a production", body: [el("p", { class: "muted small" }, "It lives on this computer, and the people you invite connect to it here. It starts with a Production office, Heads of department and Cast channel."), el("label", { class: "f" }, "Name", name)], actions: [["Cancel", false], ["Start", true, true]] });
   if (!ok || !name.value.trim()) return;
   try { const r = await api.post("/api/room/productions", { name: name.value.trim() }); RM.prod = r.id; RM.space = "board"; location.hash = `#/room/${r.id}`; }
   catch (e) { toast("bad", "Couldn't create it", e.message); }
@@ -562,7 +562,7 @@ async function roomInvite(a) {
   try {
     const r = await api.post("/api/room/invite", { production: v.production, name: name.value.trim(), role: role.value.trim(), tier: tier.value, department: dept.value, second_ad: ad.checked });
     await modal({ icon: "check", title: "Send them this link", body: [el("div", { class: "invite-link" }, el("code", {}, r.link), copyBtn(r.link)),
-      `On a phone it opens the Room app; on a PC, they paste it into the Studio's Room page. It works once and expires in ${r.expires_in_days} days.`,
+      `On a phone it opens the Room app; on a computer, they paste it into the Studio's Room page. It works once and expires in ${r.expires_in_days} days.`,
       "Send it however you like (text, email). It isn't a secret on its own: nobody gets in until the safety words match."], actions: [["Done", true, true]] });
     roomAccess();
   } catch (e) { toast("bad", "Couldn't create the invite", e.message); }

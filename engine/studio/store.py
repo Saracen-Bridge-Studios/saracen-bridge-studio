@@ -1,4 +1,5 @@
-"""Per-user storage: settings and run history. Windows: %APPDATA%\\SaracenStudio."""
+"""Per-user storage: settings and run history. Windows: %APPDATA%\\SaracenStudio;
+Mac: ~/Library/Application Support/SaracenStudio."""
 from __future__ import annotations
 
 import json
@@ -25,10 +26,16 @@ DEFAULT_SETTINGS = {
 }
 
 
+def default_home(platform: str = sys.platform) -> str:
+    if platform == "win32":
+        return os.path.join(os.environ.get("APPDATA", ""), "SaracenStudio")
+    if platform == "darwin":
+        return os.path.join(Path.home(), "Library", "Application Support", "SaracenStudio")
+    return os.path.join(Path.home(), ".saracen-studio")
+
+
 def home() -> Path:
-    base = os.environ.get("STUDIO_HOME") or (
-        os.path.join(os.environ.get("APPDATA", ""), "SaracenStudio") if sys.platform == "win32"
-        else os.path.join(Path.home(), ".saracen-studio"))
+    base = os.environ.get("STUDIO_HOME") or default_home()
     p = Path(base)
     p.mkdir(parents=True, exist_ok=True)
     return p

@@ -1,5 +1,5 @@
 """Huddles and meetings on the Studio side (1.0.8): the encrypted meeting item (title, time, agenda and the media
-key) and the hub's LiveKit token. The media key goes only to this PC's own page, which does LiveKit's end-to-end
+key) and the hub's LiveKit token. The media key goes only to this computer's own page, which does LiveKit's end-to-end
 encryption; LiveKit never sees it."""
 from __future__ import annotations
 

@@ -38,7 +38,7 @@ written coverage, look book analysis, brand opportunity spotting, element taggin
 term-sheet reading and you (Jonny) use the AI engine. Each AI step reads the script scene by scene in the background \
 and shows its progress on the page; the user can keep working.
 - Coverage takes only the script file. It reads the script in parts ("Reading part 3 of 7"), then writes Jon's 11 \
-sections. On this PC that takes minutes per script. Quick answers straight away; Deep thinks first: slower, sometimes \
+sections. On this computer that takes minutes per script. Quick answers straight away; Deep thinks first: slower, sometimes \
 sharper. Coverage queue: Waiting, Writing, Done, Failed. A failed job shows why in plain words under its title, with \
 Details; Retry runs it again.
 - Never tell people to upload material a tool doesn't take; say what it does take (listed per tool below).

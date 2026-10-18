@@ -1,7 +1,7 @@
-"""This PC hosts the Room (1.1.0).
+"""This computer hosts the Room (1.1.0).
 
 Whoever starts a project hosts it: their Studio runs the Room's hub on their own PC, and everyone they invite connects
-to that PC. Jon's projects live on Jon's PC, Colin's on Colin's; a person in both sees them together in one Studio.
+to that computer. Jon's projects live on Jon's PC, Colin's on Colin's; a person in both sees them together in one Studio.
 Nobody types an address: the invite link carries it.
 
 The hub runs inside the Studio process on its own listener (port 8710, all network interfaces, so the team can reach
@@ -64,7 +64,7 @@ def enabled() -> bool:
 
 
 def lan_ip() -> str:
-    """This PC's address on the local network (no traffic is sent: a UDP socket just picks its route)."""
+    """This computer's address on the local network (no traffic is sent: a UDP socket just picks its route)."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         s.connect(("10.255.255.255", 1))
@@ -82,7 +82,7 @@ def address() -> str:
 
 
 def local() -> str:
-    """The address this PC's own Studio uses (never changes when the network does)."""
+    """The address this computer's own Studio uses (never changes when the network does)."""
     return f"http://127.0.0.1:{PORT}"
 
 
@@ -113,7 +113,7 @@ def _lk_up() -> bool:
 
 
 def _start_livekit(cfg: dict) -> dict | None:
-    """Start LiveKit for huddles and meetings (or reuse one this PC already started). None if it isn't bundled."""
+    """Start LiveKit for huddles and meetings (or reuse one this computer already started). None if it isn't bundled."""
     lk = {"url": f"http://127.0.0.1:{LK_PORT}", "public_url": "ws://{host}:%d" % LK_PORT,
           "key": cfg["lk_key"], "secret": cfg["lk_secret"]}
     if _lk_up():
@@ -149,7 +149,7 @@ def _start_livekit(cfg: dict) -> dict | None:
 
 # ------------------------------------------------------------------ the hub
 def start() -> dict:
-    """Run the hub on this PC (idempotent). Raises RoomError with a plain reason if it can't."""
+    """Run the hub on this computer (idempotent). Raises RoomError with a plain reason if it can't."""
     with _S["lock"]:
         if running():
             return status()
@@ -171,7 +171,7 @@ def start() -> dict:
                 break
             time.sleep(0.1)
         if not server.started:
-            _S["error"] = f"Port {PORT} on this PC is in use by another program, so the Room couldn't start."
+            _S["error"] = f"Port {PORT} on this computer is in use by another program, so the Room couldn't start."
             raise RoomError(_S["error"])
         retention.start(app.state.store)
         _S.update(server=server, thread=th, app=app, error="")
@@ -181,7 +181,7 @@ def start() -> dict:
 
 
 def founder_token() -> str | None:
-    """A one-time founder code for this PC's own hub, or None if it already has its founder."""
+    """A one-time founder code for this computer's own hub, or None if it already has its founder."""
     from room_hub.__main__ import founder_token as ft
     st = _S["app"].state.store
     if st.one("SELECT 1 FROM users WHERE founder=1"):
@@ -190,7 +190,7 @@ def founder_token() -> str | None:
 
 
 def autostart():
-    """On Studio start: if this PC hosts a Room, bring it up so the team can connect."""
+    """On Studio start: if this computer hosts a Room, bring it up so the team can connect."""
     if enabled():
         try:
             start()

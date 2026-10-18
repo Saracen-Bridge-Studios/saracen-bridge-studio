@@ -7,7 +7,7 @@ python-multipart>=0.0.9
 pypdf>=4
 pypdfium2>=4.30        # renders look book pages to images (BSD-3 / Apache-2.0)
 Pillow>=10              # page images for the vision model
-pywebview>=5; sys_platform == "win32" or sys_platform == "darwin"
+pywebview>=5; sys_platform == "win32"
 # The Room (1.0.8): end-to-end encryption (libsodium, ISC; PyNaCl Apache-2.0), the hub's live link, hub calls
 pynacl>=1.5
 websockets>=13
@@ -15,3 +15,4 @@ httpx>=0.27
 # Hosting a production on this PC (1.1.0): the hub's Web Push and meeting tokens
 cryptography>=42
 PyJWT>=2.8
+keyring>=25; sys_platform == "darwin"   # the Mac Keychain, for sealing saved keys (MIT)

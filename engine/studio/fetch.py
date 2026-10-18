@@ -15,6 +15,7 @@ import json
 import os
 import shutil
 import sys
+import tarfile
 import threading
 import time
 import urllib.error
@@ -26,10 +27,20 @@ from . import store
 
 # Official sources, sizes and SHA-256 (the same files and checks as the 1.0.1 installer; Hugging Face API and the
 # llama.cpp release page, 13 Oct 2026). Tests replace ITEMS with a local server.
+# The engine is per system: Windows (Vulkan, any GPU) and Mac (Apple Silicon, Metal), the same llama.cpp release.
+ENGINES: dict[str, dict] = {
+    "win32": {"label": "AI engine (llama.cpp)", "name": "llama-win.zip", "dir": "", "unzip": True, "size": 91287837,
+              "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11577/llama-b11577-bin-win-vulkan-x64.zip",
+              "sha256": "1d9a92d7bd92d41ace1ac21fb3ac2241a8175b932b9229b0d54e8bf625df8a81", "done_when": "llama-server.exe"},
+    # Mac (18 Oct 2026): a .tar.gz with one top folder, symlinked libraries and executable files; unpacked without
+    # the top folder, so llama-server sits where the Windows one does.
+    "darwin": {"label": "AI engine (llama.cpp)", "name": "llama-mac.tar.gz", "dir": "", "unzip": True, "size": 12112274,
+               "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11577/llama-b11577-bin-macos-arm64.tar.gz",
+               "sha256": "fa6526afe087293ac83709fe6529fa087e7070f606e30dd452173c16ccebed8c", "done_when": "llama-server",
+               "strip": "llama-b11577/"},
+}
 ITEMS: dict[str, dict] = {
-    "engine": {"label": "AI engine (llama.cpp)", "name": "llama-win.zip", "dir": "", "unzip": True, "size": 91287837,
-               "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11577/llama-b11577-bin-win-vulkan-x64.zip",
-               "sha256": "1d9a92d7bd92d41ace1ac21fb3ac2241a8175b932b9229b0d54e8bf625df8a81", "done_when": "llama-server.exe"},
+    "engine": ENGINES["darwin" if sys.platform == "darwin" else "win32"],
     "12b": {"label": "Gemma 4 12B", "name": "gemma-4-12b-it-qat-q4_0.gguf", "dir": "models", "size": 6975879296,
             "url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf",
             "sha256": "93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b"},
@@ -73,9 +84,10 @@ def _writable(d: Path) -> bool:
 
 def candidate_dirs() -> list[Path]:
     """STUDIO_LLM_DIR (tests, support) · <install folder>/llm (beside the program, per-user install) ·
-    <Studio data>/llm (when the install folder is read-only, e.g. Program Files)."""
+    <Studio data>/llm (when the install folder is read-only, e.g. Program Files; always on the Mac, where writing
+    into the app would break its signature)."""
     dirs = [Path(os.environ["STUDIO_LLM_DIR"])] if os.environ.get("STUDIO_LLM_DIR") else []
-    if getattr(sys, "frozen", False):
+    if getattr(sys, "frozen", False) and sys.platform != "darwin":   # never write inside a signed Mac app
         dirs.append(Path(sys.executable).resolve().parent / "llm")
     dirs.append(store.home() / "llm")
     return dirs
@@ -242,11 +254,30 @@ def _fetch(key: str, progress) -> None:
     final = part.with_name(it["name"])
     if it.get("unzip"):
         _update(state="unpacking", message=f"Unpacking {it['label']}")
-        with zipfile.ZipFile(part) as z:
-            z.extractall(part.parent)
+        unpack(part, part.parent, it.get("strip", ""))
         part.unlink()
     else:
         os.replace(part, final)
+
+
+def unpack(archive: Path, dest: Path, strip: str = "") -> None:
+    """A .zip (Windows engine) or .tar.gz (Mac engine, which keeps its symlinks and executable bits). `strip` drops
+    a leading folder, so the engine always lands directly in `dest`."""
+    if zipfile.is_zipfile(archive):
+        with zipfile.ZipFile(archive) as z:
+            z.extractall(dest)
+        return
+    with tarfile.open(archive) as t:
+        members = []
+        for m in t.getmembers():
+            if strip:
+                if not m.name.startswith(strip):
+                    continue
+                m.name = m.name[len(strip):]
+                if not m.name:
+                    continue
+            members.append(m)
+        t.extractall(dest, members=members, filter="data")    # refuses paths or links that leave dest
 
 
 def _why(e: Exception) -> str:

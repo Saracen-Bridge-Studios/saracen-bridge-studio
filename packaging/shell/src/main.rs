@@ -1,6 +1,7 @@
 //! Saracen Bridge Studio's window (0.4). The Python launcher starts the local engine, then runs this with
 //! `--url http://127.0.0.1:<port>/`. Closing the window ends this process; the launcher then stops the engine.
-//! Native title bar (keeps Windows 11 Snap Layouts), coloured to the house style through DWM.
+//! Native title bar (keeps Windows 11 Snap Layouts), coloured to the house style through DWM. On the Mac it runs as
+//! a small app inside the Studio's bundle (Contents/Helpers), with the dark title bar and Tauri's standard menus.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use tauri::{WebviewUrl, WebviewWindowBuilder};
@@ -34,7 +35,11 @@ fn open_outside(u: &url::Url) {
             .creation_flags(0x0800_0000) // CREATE_NO_WINDOW
             .spawn();
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open").arg(u.as_str()).spawn();
+    }
+    #[cfg(all(not(windows), not(target_os = "macos")))]
     {
         let _ = std::process::Command::new("xdg-open").arg(u.as_str()).spawn();
     }

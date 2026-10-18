@@ -29,6 +29,7 @@ from __future__ import annotations
 import atexit
 import json
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -233,7 +234,7 @@ def can_see(engine: "Engine | None") -> tuple[bool, str]:
             gguf = files[1]
         if projector_for(gguf):
             return True, ""
-        return False, ("Gemma's vision add-on is not installed yet. Settings › Gemma on this PC downloads it "
+        return False, ("Gemma's vision add-on is not installed yet. Settings › Gemma on this computer downloads it "
                        "(175 MB for Gemma 4 12B, 1.0 GB for E4B).")
     return True, ""
 
@@ -355,8 +356,31 @@ def _tie_to_studio(proc: subprocess.Popen) -> None:
         pass
 
 
+PIDFILE = "llm-server.pid"
+
+
+def _reap_stale() -> None:
+    """Mac (and Linux): stop an engine a Studio that crashed or was force-quit left running. Windows ties the
+    engine to the Studio with a job object and Linux with a parent-death signal; the Mac has neither, so the
+    engine's process id is kept in the data folder and checked on the next start."""
+    if sys.platform == "win32":
+        return
+    f = store.home() / PIDFILE
+    try:
+        pid = int(f.read_text().strip())
+    except (OSError, ValueError):
+        return
+    try:
+        name = subprocess.run(["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True, timeout=5).stdout
+        if "llama-server" in name:
+            os.kill(pid, signal.SIGTERM)
+    except (OSError, subprocess.SubprocessError):
+        pass
+    f.unlink(missing_ok=True)
+
+
 def _child_setup():
-    """POSIX only (runs in the child before exec): get SIGTERM if the Studio dies."""
+    """POSIX only (runs in the child before exec): get SIGTERM if the Studio dies (Linux; see _reap_stale for Mac)."""
     try:
         import ctypes
         import signal
@@ -409,6 +433,7 @@ class _Bundled:
         with socket.socket() as s:
             s.bind(("127.0.0.1", 0))
             port = s.getsockname()[1]
+        _reap_stale()
         log = open(store.home() / "llm-server.log", "ab")
         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         args = [str(exe), "-m", str(gguf), "--host", "127.0.0.1", "--port", str(port),
@@ -421,6 +446,11 @@ class _Bundled:
                                      stdout=log, stderr=log, creationflags=flags,
                                      preexec_fn=None if sys.platform == "win32" else _child_setup)
         _tie_to_studio(self.proc)
+        if sys.platform != "win32":
+            try:
+                (store.home() / PIDFILE).write_text(str(self.proc.pid))
+            except OSError:
+                pass
         self.url = f"http://127.0.0.1:{port}"
         deadline = time.time() + load_timeout
         while time.time() < deadline:
@@ -452,6 +482,8 @@ class _Bundled:
                 self.proc.wait(10)
             except subprocess.TimeoutExpired:
                 self.proc.kill()
+        if self.proc is not None and sys.platform != "win32":
+            (store.home() / PIDFILE).unlink(missing_ok=True)
         self.proc = None
 
 

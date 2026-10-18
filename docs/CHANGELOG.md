@@ -4,6 +4,14 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## Unreleased (planned as 1.2.0), the Mac version
+One codebase, two installers: the Windows Setup.exe as before, and a Mac disk image for Apple Silicon Macs (2020 on), built and tested on GitHub's Macs. Not yet built: waiting on the GitHub repository.
+- Added: the Mac app. Its own window (the same Tauri shell as Windows) carries the Dock icon and menus; settings and data live in ~/Library/Application Support/SaracenStudio; saved keys and the Room's device keys are sealed with a key kept in the Mac's Keychain (Windows keeps DPAPI). (S-91)
+- Added: the AI engine on the Mac is llama.cpp's Metal build (same release as Windows), downloaded by the Studio into its data folder, never into the app; an engine left running by a crash is stopped on the next start. (S-91)
+- Added: OCR for scanned scripts on the Mac uses Apple's built-in text recognition (Vision), answering in Tesseract's format; the call server is LiveKit 1.13.10 built from source for the Mac. (S-91)
+- Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
+- Changed: on-screen text says "this computer" instead of "this PC"; keyboard hints show ⌘ on a Mac; the Windows display tip shows only on Windows. (S-91)
+
 ## 1.1.0 (17 Oct 2026), whoever starts a production hosts it
 Setup `00530167`, 82.4 MB (the call server adds 14 MB). Delivered to Tim's Downloads; replaces 1.0.8, which shouldn't be installed. Numbered 1.1.0 by Tim for the size of the change (built as 1.0.8.1 first). Tested by a silent upgrade over 1.0.7 and the 36-check smoke on the installed app, including the Room it hosts: starting a production, the Room coming back by itself when the Studio restarts, and a phone joining over the host's address (safety words matched) and holding an encrypted huddle with the Studio through the bundled call server. 200 tests pass under Windows Python (3 skipped), 203 under Linux. Not yet run on Tim's PC.
 - Changed: no web address or founder code. **Start a production** runs the Room on this PC: the person who starts a production is its host and its executive, sends the invites, approves each device and sets everyone's access. Invite links carry the host PC's network address. (S-88)

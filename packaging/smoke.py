@@ -1,8 +1,10 @@
 """Smoke test a running Saracen Bridge Studio (packaged or not). Standard library only.
 
-    python packaging/smoke.py http://127.0.0.1:8798 [https://room.example.com]
+    python packaging/smoke.py http://127.0.0.1:8798 [https://room.example.com | --host]
 
-The optional second address is a Room hub (1.0.8) to health-check. Never point this at port 8799.
+The optional second address is a Room hub (1.0.8) to health-check. --host instead starts a production on the Studio
+under test (a throwaway data folder only: it becomes that production's host) and checks its hub, meetings server
+and a huddle (1.2, used by the Mac build). Never point this at port 8799.
 
 Checks every layer the installer must carry: UI, catalog, reference database, engine figures against Jon's
 workbooks, script intake for all three formats, and the agreement builder's bundled master.
@@ -160,6 +162,24 @@ check("1.0.8 voice: the mic picker finds the system default, follows it and asks
       all(s in mjs for s in (b"micLabel", b"enumerateDevices", b"devicechange", b"micConsent", b"noiseSuppression", b"echoCancellation",
                              b'"Microphone"', b'"automatic"')))
 HUB = (sys.argv[2] if len(sys.argv) > 2 else "").rstrip("/")
+if HUB == "--host":                                   # host a production here, then check what the team would reach
+    made = call("/api/room/host", {"name": "Smoke Test", "production": "SMOKE TEST"})
+    check("1.1.0 a production starts on this computer, which hosts it", bool(made.get("id")), made.get("id"))
+    HUB = "http://127.0.0.1:8710"
+    for _ in range(30):
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:7880/", timeout=2) as r:
+                lk_ok = r.read().strip() == b"OK"
+            break
+        except Exception:
+            lk_ok = False
+            time.sleep(1)
+    check("1.1.0 the meetings server runs beside the hub", lk_ok)
+    view = call(f"/api/room/view?production={made['id']}")
+    office = next(sp["id"] for sp in view["spaces"] if sp["name"] == "Production office")
+    hud = call("/api/room/huddle", {"space": office})
+    check("1.1.0 a huddle opens (the hub asks the meetings server for an encrypted call)",
+          bool(hud.get("token")) and bool(hud.get("url")), hud.get("url"))
 if HUB:                                               # a Room hub to check (the deploy kit's, or a test hub on the LAN)
     with urllib.request.urlopen(HUB + "/api/health", timeout=30) as r:
         hh = json.loads(r.read())

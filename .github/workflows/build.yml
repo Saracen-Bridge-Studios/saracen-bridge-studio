@@ -1,4 +1,13 @@
-name: build-installers
+# Saracen Bridge Studio for both systems. Every push to main (or a manual run) builds the Mac app on one of GitHub's
+# Apple Silicon Macs (tests, app, smoke test hosting a production, disk image) and runs the tests on real Windows.
+# The Windows installer itself is still built with packaging/build_windows_on_linux.sh.
+#
+# Mac signing turns on by itself once these repository secrets exist (Settings › Secrets and variables › Actions):
+#   MAC_CERT_P12 (base64 of the Developer ID Application certificate, .p12), MAC_CERT_PASSWORD,
+#   MAC_SIGN_IDENTITY ("Developer ID Application: <name> (<team id>)"),
+#   NOTARY_KEY_P8 (App Store Connect API key, the .p8 text), NOTARY_KEY_ID, NOTARY_ISSUER.
+name: Build
+
 on:
   push:
     branches: [main]
@@ -6,52 +15,74 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  mac:
+    name: Mac (Apple Silicon)
+    runs-on: macos-15
+    timeout-minutes: 90
+    env:
+      HAS_CERT: ${{ secrets.MAC_CERT_P12 != '' }}
+      HAS_NOTARY: ${{ secrets.NOTARY_KEY_P8 != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.x" }
-      - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -q
-
-  windows:
-    needs: test
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.x" }
-      - run: pip install -r requirements-dev.txt
-      - run: pyinstaller packaging/studio.spec --noconfirm
-      - name: Smoke test the packaged app
-        shell: pwsh
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.x"
+          cache: false
+      - name: A throwaway keychain (the Studio seals saved keys in the Keychain; no prompts on a build machine)
         run: |
-          $env:STUDIO_HOME = Join-Path $env:RUNNER_TEMP "studio_smoke"
-          $p = Start-Process dist\SaracenBridgeStudio\SaracenBridgeStudio.exe -ArgumentList "--headless","--port","8798" -PassThru
-          try { python packaging\smoke.py http://127.0.0.1:8798; if ($LASTEXITCODE -ne 0) { throw "Smoke test failed" } }
-          finally { Stop-Process $p -ErrorAction SilentlyContinue }
-      - run: choco install innosetup -y --no-progress
-      - name: Fetch and verify the WebView2 bootstrapper
-        shell: pwsh
+          security create-keychain -p ci build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci build.keychain
+          security set-keychain-settings build.keychain
+          security list-keychains -d user -s build.keychain $(security list-keychains -d user | tr -d '"')
+      - name: Developer ID certificate
+        if: env.HAS_CERT == 'true'
+        env:
+          MAC_CERT_P12: ${{ secrets.MAC_CERT_P12 }}
+          MAC_CERT_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
         run: |
-          $wv = "packaging\redist\MicrosoftEdgeWebview2Setup.exe"
-          if (-not (Test-Path $wv)) { Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile $wv }
-          $sig = Get-AuthenticodeSignature $wv
-          if ($sig.Status -ne "Valid" -or $sig.SignerCertificate.Subject -notmatch "Microsoft Corporation") { throw "WebView2 bootstrapper signature check failed" }
-      - run: iscc packaging\installer.iss
+          echo "$MAC_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k build.keychain -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k ci build.keychain
+          rm "$RUNNER_TEMP/cert.p12"
+      - name: Notary key
+        if: env.HAS_NOTARY == 'true'
+        env:
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          printf '%s\n' "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+          echo "NOTARY_KEY=$RUNNER_TEMP/notary.p8" >> "$GITHUB_ENV"
+      - name: Build, test, smoke test and package
+        env:
+          CI_KEYCHAIN: "1"
+          MAC_SIGN_IDENTITY: ${{ secrets.MAC_SIGN_IDENTITY }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+        run: bash packaging/build_mac.sh
       - uses: actions/upload-artifact@v4
-        with: { name: SaracenBridgeStudio-Windows, path: dist/installer/*.exe }
+        with:
+          name: SaracenBridgeStudio-mac
+          path: dist/installer/*.dmg
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mac-build-logs
+          path: |
+            build/mac/*.log
+          retention-days: 14
 
-  macos:
-    needs: test
-    runs-on: macos-latest
+  windows-tests:
+    name: Windows tests
+    runs-on: windows-2022
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "3.x" }
-      - run: pip install -r requirements-dev.txt
-      - run: pyinstaller packaging/studio.spec --noconfirm
-      - run: cd dist && zip -qry SaracenBridgeStudio-macOS.zip "Saracen Bridge Studio.app"
-      - uses: actions/upload-artifact@v4
-        with: { name: SaracenBridgeStudio-macOS, path: dist/SaracenBridgeStudio-macOS.zip }
+        with:
+          python-version: "3.13"
+      - run: python -m pip install -q -r requirements-dev.txt
+      - run: python -m pytest -q -p no:cacheprovider

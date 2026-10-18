@@ -186,7 +186,7 @@ function openPalette() {
     { group: "Go to", label: "Library", ic: "library", go: () => { location.hash = "#/library"; } },
     { group: "Go to", label: "Settings", ic: "settings", go: () => { location.hash = "#/settings"; } },
     { group: "Actions", label: "Write coverage for every script without it", ic: "sparkle", go: () => writeMissing() },
-    { group: "Actions", label: "Ask Jonny a question", ic: "chat", hint: "Ctrl J", go: () => askToggle(true) },
+    { group: "Actions", label: "Ask Jonny a question", ic: "chat", hint: navigator.platform.startsWith("Mac") ? "⌘ J" : "Ctrl J", go: () => askToggle(true) },
     { group: "Actions", label: "Test the AI engine", ic: "sparkle", go: () => testEngine() },
     { group: "Actions", label: "Add scripts to Script Coverage", ic: "upload", go: () => { location.hash = "#/tool/coverage"; } },
   ];
@@ -272,7 +272,7 @@ function jonBlink() {
 }
 function jonDock() {
   if (JON.dock) return JON.dock;
-  const dock = el("button", { type: "button", class: "jon jon-dock", "aria-label": "Ask Jonny (Ctrl J)", title: "Ask Jonny · Ctrl J", html: jonSvg(false), onclick: () => { jonHide(); askToggle(true); } });
+  const dock = el("button", { type: "button", class: "jon jon-dock", "aria-label": `Ask Jonny (${navigator.platform.startsWith("Mac") ? "Command J" : "Ctrl J"})`, title: `Ask Jonny · ${navigator.platform.startsWith("Mac") ? "⌘ J" : "Ctrl J"}`, html: jonSvg(false), onclick: () => { jonHide(); askToggle(true); } });
   document.body.append(dock);
   if (!CALM) {
     let raf = 0;
@@ -442,7 +442,7 @@ function askSuggestions() {
 function askEngineLine() {
   const c = AI.cloud || {};
   if (c.active && c.active.chat) return el("span", { class: "eng cloud" }, el("span", { class: "tag" }, "Cloud"), `${c.name} · ${c.model}`);
-  if (AI.connected) return el("span", { class: "eng", title: AI.description || "" }, el("span", { class: "dot ok" }), "Local compute · on this PC");
+  if (AI.connected) return el("span", { class: "eng", title: AI.description || "" }, el("span", { class: "dot ok" }), "Local compute · on this computer");
   return el("span", { class: "eng" }, el("span", { class: "dot warn" }), "No AI engine connected");
 }
 function askBuild() {
@@ -617,18 +617,18 @@ function buildNav(route) {
 const prettyModel = m => String(m || "").replace(/\.gguf$/i, "").replace(/[-_](it|instruct)([-_].*)?$/i, "").split(/[-_:\s]+/).filter(Boolean)
   .map((w, i) => /^\d+(\.\d+)?[bkm]$/i.test(w) || /^e\d+b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
 function engineChip() {
-  /* Tim, 13 Oct: no model names here. Local compute (this PC) or cloud compute (the user's own AI account), one click apart. */
+  /* Tim, 13 Oct: no model names here. Local compute (this computer) or cloud compute (the user's own AI account), one click apart. */
   const foot = document.getElementById("side-foot");
   const c = AI.cloud || {}, cloud = !!c.enabled;
   const dl = AI.download || {};
   const pct = dl.total_bytes ? Math.floor(100 * (dl.done_bytes || 0) / dl.total_bytes) : 0;
   const sub = cloud ? `${c.name || "Cloud"} · your own account` : dl.active ? `Downloading ${dl.model_name || "Gemma"} · ${pct}%`
-    : AI.connected ? "Runs on this PC" : dl.state === "paused" || dl.state === "waiting" ? `${dl.model_name || "Gemma"} download paused · ${pct}%`
+    : AI.connected ? "Runs on this computer" : dl.state === "paused" || dl.state === "waiting" ? `${dl.model_name || "Gemma"} download paused · ${pct}%`
     : dl.state === "error" ? "Gemma download stopped: see Settings" : "No local engine yet";
-  /* Tim, 13 Oct: "private" was said twice. One status light instead: green while everything stays on this PC,
+  /* Tim, 13 Oct: "private" was said twice. One status light instead: green while everything stays on this computer,
      red with the words gone dark while Cloud is on. */
-  const privacy = cloud ? `Cloud is on: questions and writing go to ${c.name || "your cloud AI"}. Switch to Local compute to keep everything on this PC.`
-    : "Private and offline: nothing leaves this PC.";
+  const privacy = cloud ? `Cloud is on: questions and writing go to ${c.name || "your cloud AI"}. Switch to Local compute to keep everything on this computer.`
+    : "Private and offline: nothing leaves this computer.";
   put(foot,
     el("div", { class: "compute", role: "group", "aria-label": "Where the AI runs" },
       el("button", { type: "button", "aria-pressed": String(!cloud), title: AI.connected ? AI.description : AI.reason, onclick: () => setCompute(false) },
@@ -655,14 +655,14 @@ async function setCompute(on) {
     await api.put("/api/cloud", { provider: c.provider, enabled: on });
     AI = await api.get("/api/ai/status");
     engineChip(); if (ASK.node) ASK.node.draw();
-    toast(on ? "ai" : "ok", on ? `Cloud compute on: ${AI.cloud.name}` : "Local compute", on ? "Answers are marked Cloud." : "Everything runs on this PC again.");
+    toast(on ? "ai" : "ok", on ? `Cloud compute on: ${AI.cloud.name}` : "Local compute", on ? "Answers are marked Cloud." : "Everything runs on this computer again.");
   } catch (e) { toast("bad", "Couldn't switch", e.message); }
 }
 let JOBS_ACTIVE = 0;
 function topbar(crumbs) {
   const bar = document.getElementById("topbar");
   put(bar, el("div", { class: "crumbs" }, crumbs.map((c, i) => [i ? el("span", { class: "sep" }, "/") : null, i === crumbs.length - 1 ? el("b", {}, c) : el("span", {}, c)])),
-    el("button", { type: "button", class: "search-trigger", onclick: openPalette, "aria-label": "Search (Ctrl K)" }, icon("search"), el("span", {}, "Search tools, scripts, actions"), el("kbd", {}, navigator.platform.startsWith("Mac") ? "⌘ K" : "Ctrl K")),
+    el("button", { type: "button", class: "search-trigger", onclick: openPalette, "aria-label": `Search (${navigator.platform.startsWith("Mac") ? "Command K" : "Ctrl K"})` }, icon("search"), el("span", {}, "Search tools, scripts, actions"), el("kbd", {}, navigator.platform.startsWith("Mac") ? "⌘ K" : "Ctrl K")),
     el("div", { class: "top-actions" },
       el("a", { class: "icon-btn", href: "#/tool/coverage", title: JOBS_ACTIVE ? `${plural(JOBS_ACTIVE, "job")} in the queue` : "Coverage queue", "aria-label": "Coverage queue" }, icon("reel"), JOBS_ACTIVE ? el("span", { class: "badge" }, JOBS_ACTIVE) : null),
       el("a", { class: "icon-btn", href: "#/library", title: "Library", "aria-label": "Library" }, icon("library")),
@@ -722,7 +722,7 @@ async function home() {
         el("div", {},
           el("div", { class: "eyebrow" }, "Saracen Bridge Studio", el("span", { class: "opt" }, `· ${today}`)),
           el("h1", {}, "What are you working ", el("em", {}, "on?")),
-          el("p", { class: "lede" }, "Every Saracen Bridge tool in one place. Run privately on this PC for the most security, or on Cloud for the most power: whatever goes to the cloud leaves this PC, and that always carries some risk."),
+          el("p", { class: "lede" }, "Every Saracen Bridge tool in one place. Run privately on this computer for the most security, or on Cloud for the most power: whatever goes to the cloud leaves this computer, and that always carries some risk."),
           el("div", { class: "mq-actions" },
             el("a", { class: "btn primary", href: "#/tool/coverage" }, icon("upload"), "Read a script"),
             el("button", { type: "button", class: "btn ghost", onclick: openPalette }, icon("search"), "Find anything", el("kbd", {}, navigator.platform.startsWith("Mac") ? "⌘ K" : "Ctrl K")),
@@ -2278,7 +2278,7 @@ function jonCard() {
       toast("ok", "First-visit tips reset", "Jonny will offer a walkthrough the next time you open each tool.");
     } }, "Show first-visit walkthroughs again"));
 }
-/* ---------------- Gemma on this PC: downloaded by the Studio itself (Tim, 13 Oct) ----------------
+/* ---------------- Gemma on this computer: downloaded by the Studio itself (Tim, 13 Oct) ----------------
    On Jon's PC the installer's download of the 6.1 GB model timed out and could only start again from zero. The Studio
    now fetches it in the background, carrying on from the last byte after a dropped connection, a closed Studio or a
    restart, and checks every file before it is used. */
@@ -2296,7 +2296,7 @@ function gemmaCard() {
     const name = d.model_name || "Gemma";
     const rec = d.memory_gb >= 15 ? "12b" : "e4b";
     const opt = m => d.options[m];
-    const head = el("h2", {}, icon("download"), "Gemma on this PC");
+    const head = el("h2", {}, icon("download"), "Gemma on this computer");
     const note = el("p", { class: "muted small", style: "margin-top:-4px" }, "Downloads in the background while you work, from Google's official source, and is checked before it is used. If the connection drops or the Studio closes, it carries on from where it stopped.");
     const bar = () => el("div", { class: "dl-track" + (d.active ? " live" : "") }, el("i", { style: `width:${pct}%` }));
     const nums = () => el("div", { class: "dl-nums" }, el("span", {}, `${gb(d.done_bytes || 0)} of ${gb(d.total_bytes || 0)}`),
@@ -2314,7 +2314,7 @@ function gemmaCard() {
       bodyEls = [have.length ? el("p", { class: "small", style: "margin:0 0 12px" }, icon("check"), ` ${have.map(m => opt(m).name).join(" and ")} installed and ready.`) : null,
         el("div", { class: "row", style: "gap:10px" }, ["12b", "e4b"].filter(m => !opt(m).installed).map(m => el("button", { type: "button", class: "btn sm" + (m === rec && !have.length ? " primary" : ""), onclick: () => go(m) },
           icon("download"), `${have.length ? "Also download" : "Download"} ${opt(m).name} · ${gb(opt(m).to_download)}`))),
-        !have.length ? el("p", { class: "muted small", style: "margin:10px 0 0" }, d.memory_gb ? `This PC has about ${d.memory_gb} GB of memory: ${rec === "12b" ? "Gemma 4 12B (best writing) suits it." : "Gemma 4 E4B (lighter) suits it; 12B wants about 16 GB."}` : "Gemma 4 12B writes best and wants about 16 GB of memory; E4B is lighter.") : null];
+        !have.length ? el("p", { class: "muted small", style: "margin:10px 0 0" }, d.memory_gb ? `This computer has about ${d.memory_gb} GB of memory: ${rec === "12b" ? "Gemma 4 12B (best writing) suits it." : "Gemma 4 E4B (lighter) suits it; 12B wants about 16 GB."}` : "Gemma 4 12B writes best and wants about 16 GB of memory; E4B is lighter.") : null];
     }
     put(box, head, note, ...bodyEls);
     if (AI.download ? (AI.download.state !== d.state || AI.download.done_bytes !== d.done_bytes) : true) { AI.download = d; engineChip(); }
@@ -2437,7 +2437,8 @@ function displayCard() {
   return el("div", { class: "card side-card", style: "margin-top:20px" }, el("h2", {}, icon("eye"), "Display"),
     el("p", { class: "muted small", style: "margin-top:-4px" }, "Text and layout scale together, as one, so letters keep their shape on any screen. Auto sizes the Studio to the window."),
     bar, now,
-    el("p", { class: "muted small", style: "margin:14px 0 0" }, "If letters look wide or squashed in every program, not just here, Windows is stretching a resolution the monitor wasn't made for. In Windows, open Settings › System › Display and pick the resolution marked (Recommended)."));
+    /Mac/.test(navigator.userAgent) ? null   /* the Mac picks the screen's own resolution; the note is about Windows */
+      : el("p", { class: "muted small", style: "margin:14px 0 0" }, "If letters look wide or squashed in every program, not just here, Windows is stretching a resolution the monitor wasn't made for. In Windows, open Settings › System › Display and pick the resolution marked (Recommended)."));
 }
 
 /* ---------------- boot ---------------- */

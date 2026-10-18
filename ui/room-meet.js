@@ -82,7 +82,7 @@ async function micConsent() {
   try { ok = localStorage.getItem("room-mic-ok") === "1"; } catch (e) { /* private window */ }
   if (ok) return true;
   const yes = await modal({ icon: "mic", title: "Use your microphone?", body: ["Huddles and meetings use your microphone. The Studio picks the system default automatically and follows it if you plug in another.",
-    "Next, Windows or the browser asks you once to allow it."], actions: [["Not now", false], ["Continue", true, true]] });
+    "Next, your computer or browser asks you once to allow it."], actions: [["Not now", false], ["Continue", true, true]] });
   if (yes) try { localStorage.setItem("room-mic-ok", "1"); } catch (e) { /* private window */ }
   return !!yes;
 }

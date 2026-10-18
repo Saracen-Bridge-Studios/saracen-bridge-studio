@@ -319,6 +319,8 @@ def launch(app_id: str):
         webbrowser.open(target)
     elif sys.platform == "win32":
         os.startfile(target)  # noqa: S606 - user-configured local program
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", target])          # an .app, or a program or file the user chose
     else:
         subprocess.Popen([target])
     return {"launched": target}
@@ -1003,7 +1005,7 @@ app.include_router(_room_router)
 
 @app.on_event("startup")
 def _room_host_autostart():
-    """If this PC hosts a Room (whoever starts a project hosts it), bring it up so the team can connect (1.1.0)."""
+    """If this computer hosts a Room (whoever starts a project hosts it), bring it up so the team can connect (1.1.0)."""
     from .room import host as _room_host
     threading.Thread(target=_room_host.autostart, daemon=True, name="room-host-start").start()
 

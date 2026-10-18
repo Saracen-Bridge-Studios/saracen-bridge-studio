@@ -1,4 +1,4 @@
-"""The Studio's Room service: one RoomClient for this PC, a live link to the hub, and the view the Room pages draw.
+"""The Studio's Room service: one RoomClient for this computer, a live link to the hub, and the view the Room pages draw.
 
 Everything here runs inside the local Studio server (127.0.0.1). The page never talks to the hub directly; it asks
 this service, which holds the keys and decrypts. The hub only ever sees ciphertext.
@@ -36,7 +36,7 @@ NOTE_STATUSES = ("Open", "Needs review", "Decision", "Done")
 
 _LOCK = threading.RLock()
 _CLIENT: RoomClient | None = None             # the Room the page is looking at now (the "active" one)
-_CLIENTS: dict[str, RoomClient] = {}          # every Room this PC is in: one per host (1.1.0), keyed by folder
+_CLIENTS: dict[str, RoomClient] = {}          # every Room this computer is in: one per host (1.1.0), keyed by folder
 _LIVE: dict = {"threads": {}, "stops": {}, "seq": 0, "error": "", "cond": threading.Condition()}
 HTTP_FACTORY = None                           # tests: hub address -> http client
 MEETINGS: dict[str, str] = {}                 # meeting id -> folder of the Room it belongs to
@@ -62,7 +62,7 @@ def _new_client(path: Path, hub: str | None) -> RoomClient:
 
 
 def _discover():
-    """Load every Room on this PC: the first one (1.0.8, in room/) and one folder per host since (room/hubs/<id>)."""
+    """Load every Room on this computer: the first one (1.0.8, in room/) and one folder per host since (room/hubs/<id>)."""
     roots = [folder()] + sorted((folder() / "hubs").glob("*")) if (folder() / "hubs").exists() else [folder()]
     for d in roots:
         if str(d) not in _CLIENTS and (d / "state.json").exists():
@@ -80,7 +80,7 @@ def clients(status: str | None = "approved") -> list[RoomClient]:
 
 
 def client(hub: str | None = None) -> RoomClient:
-    """The Room the page is on. With a hub address: the Room at that address (a new one if this PC isn't in it yet)."""
+    """The Room the page is on. With a hub address: the Room at that address (a new one if this computer isn't in it yet)."""
     global _CLIENT
     with _LOCK:
         _discover()
@@ -91,7 +91,7 @@ def client(hub: str | None = None) -> RoomClient:
                     return c
             legacy = folder()
             if not (legacy / "state.json").exists() and not any(Path(k) == legacy for k in _CLIENTS):
-                _CLIENT = _new_client(legacy, hub)            # this PC's first Room
+                _CLIENT = _new_client(legacy, hub)            # this computer's first Room
             else:
                 import hashlib
                 _CLIENT = _new_client(folder() / "hubs" / hashlib.sha1(_norm(hub).encode()).hexdigest()[:12], hub)
@@ -103,7 +103,7 @@ def client(hub: str | None = None) -> RoomClient:
 
 
 def own() -> RoomClient | None:
-    """The Room this PC hosts, if it hosts one and has founded it."""
+    """The Room this computer hosts, if it hosts one and has founded it."""
     from . import host
     for c in clients():
         if _norm(c.state.get("hub")) == _norm(host.local()):
@@ -120,7 +120,7 @@ def activate(c: RoomClient) -> RoomClient:
 
 def resolve(production: str | None = None, space: str | None = None, item: str | None = None,
             file: str | None = None, meeting: str | None = None) -> RoomClient:
-    """The Room that holds this production, space, item, file or meeting (this PC may be in several hosts' Rooms)."""
+    """The Room that holds this production, space, item, file or meeting (this computer may be in several hosts' Rooms)."""
     cs = clients()
     if len(cs) <= 1:
         return client()
@@ -155,7 +155,7 @@ def is_local(url: str) -> bool:
 
 # ------------------------------------------------------------------ live links to the hosts
 def start_live():
-    """One live link per Room this PC is in."""
+    """One live link per Room this computer is in."""
     for c in clients():
         if not c.state.get("hub"):
             continue

@@ -1,4 +1,5 @@
-"""Scanned scripts read by OCR (1.0.6). Needs Tesseract: the bundled Windows build (packaging/ocr), or one on PATH."""
+"""Scanned scripts read by OCR (1.0.6). Needs Tesseract (the bundled Windows build in packaging/ocr, or one on PATH) or,
+on the Mac, studio-ocr given by STUDIO_TESSERACT."""
 from pathlib import Path
 
 import pytest

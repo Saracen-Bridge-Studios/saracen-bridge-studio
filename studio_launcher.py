@@ -31,12 +31,16 @@ if sys.platform == "win32":      # never wait on a stuck WMI service (see packag
 
 
 def _open_log():
-    """The installed program always logs to %APPDATA%\\SaracenStudio\\studio.log, written before anything else
-    loads, so a start that stalls or is stopped early still leaves a trace (13 Oct: 0.3.3 left none on Tim's PC)."""
+    """The installed program always logs to studio.log in the Studio data folder (%APPDATA%\\SaracenStudio on
+    Windows, ~/Library/Application Support/SaracenStudio on the Mac), written before anything else loads, so a
+    start that stalls or is stopped early still leaves a trace (13 Oct: 0.3.3 left none on Tim's PC)."""
     if not getattr(sys, "frozen", False):
         return None, None
     try:
-        folder = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "SaracenStudio")
+        if sys.platform == "darwin":
+            folder = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "SaracenStudio")
+        else:
+            folder = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "SaracenStudio")
         os.makedirs(folder, exist_ok=True)
         path = os.path.join(folder, "studio.log")
         f = open(path, "a", encoding="utf-8", buffering=1)
@@ -84,13 +88,21 @@ def log(msg: str) -> None:
 
 
 def tell_user(msg: str) -> None:
-    """A message box on Windows, so a failure is never silent; the log gets the same text."""
+    """A message box (Windows) or alert (Mac), so a failure is never silent; the log gets the same text."""
     log(msg.replace("\n\n", " "))
     if sys.platform == "win32":
         try:
             import ctypes
             ctypes.windll.user32.MessageBoxW(None, msg, "Saracen Bridge Studio", 0x10 | 0x40000)  # error icon, on top
         except Exception:  # noqa: BLE001
+            pass
+    elif sys.platform == "darwin":
+        import subprocess
+        try:                                     # the text goes in as an argument, never into the script itself
+            subprocess.run(["osascript", "-e", "on run argv", "-e",
+                            'display alert "Saracen Bridge Studio" message (item 1 of argv) as critical',
+                            "-e", "end run", msg], timeout=600, capture_output=True)
+        except (OSError, subprocess.SubprocessError):
             pass
 
 
@@ -263,14 +275,20 @@ def open_app_window(url: str) -> bool:
 
 
 SHELL_NAME = "studio-window.exe" if sys.platform == "win32" else "studio-window"
+# On the Mac the window is its own small app inside the Studio's (Contents/Helpers), so it carries the Dock icon,
+# the menu bar and Cmd-Q, while the launcher stays in the background (LSUIElement; packaging/macos).
+MAC_WINDOW_APP = "Saracen Bridge Studio.app"
 
 
 def find_shell() -> str | None:
     """The Studio's own window (0.4, Tauri): beside the launcher when installed; STUDIO_SHELL for tests."""
     cands = [os.environ.get("STUDIO_SHELL", "")]
     if getattr(sys, "frozen", False):
-        cands.append(os.path.join(os.path.dirname(sys.executable), SHELL_NAME))
-    return next((c for c in cands if c and os.path.isfile(c)), None)
+        here = os.path.dirname(sys.executable)
+        if sys.platform == "darwin":
+            cands.append(os.path.join(here, "..", "Helpers", MAC_WINDOW_APP, "Contents", "MacOS", SHELL_NAME))
+        cands.append(os.path.join(here, SHELL_NAME))
+    return next((p for p in (os.path.normpath(c) for c in cands if c) if os.path.isfile(p)), None)
 
 
 def shell_window_until_closed(url: str, connect_seconds: float = PAGE_CONNECT_SECONDS) -> bool:
@@ -375,7 +393,7 @@ def _say_where(url: str) -> None:
 
 
 def browser_until_idle(url: str, idle_seconds: int = IDLE_SECONDS, first_contact_seconds: int = 600) -> None:
-    """Default browser, then wait. Used by --browser, on macOS/Linux, and after a native window fails."""
+    """Default browser, then wait. Used by --browser, on Linux, and after the Studio window fails."""
     if not _claim_browser():
         return
     log(f"Opening in the browser: {url}")
@@ -425,7 +443,8 @@ def main() -> None:
     ap.add_argument("--port", type=int, default=0)
     ap.add_argument("--browser", action="store_true", help="open in the default browser")
     ap.add_argument("--native", action="store_true", help="try the embedded WebView2 window (before 0.3.4, the default)")
-    ap.add_argument("--no-shell", action="store_true", help="skip the Studio window and use an Edge app window")
+    ap.add_argument("--no-shell", action="store_true",
+                    help="skip the Studio window and use an Edge app window (Windows) or the browser (Mac)")
     args = ap.parse_args()
     log(f"Starting Saracen Bridge Studio (process {os.getpid()}, {' '.join(sys.argv[1:]) or 'no options'})")
     port = args.port or free_port()
@@ -454,6 +473,9 @@ def main() -> None:
         elif sys.platform == "win32" and not args.native:
             if args.no_shell or not shell_window_until_closed(url):
                 app_window_until_idle(url)
+        elif sys.platform == "darwin" and not args.native:
+            if args.no_shell or not shell_window_until_closed(url):
+                browser_until_idle(url)
         else:
             use_window = not window_failed_before()
             if not use_window:
