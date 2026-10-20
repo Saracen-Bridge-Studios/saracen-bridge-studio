@@ -67,3 +67,12 @@ def test_a_studio_fault_says_what_it_is_and_what_to_do(client, monkeypatch):
 def test_jonny_knows_errors_are_the_studios_own():
     from studio import assist
     assert "never suggest waiting for traffic" in assist.RULES and "studio.log" in assist.RULES
+
+
+def test_reference_data_reads_from_many_threads_at_once():
+    """Tim's log, 20 Oct: the Sales warm-up thread and a page request shared one database connection and one failed."""
+    from concurrent.futures import ThreadPoolExecutor
+    from studio import refdata
+    with ThreadPoolExecutor(16) as pool:
+        got = list(pool.map(lambda _: refdata.fx_usd_per_unit("GBP"), range(400)))
+    assert len(set(got)) == 1 and got[0] > 1

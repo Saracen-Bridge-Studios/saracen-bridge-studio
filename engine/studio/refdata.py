@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import threading
 import sys
 from functools import lru_cache
 from pathlib import Path
@@ -18,10 +19,17 @@ def app_root() -> Path:
 DB_PATH = Path(os.environ.get("STUDIO_REFERENCE_DB", app_root() / "data" / "studio_reference.db"))
 
 
-@lru_cache(maxsize=1)
+_LOCAL = threading.local()
+
+
 def _conn() -> sqlite3.Connection:
-    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
+    """One read-only connection per thread. A single shared one (to 1.1.1) failed when two threads read at once:
+    Tim's log, 20 Oct, the Sales warm-up thread got "sqlite3.InterfaceError: bad parameter or other API misuse"."""
+    conn = getattr(_LOCAL, "conn", None)
+    if conn is None:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        _LOCAL.conn = conn
     return conn
 
 
