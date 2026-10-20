@@ -10,6 +10,12 @@ One codebase, two installers: the Windows Setup.exe as before, and a Mac disk im
 - Added: the AI engine on the Mac is llama.cpp's Metal build (same release as Windows), downloaded by the Studio into its data folder, never into the app; an engine left running by a crash is stopped on the next start. (S-91)
 - Added: OCR for scanned scripts on the Mac uses Apple's built-in text recognition (Vision), answering in Tesseract's format; the call server is LiveKit 1.13.10 built from source for the Mac. (S-91)
 - Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
+
+## 1.1.1 (20 Oct 2026), long titles and plain errors
+Setup `SETUPHASH`. Fixes what Tim hit on 20 Oct with "Where the Sparrows Fly". Built from the same code as the coming Mac version.
+- Fixed: a script with a long title couldn't be opened, re-dropped or queued for coverage ("Internal Server Error"). The Library cut long run ids short when looking them up; it now finds them exactly as saved, so the scripts already in Tim's Library open again with nothing lost. (S-92)
+- Fixed: a title page with no title in its text gave the registration line as the title ("Registered with the Writer's Guild of Great Britain."). Registration and guild lines are skipped, the search stops where the script starts (FADE IN), and the title comes from the file name, which now drops dates like "250926". Scripts already in the Library are re-read once on start and get their right titles. (S-93)
+- Fixed: a fault inside the Studio showed a bare "Internal Server Error", and Jonny took it for a busy web server and suggested waiting for the traffic to drop. Such faults now say they're the Studio's own, to try once more, and where the log is; Jonny knows everything runs on this computer. One unreadable script no longer stops the others being re-read on start. (S-94)
 - Changed: on-screen text says "this computer" instead of "this PC"; keyboard hints show ⌘ on a Mac; the Windows display tip shows only on Windows. (S-91)
 
 ## 1.1.0 (17 Oct 2026), whoever starts a production hosts it

@@ -23,7 +23,7 @@ TIMES = ("NIGHT", "DAY", "DAWN", "DUSK", "MORNING", "EVENING", "AFTERNOON", "CON
 
 
 # Bump when reading changes, so scripts already in the Library are read again (13 Oct: WEREWOLF, 133 scenes read as 1).
-PARSER_VERSION = 4                                        # 4: scanned PDFs read by OCR (1.0.6)
+PARSER_VERSION = 5                                        # 4: scanned PDFs read by OCR (1.0.6); 5: registration lines aren't titles (1.1.1)
 
 SCENE_NO = r"[A-Z]?\d{1,4}[A-Z]{0,3}"
 
@@ -202,7 +202,11 @@ def parse(filename: str, data: bytes) -> dict:
 CREDIT = re.compile(r"(?i)^(?:(?:written|created|directed|produced|screenplay|teleplay|story|adapted|developed)\b.*|"
                     r"b\s*y|.*\bb\s*y\s*$|based (?:on|upon)\b.*|an? .{0,30}(?:film|production|presentation)\b.*)$")
 NOT_TITLE = re.compile(r"(?i)\b(?:draft|final|edit|revis\w*|version|copyright|all rights|confidential|contact|"
+                       r"regist(?:ered|ration)|writers?'?s?'? guild|wga|wggb|"
                        r"www\.|@|page \d)\b|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|^\(?\d[\d .()+-]{6,}$|^\d+\.?$|©")
+
+
+SCRIPT_STARTS = re.compile(r"(?i)^(?:fade in|fade up|open on|cold open|black screen|over black)\b")   # page 1 of the script
 
 
 def _pick_title(lines: list[str]) -> str:
@@ -214,7 +218,7 @@ def _pick_title(lines: list[str]) -> str:
         t = re.sub(r"\s{2,}", " ", raw).strip()
         if not t:
             continue
-        if HEADING.match(_unnumber(t)) or HEADING.match(t):
+        if HEADING.match(_unnumber(t)) or HEADING.match(t) or SCRIPT_STARTS.match(t):
             break                                          # the script has started: no title page
         if CREDIT.match(t):
             after_credit = True
@@ -230,11 +234,14 @@ def _pick_title(lines: list[str]) -> str:
 
 def title_from_filename(stem: str) -> str:
     """'WEREWOLF Script 28-08-26' -> 'WEREWOLF'; 'Ultimate Feature - FINAL Sept 2026' -> 'Ultimate Feature';
-    'Known Associate - MF - 04.26.26 (1)' -> 'Known Associate - MF'. A title that is only a year ('1917') is kept."""
+    'Known Associate - MF - 04.26.26 (1)' -> 'Known Associate - MF'; 'Where the Sparrows Fly - Script - 250926' ->
+    'Where the Sparrows Fly'. A title that is only a year ('1917') is kept."""
     t = re.sub(r"\(\d{1,3}\)", " ", stem)                                         # browser copy markers "(1)"
     t = re.sub(r"\d{1,4}[-_.]\d{1,2}[-_.]\d{1,4}(?:[-_.]\d{1,3})?", " ", t).replace("_", " ")   # dates, "04-26-23-1"
     t = re.sub(r"(?i)\b(?:script|screenplay|shooting|draft|final|revised|rev\d*|v\d+(?:\.\d+)*|copy)\b", " ", t)
     t = re.sub(r"(?i)\b(?:jan|feb|mar|apr|may|jun|jul|aug|sept?|oct|nov|dec)[a-z]*\.?\s+(?:19|20)\d\d\b", " ", t)   # "Sept 2026"
+    t = re.sub(r"\b(?:\d{6}|\d{8})\b", " ", t)                                  # unseparated dates, "250926", "20260925"
+    t = re.sub(r"(?:\s*[-–—]\s*){2,}", " - ", t)                                   # "Fly - Script - 250926" left "Fly - - "
     tidy = lambda x: re.sub(r"(?:\s*[-–—_.,(]\s*)+$", "", re.sub(r"\s{2,}", " ", x).strip(" -–—_.,()")).strip()
     keep = tidy(t)
     t = tidy(re.sub(r"\b(?:19|20)\d\d\s*$", " ", keep))                             # a trailing year, unless that's the title

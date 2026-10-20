@@ -67,6 +67,14 @@ def _slug(s: str) -> str:
     return re.sub(r"[^A-Za-z0-9_-]+", "-", s).strip("-")[:60] or "run"
 
 
+def _id(s: str) -> str:
+    """A run id as a folder name, exactly as save_run made it. Ids are a 15-character time stamp plus a title of up to
+    60, so cutting them to 60 like a title (1.1.0) lost the end of every long one: Tim's "Where the Sparrows Fly",
+    20 Oct, read as "Registered with the Writer's Guild of Great Britain" and then couldn't be found ("Internal Server
+    Error"). Only the safe characters are kept, so an id can never point outside the runs folder."""
+    return re.sub(r"[^A-Za-z0-9_-]+", "-", s)[:120].strip("-") or "run"
+
+
 _LOCK = threading.Lock()
 
 
@@ -116,7 +124,7 @@ def _clean_titles(con: sqlite3.Connection):
             continue
         con.execute("UPDATE runs SET title = ? WHERE tool = ? AND id = ?", (new, tool, rid))
         con.execute("UPDATE jobs SET title = ? WHERE tool = ? AND run_id = ?", (new, tool, rid))
-        f = home() / "runs" / _slug(tool) / _slug(rid) / "run.json"
+        f = home() / "runs" / _slug(tool) / _id(rid) / "run.json"
         try:
             rec = json.loads(f.read_text(encoding="utf-8"))
             rec["title"] = new
@@ -190,7 +198,7 @@ def list_runs(tool: str | None = None, q: str = "", limit: int = 200, offset: in
 
 
 def get_run(tool: str, run_id: str) -> tuple[dict, Path]:
-    d = home() / "runs" / _slug(tool) / _slug(run_id)
+    d = home() / "runs" / _slug(tool) / _id(run_id)
     return json.loads((d / "run.json").read_text(encoding="utf-8")), d
 
 

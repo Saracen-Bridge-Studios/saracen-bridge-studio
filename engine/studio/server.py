@@ -22,11 +22,23 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 
 app = FastAPI(title="Saracen Bridge Studio", version=VERSION, docs_url=None, redoc_url=None)
+
+
+@app.exception_handler(Exception)
+async def _unexpected(request, exc: Exception):
+    """A fault in the Studio itself says so in plain words, instead of a bare "Internal Server Error" (Tim, 20 Oct:
+    Jonny read that as a busy web server and told him to wait for the traffic to drop). The traceback still goes to
+    studio.log."""
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=500, content={"detail": (
+        f"Something went wrong inside the Studio ({exc.__class__.__name__}). It isn't your file, the internet or your "
+        f"account: everything here runs on this computer. Try once more. If it happens again, send studio.log from "
+        f"the Studio's data folder ({store.home()}) to whoever looks after your Studio.")})
 
 
 # ---------- shell ----------
@@ -373,10 +385,14 @@ def refresh_library_once():
     def work():
         for tool in ("coverage", "schedule", "brand", "bfi"):
             try:
-                for r in store.list_runs(tool, limit=100000)["runs"]:
-                    fresh_breakdown(tool, r["id"])
+                runs = store.list_runs(tool, limit=100000)["runs"]
             except Exception:  # noqa: BLE001 - best effort; opening a run refreshes it anyway
-                pass
+                continue
+            for r in runs:
+                try:                                  # one unreadable run no longer stops the rest (1.1.1)
+                    fresh_breakdown(tool, r["id"])
+                except Exception:  # noqa: BLE001
+                    pass
     import threading
     threading.Thread(target=work, name="studio-reread", daemon=True).start()
 
@@ -552,12 +568,18 @@ def coverage_write(body: dict = Body(...)):
     engine, why = llm.resolve(settings, mode)
     if not engine:
         raise HTTPException(409, why)
-    queued = []
-    for rid in ids:
-        rec, _ = store.get_run(tool, rid)
+    queued, gone = [], 0
+    for rid in dict.fromkeys(ids):                    # the same script twice in one drop is queued once
+        try:
+            rec, _ = store.get_run(tool, rid)
+        except FileNotFoundError:
+            gone += 1
+            continue
         if "breakdown" not in rec.get("outputs", {}):
             continue
         queued.append(store.enqueue("coverage", tool, rid, rec["title"], {"mode": mode}))
+    if gone and not queued:
+        raise HTTPException(404, "That script is no longer in the Library. Drop it in again.")
     jobs.ensure_worker()
     return {"queued": len(queued), "jobs": queued, "engine": engine.describe(), "mode": mode}
 
