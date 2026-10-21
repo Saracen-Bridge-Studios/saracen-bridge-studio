@@ -12,7 +12,7 @@ One codebase, two installers: the Windows Setup.exe as before, and a Mac disk im
 - Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
 
 ## 1.1.2 (20 Oct 2026), genre and subgenre lists
-Setup `SETUPHASH`.
+Setup `ab419892`, 82.4 MB, in Tim's Downloads and posted in chat. Upgraded over 1.1.1 here: the 39-check smoke test passes (hosting and a huddle included), the Library keeps "Where the Sparrows Fly", and Sales Estimates serves the 18 genres. 215 tests pass under Windows Python, 222 under Linux.
 - Changed: in Sales Estimates, Genre and Subgenre are dropdowns from Tim's list: 18 genres, and under each its own subgenres (192 in all), so Subgenre offers only the chosen genre's. Comparable films take the same genres. A valuation saved before keeps what it had. Jon's engine uses the genre in its narrative only, so valuations don't change. The list's other classifications (audience, format, tone, themes, positioning) are stored with it, unused for now. (S-96)
 - Fixed: Sales Estimates read its reference database from two threads over one connection, and one read could fail ("bad parameter or other API misuse", Tim's log, 20 Oct). Each thread now has its own. (S-95)
 
