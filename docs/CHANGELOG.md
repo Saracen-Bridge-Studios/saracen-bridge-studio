@@ -11,6 +11,11 @@ One codebase, two installers: the Windows Setup.exe as before, and a Mac disk im
 - Added: OCR for scanned scripts on the Mac uses Apple's built-in text recognition (Vision), answering in Tesseract's format; the call server is LiveKit 1.13.10 built from source for the Mac. (S-91)
 - Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
 
+## 1.1.2 (20 Oct 2026), genre and subgenre lists
+Setup `SETUPHASH`.
+- Changed: in Sales Estimates, Genre and Subgenre are dropdowns from Tim's list: 18 genres, and under each its own subgenres (192 in all), so Subgenre offers only the chosen genre's. Comparable films take the same genres. A valuation saved before keeps what it had. Jon's engine uses the genre in its narrative only, so valuations don't change. The list's other classifications (audience, format, tone, themes, positioning) are stored with it, unused for now. (S-96)
+- Fixed: Sales Estimates read its reference database from two threads over one connection, and one read could fail ("bad parameter or other API misuse", Tim's log, 20 Oct). Each thread now has its own. (S-95)
+
 ## 1.1.1 (20 Oct 2026), long titles and plain errors
 Setup `d8d4ed3a`, 82.4 MB, delivered to Tim's Downloads. Tested as an upgrade over 1.1.0 with his broken Library entry recreated: it opens as "Where the Sparrows Fly", re-drops as already in the Library, and the 39-check smoke test passes, hosting a production and a huddle included. 213 tests pass under Windows Python, 220 under Linux. Fixes what Tim hit on 20 Oct with "Where the Sparrows Fly". Built from the same code as the coming Mac version.
 - Fixed: a script with a long title couldn't be opened, re-dropped or queued for coverage ("Internal Server Error"). The Library cut long run ids short when looking them up; it now finds them exactly as saved, so the scripts already in Tim's Library open again with nothing lost. (S-92)

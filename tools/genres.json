@@ -1,0 +1,382 @@
+{
+ "_about": "Tim's genre and subgenre list (20 Oct 2026). Genre and Subgenre in Sales Estimates are chosen from it; Jon's engine uses the genre as narrative only (PROXY_ASSUMPTIONS B7), so no calculation depends on it. The other classifications are kept separate, as the list asks; nothing uses them yet.",
+ "structure": "Primary genre -> Secondary genre -> Subgenre(s) -> Audience -> Format -> Tone -> Themes",
+ "genres": [
+  {
+   "genre": "Action",
+   "subgenres": [
+    "Action thriller",
+    "Martial arts",
+    "Military action",
+    "Spy action",
+    "Superhero",
+    "Vigilante",
+    "Revenge action",
+    "Buddy action",
+    "Survival action",
+    "Disaster action"
+   ]
+  },
+  {
+   "genre": "Adventure",
+   "subgenres": [
+    "Action adventure",
+    "Exploration",
+    "Treasure hunt",
+    "Quest",
+    "Expedition",
+    "Jungle adventure",
+    "Maritime adventure",
+    "Swashbuckler",
+    "Survival adventure"
+   ]
+  },
+  {
+   "genre": "Comedy",
+   "subgenres": [
+    "Romantic comedy",
+    "Action comedy",
+    "Buddy comedy",
+    "Screwball comedy",
+    "Slapstick",
+    "Farce",
+    "Black comedy",
+    "Satire",
+    "Parody",
+    "Workplace comedy",
+    "Teen comedy",
+    "Comedy of manners"
+   ]
+  },
+  {
+   "genre": "Crime",
+   "subgenres": [
+    "Gangster",
+    "Organised crime",
+    "Heist",
+    "Police procedural",
+    "Detective crime",
+    "True crime",
+    "Prison crime",
+    "Underworld drama",
+    "Crime thriller",
+    "Crime comedy"
+   ]
+  },
+  {
+   "genre": "Drama",
+   "subgenres": [
+    "Family drama",
+    "Relationship drama",
+    "Social drama",
+    "Psychological drama",
+    "Legal/courtroom drama",
+    "Political drama",
+    "Workplace drama",
+    "Medical drama",
+    "Domestic drama",
+    "Tragedy",
+    "Comedy drama"
+   ]
+  },
+  {
+   "genre": "Thriller",
+   "subgenres": [
+    "Psychological thriller",
+    "Crime thriller",
+    "Action thriller",
+    "Conspiracy thriller",
+    "Political thriller",
+    "Espionage thriller",
+    "Legal thriller",
+    "Financial thriller",
+    "Techno-thriller",
+    "Erotic thriller",
+    "Domestic thriller",
+    "Survival thriller"
+   ]
+  },
+  {
+   "genre": "Horror",
+   "subgenres": [
+    "Supernatural horror",
+    "Psychological horror",
+    "Slasher",
+    "Folk horror",
+    "Body horror",
+    "Cosmic horror",
+    "Gothic horror",
+    "Creature feature",
+    "Haunted house",
+    "Possession",
+    "Occult horror",
+    "Zombie",
+    "Vampire",
+    "Werewolf",
+    "Survival horror",
+    "Horror comedy"
+   ]
+  },
+  {
+   "genre": "Mystery",
+   "subgenres": [
+    "Whodunit",
+    "Detective mystery",
+    "Murder mystery",
+    "Locked-room mystery",
+    "Amateur-sleuth mystery",
+    "Cosy mystery",
+    "Historical mystery",
+    "Supernatural mystery",
+    "Mystery thriller"
+   ]
+  },
+  {
+   "genre": "Science fiction",
+   "subgenres": [
+    "Hard science fiction",
+    "Space opera",
+    "Space exploration",
+    "Alien invasion",
+    "First contact",
+    "Time travel",
+    "Artificial intelligence",
+    "Robotics",
+    "Cyberpunk",
+    "Dystopian",
+    "Post-apocalyptic",
+    "Alternate reality",
+    "Science-fiction thriller",
+    "Science-fiction horror"
+   ]
+  },
+  {
+   "genre": "Fantasy",
+   "subgenres": [
+    "High/epic fantasy",
+    "Low fantasy",
+    "Urban fantasy",
+    "Dark fantasy",
+    "Sword and sorcery",
+    "Fairy tale",
+    "Mythological fantasy",
+    "Supernatural fantasy",
+    "Portal fantasy",
+    "Romantic fantasy"
+   ]
+  },
+  {
+   "genre": "Romance",
+   "subgenres": [
+    "Romantic drama",
+    "Romantic comedy",
+    "Historical romance",
+    "Contemporary romance",
+    "Teen romance",
+    "Romantic fantasy",
+    "Paranormal romance",
+    "Romantic suspense",
+    "Tragic romance",
+    "Erotic romance"
+   ]
+  },
+  {
+   "genre": "Historical / Period",
+   "subgenres": [
+    "Historical drama",
+    "Historical epic",
+    "Period romance",
+    "Historical adventure",
+    "Historical mystery",
+    "Political history",
+    "Royal/court drama",
+    "Alternate history"
+   ]
+  },
+  {
+   "genre": "War",
+   "subgenres": [
+    "Combat film",
+    "Anti-war drama",
+    "Military drama",
+    "Prisoner-of-war film",
+    "Resistance film",
+    "Wartime espionage",
+    "Home-front drama",
+    "Naval warfare",
+    "Aerial warfare",
+    "War epic"
+   ]
+  },
+  {
+   "genre": "Western",
+   "subgenres": [
+    "Classical western",
+    "Revisionist western",
+    "Spaghetti western",
+    "Contemporary/neo-western",
+    "Frontier drama",
+    "Outlaw western",
+    "Western comedy",
+    "Western horror",
+    "Acid western"
+   ]
+  },
+  {
+   "genre": "Musical",
+   "subgenres": [
+    "Original musical",
+    "Stage adaptation",
+    "Jukebox musical",
+    "Backstage musical",
+    "Romantic musical",
+    "Musical comedy",
+    "Musical drama",
+    "Rock opera",
+    "Animated musical"
+   ]
+  },
+  {
+   "genre": "Sports",
+   "subgenres": [
+    "Sports drama",
+    "Sports comedy",
+    "Sports biopic",
+    "Underdog sports story",
+    "Team sports",
+    "Individual sports",
+    "Combat sports",
+    "Motorsport",
+    "Extreme sports"
+   ]
+  },
+  {
+   "genre": "Biographical / Biopic",
+   "subgenres": [
+    "Artist biopic",
+    "Musician biopic",
+    "Political biopic",
+    "Historical biopic",
+    "Sports biopic",
+    "Business/entrepreneur biopic",
+    "Scientific biopic",
+    "Criminal biopic"
+   ]
+  },
+  {
+   "genre": "Documentary",
+   "subgenres": [
+    "Observational",
+    "Investigative",
+    "Historical",
+    "Biographical",
+    "True crime",
+    "Political",
+    "Social issue",
+    "Nature/wildlife",
+    "Environmental",
+    "Science",
+    "Sports",
+    "Music",
+    "Travel",
+    "Essay film",
+    "Participatory",
+    "Archival"
+   ]
+  }
+ ],
+ "classifications": [
+  {
+   "classification": "Audience",
+   "tags": [
+    "Children",
+    "Family",
+    "Teen",
+    "Young adult",
+    "Adult",
+    "Broad audience"
+   ]
+  },
+  {
+   "classification": "Production format",
+   "tags": [
+    "Live action",
+    "Animation",
+    "Live-action/animation hybrid"
+   ]
+  },
+  {
+   "classification": "Animation technique",
+   "tags": [
+    "2D",
+    "3D/CGI",
+    "Stop motion",
+    "Rotoscope",
+    "Mixed media"
+   ]
+  },
+  {
+   "classification": "Length / release form",
+   "tags": [
+    "Feature",
+    "Short",
+    "Anthology",
+    "Serial"
+   ]
+  },
+  {
+   "classification": "Style / storytelling approach",
+   "tags": [
+    "Film noir",
+    "Neo-noir",
+    "Mockumentary",
+    "Found footage",
+    "Docudrama",
+    "Experimental",
+    "Surrealist",
+    "Magical realism"
+   ]
+  },
+  {
+   "classification": "Tone",
+   "tags": [
+    "Light-hearted",
+    "Feel-good",
+    "Uplifting",
+    "Dark",
+    "Gritty",
+    "Bleak",
+    "Suspenseful",
+    "Disturbing",
+    "Whimsical",
+    "Absurdist"
+   ]
+  },
+  {
+   "classification": "Themes / subject matter",
+   "tags": [
+    "Coming of age",
+    "Faith/religion",
+    "LGBTQ+",
+    "Identity",
+    "Friendship",
+    "Grief",
+    "Addiction",
+    "Redemption",
+    "Revenge",
+    "Social justice",
+    "Christmas/holiday"
+   ]
+  },
+  {
+   "classification": "Commercial positioning",
+   "tags": [
+    "Mainstream",
+    "Independent",
+    "Arthouse",
+    "Crossover",
+    "Specialist/niche"
+   ]
+  }
+ ]
+}

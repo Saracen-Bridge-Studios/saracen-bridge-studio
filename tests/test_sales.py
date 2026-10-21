@@ -149,3 +149,21 @@ def test_golden_file_is_what_libreoffice_calculates(tmp_path):
     for i, g in enumerate(GOLD["territories"]):
         for k, col in zip(COLS, "IJKNOPR"):
             assert same(g[k], lo[f"{col}{15 + i}"].value), (g["territory"], k)
+
+
+def test_genre_and_subgenre_come_from_tims_list(tmp_path, monkeypatch):
+    """20 Oct (1.1.2): Genre and Subgenre are dropdowns from Tim's list. Jon's engine uses the genre in its narrative
+    only, so a genre outside his own twelve values the same and writes through to the workbook."""
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path))
+    from studio.server import app
+    c = TestClient(app)
+    g = {x["genre"]: x["subgenres"] for x in c.get("/api/tools/sales/engine/options").json()["genres"]}
+    assert len(g) == 18 and "Folk horror" in g["Horror"] and "Heist" in g["Crime"] and "Spaghetti western" in g["Western"]
+    assert all(len(v) >= 8 for v in g.values())
+    base = c.post("/api/tools/sales/value", json={"project": SAMPLE}).json()
+    tagged = dict(SAMPLE, intake=dict(SAMPLE["intake"], genre="Horror", subgenre="Folk horror"))
+    r = c.post("/api/tools/sales/value", json={"project": tagged}).json()
+    assert same(r["summary"]["ask"], base["summary"]["ask"])
+    x = c.get(f"/api/runs/sales/{r['run_id']}/engine.xlsx")
+    wb = openpyxl.load_workbook(__import__("io").BytesIO(x.content))
+    assert wb["PROJECT_INTAKE"]["B7"].value == "Horror" and wb["PROJECT_INTAKE"]["B8"].value == "Folk horror"

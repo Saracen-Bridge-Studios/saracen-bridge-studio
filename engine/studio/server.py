@@ -22,9 +22,10 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
+GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
 
 app = FastAPI(title="Saracen Bridge Studio", version=VERSION, docs_url=None, redoc_url=None)
 
@@ -882,7 +883,8 @@ def sales_options():
     return {"lists": lists, "intake": [{"key": k, "label": label, "required": k not in sales.OPTIONAL, "numeric": k in sales.NUMERIC}
                                        for k, _, label in sales.INTAKE],
             "attachment": sales.ATTACHMENT, "package_factors": [{"key": k, "label": label} for k, _, label in sales.PACKAGE_FACTORS],
-            "selection_factors": sales.SELECTION_FACTORS, "fx": sales.fx_rates(), "territories": lists["territories"]}
+            "selection_factors": sales.SELECTION_FACTORS, "fx": sales.fx_rates(), "territories": lists["territories"],
+            "genres": GENRES["genres"]}
 
 
 @app.get("/api/tools/sales/engine/prefill")

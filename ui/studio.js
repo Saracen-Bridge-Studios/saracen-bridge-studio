@@ -1488,7 +1488,8 @@ function editTable(cols, data, { addLabel, newRow, empty } = {}) {
   const opts = c => typeof c.options === "function" ? c.options() : c.options;
   const cell = (rec, c) => {
     const v = rec[c.key] ?? "";
-    const fillOpts = (n, cur) => put(n, ["", ...opts(c)].map(o => el("option", { value: o, selected: String(o) === String(cur) }, o || "—")));
+    const fillOpts = (n, cur) => { const list = opts(c), keep = cur !== "" && cur != null && !list.map(String).includes(String(cur));   // a saved value outside the list stays visible
+      return put(n, ["", ...list, ...(keep ? [cur] : [])].map(o => el("option", { value: o, selected: String(o) === String(cur) }, o || "—"))); };
     const n = c.type === "select" ? fillOpts(el("select", { "aria-label": c.label }), v)
       : el("input", { type: c.type === "number" ? "number" : c.type === "date" ? "date" : "text", value: v, step: "any", placeholder: c.ph || "", "aria-label": c.label, list: c.list || null, style: `width:${c.width || 120}px` });
     n.addEventListener("change", () => { rec[c.key] = n.value === "" ? null : (c.type === "number" ? Number(n.value) : n.value); });
@@ -1548,7 +1549,27 @@ async function valuationPanel(box) {
   const from = el("select", { "aria-label": "Start from a script" }, el("option", { value: "" }, "Start from a script in the Library…"), scripts.map(r => el("option", { value: `${r.tool}/${r.id}` }, `${r.title} · ${(toolById(r.tool) || {}).name || r.tool}`)));
   const form = el("div", {}), out = el("div", { style: "margin-top:22px" });
   const sel = (key, opts) => ({ key, type: "select", options: opts });
-  const fieldKind = { genre: sel("genre", L.genre_profile || []), rating: sel("rating", L.rating || []), release_model: sel("release_model", L.release_model || []),
+  /* Tim's genre list (20 Oct, 1.1.2): Genre, then the Subgenres of that genre. A value saved before keeps its place
+     in the list, so an older valuation shows what it had. Jon's engine uses the genre in its narrative only. */
+  const GENRES = SALES_OPTS.genres || [], GENRE_NAMES = GENRES.map(g => g.genre);
+  const subsOf = g => (GENRES.find(x => x.genre === g) || {}).subgenres || [];
+  const withCurrent = (opts, v) => v && !opts.includes(v) ? [...opts, v] : opts;
+  const genrePair = () => {
+    const sub = el("select", { "aria-label": "Subgenre" });
+    const fillSub = () => put(sub, ["", ...withCurrent(subsOf(P.intake.genre), P.intake.subgenre)].map(o =>
+      el("option", { value: o, selected: o === (P.intake.subgenre || "") }, o || (P.intake.genre ? "—" : "Choose a genre first"))));
+    const genre = el("select", { "aria-label": "Genre" }, ["", ...withCurrent(GENRE_NAMES, P.intake.genre)].map(o =>
+      el("option", { value: o, selected: o === (P.intake.genre || "") }, o || "—")));
+    genre.addEventListener("change", () => {
+      P.intake.genre = genre.value || null;
+      if (P.intake.subgenre && !subsOf(P.intake.genre).includes(P.intake.subgenre)) P.intake.subgenre = null;
+      fillSub();
+    });
+    sub.addEventListener("change", () => { P.intake.subgenre = sub.value || null; });
+    fillSub();
+    return { genre, subgenre: sub };
+  };
+  const fieldKind = { rating: sel("rating", L.rating || []), release_model: sel("release_model", L.release_model || []),
     production_status: sel("production_status", L.production_status || []), budget_currency: sel("budget_currency", L.currencies || []),
     director_attachment: sel("director_attachment", SALES_OPTS.attachment), cast_attachment: sel("cast_attachment", SALES_OPTS.attachment), delivery_date: { type: "date" } };
   const input = (obj, key, kind = {}, w) => {
@@ -1574,10 +1595,11 @@ async function valuationPanel(box) {
     const films = () => P.films.map(f => f.id).filter(Boolean);
     P.rights = Object.fromEntries(T.map(t => [t, P.rights[t] || {}]));
     const rightsRows = T.map(t => Object.assign(P.rights[t], { territory: t }));
+    const gp = genrePair();
     put(form,
       section("Project", "Jon's 27 intake fields; the more you give, the better the package factors", el("div", { class: "row", style: "align-items:flex-end" },
         SALES_OPTS.intake.map(f => el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
-          f.label + (f.required ? "" : " (optional)"), input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {}))))), true),
+          f.label + (f.required ? "" : " (optional)"), gp[f.key] || input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {}))))), true),
       section("Package", "cast and director from Jon's databases, with attachment status", [actorsDL.dl, dirDL.dl,
         pkgMissing() ? el("div", { class: "notice", style: "margin-bottom:14px" }, el("div", { class: "ic" }, icon("users")),
           el("div", { class: "grow" }, el("div", {}, `${plural(pkgMissing(), "name")} attached on the Actors and Directors tabs ${pkgMissing() === 1 ? "isn't" : "aren't"} in this valuation yet`)),
@@ -1593,7 +1615,7 @@ async function valuationPanel(box) {
           el("label", { class: "f", style: "flex:1 1 320px" }, "Basis for the anchor", input(P.anchor, "note"))),
         el("p", { class: "muted small" }, "Expected Close before package and market adjustments, from documented public comparables. Jon's engine allocates it by his territory weights at grade D, and only where no deal or proxy evidence exists."),
         el("h2", { style: "margin-top:18px" }, "Comparable films"), editTable([{ key: "id", label: "ID", width: 60 }, { key: "title", label: "Title", width: 200 }, { key: "year", label: "Year", type: "number", width: 80 },
-          { key: "genre", label: "Genre", type: "select", options: L.genre_profile || [] }, { key: "source", label: "Source", width: 160 }], P.films, { addLabel: "Add a film", newRow: d => ({ id: nextId(d, "F") }) }),
+          { key: "genre", label: "Genre", type: "select", options: GENRE_NAMES.length ? GENRE_NAMES : L.genre_profile || [] }, { key: "source", label: "Source", width: 160 }], P.films, { addLabel: "Add a film", newRow: d => ({ id: nextId(d, "F") }) }),
         el("h2", { style: "margin-top:18px" }, "Deals (verified transactions)"), editTable([{ key: "id", label: "ID", width: 60 }, { key: "film_id", label: "Film", type: "select", options: films },
           { key: "territory", label: "Territory", type: "select", options: T }, { key: "date", label: "Date", type: "date" }, { key: "stage", label: "Stage", type: "select", options: L.deal_stage || [] },
           { key: "buyer", label: "Buyer", width: 120 }, { key: "package", label: "Rights", type: "select", options: L.rights_package || [] }, { key: "term", label: "Term (yrs)", type: "number", width: 70 },
