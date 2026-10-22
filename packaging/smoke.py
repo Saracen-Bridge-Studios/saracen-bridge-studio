@@ -62,7 +62,7 @@ h = call("/api/health")
 check("health", h.get("ok") is True, h.get("version"))
 check("ui served", b"Saracen Bridge Studio" in call("/", raw=True) and len(call("/ui/studio.js", raw=True)) > 10_000)
 ids = [t["id"] for t in call("/api/catalog")["tools"]]
-check("catalog has 12 tools incl. A.I.D.E.N. and F.R.A.T.", len(ids) == 12 and "aiden" in ids and "frat" in ids, ",".join(ids))
+check("catalog has 13 tools incl. Sales Agents, A.I.D.E.N. and F.R.A.T.", len(ids) == 13 and {"agents", "aiden", "frat"} <= set(ids), ",".join(ids))
 check("reference database", len(call("/api/tools/incentives/programmes")) == 69)
 
 ex = call("/api/tools/finance/example")
