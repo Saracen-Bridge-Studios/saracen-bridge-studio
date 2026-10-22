@@ -11,6 +11,12 @@ One codebase, two installers: the Windows Setup.exe as before, and a Mac disk im
 - Added: OCR for scanned scripts on the Mac uses Apple's built-in text recognition (Vision), answering in Tesseract's format; the call server is LiveKit 1.13.10 built from source for the Mac. (S-91)
 - Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
 
+## 1.1.3 (22 Oct 2026), Tim's Sales Estimates intake
+Setup `SETUPHASH`.
+- Changed (Tim, 22 Oct): Sales Estimates' project form. Feature or Episodic comes first (Episodic asks for the number of episodes and the episode length). Release model offers Theatrical-led, VOD, TVOD, Direct to streaming and Direct to TV for a feature, and Direct to streaming or Direct to TV for episodic. Script status is Development or Final; Sales stage is Package estimate, Pre-sale, In production, Rough cut or Completed film; Festival strategy is ticked from 20 major festivals, with a line for anything else. Tone and Co-production status are gone, and Jon's workbook counts them as optional so the intake can still be complete. (S-97)
+- Added: choosing a script to start from fills the logline and synopsis from its coverage (the same script's coverage under any tool); without coverage it says to write it first. (S-97)
+- None of this changes the figures: Jon's engine uses these fields for narrative and completeness only (checked against every formula in his workbook; tested).
+
 ## 1.1.2 (20 Oct 2026), genre and subgenre lists
 Setup `ab419892`, 82.4 MB, in Tim's Downloads and posted in chat. Upgraded over 1.1.1 here: the 39-check smoke test passes (hosting and a huddle included), the Library keeps "Where the Sparrows Fly", and Sales Estimates serves the 18 genres. 215 tests pass under Windows Python, 222 under Linux.
 - Changed: in Sales Estimates, Genre and Subgenre are dropdowns from Tim's list: 18 genres, and under each its own subgenres (192 in all), so Subgenre offers only the chosen genre's. Comparable films take the same genres. A valuation saved before keeps what it had. Jon's engine uses the genre in its narrative only, so valuations don't change. The list's other classifications (audience, format, tone, themes, positioning) are stored with it, unused for now. (S-96)

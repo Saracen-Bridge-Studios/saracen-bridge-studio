@@ -122,7 +122,7 @@ def test_api_values_saves_and_exports_the_filled_workbook(tmp_path, monkeypatch)
     from studio.server import app
     c = TestClient(app)
     opts = c.get("/api/tools/sales/engine/options").json()
-    assert len(opts["territories"]) == 33 and len(opts["intake"]) == 29 and "Pay-or-play" in opts["attachment"]
+    assert len(opts["territories"]) == 33 and len(opts["intake"]) == 27 and "Pay-or-play" in opts["attachment"]
     r = c.post("/api/tools/sales/value", json={"project": SAMPLE}).json()
     assert r["title"] == "Night Ferry" and same(r["summary"]["ask"], GOLD["summary"]["ask"])
     again = c.post("/api/tools/sales/value", json={"run_id": r["run_id"], "project": SAMPLE}).json()
@@ -167,3 +167,44 @@ def test_genre_and_subgenre_come_from_tims_list(tmp_path, monkeypatch):
     x = c.get(f"/api/runs/sales/{r['run_id']}/engine.xlsx")
     wb = openpyxl.load_workbook(__import__("io").BytesIO(x.content))
     assert wb["PROJECT_INTAKE"]["B7"].value == "Horror" and wb["PROJECT_INTAKE"]["B8"].value == "Folk horror"
+
+
+def test_tims_intake_changes_22_oct(tmp_path, monkeypatch):
+    """1.1.3: Tone and Co-production gone (and not counted as missing), Tim's dropdown choices, festivals ticked from a
+    list, Feature or Episodic. None of it changes the figures: Jon's engine uses these fields for narrative only."""
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path))
+    from studio.server import app
+    c = TestClient(app)
+    o = c.get("/api/tools/sales/engine/options").json()
+    keys = [f["key"] for f in o["intake"]]
+    assert "tone" not in keys and "coproduction" not in keys and "subgenre" in keys
+    ch = o["choices"]
+    assert ch["script_status"] == ["Development", "Final"] and "Completed film" in ch["sales_stage"]
+    assert ch["release_model"]["Episodic"] == ["Direct to streaming", "Direct to TV"] and "TVOD" in ch["release_model"]["Feature"]
+    assert {"Cannes", "Venice", "Berlinale", "Sundance", "Toronto (TIFF)"} <= set(ch["festivals"])
+    base = c.post("/api/tools/sales/value", json={"project": SAMPLE}).json()
+    intake = {k: v for k, v in SAMPLE["intake"].items() if k not in ("tone", "coproduction")}
+    intake.update(script_status="Final", sales_stage="Pre-sale", format="Episodic", episodes=8, runtime=45,
+                  release_model="Direct to streaming", festival={"festivals": ["Cannes", "Toronto (TIFF)"], "note": "Market screening at AFM"})
+    r = c.post("/api/tools/sales/value", json={"project": dict(SAMPLE, intake=intake)}).json()
+    assert same(r["summary"]["ask"], base["summary"]["ask"])
+    wb = openpyxl.load_workbook(__import__("io").BytesIO(c.get(f"/api/runs/sales/{r['run_id']}/engine.xlsx").content))
+    ws = wb["PROJECT_INTAKE"]
+    assert ws["B28"].value == "Cannes; Toronto (TIFF); Market screening at AFM" and ws["B27"].value == "Direct to streaming"
+    assert ws["C9"].value == "Optional" and ws["C16"].value == "Optional" and ws["B33"].value.startswith("Episodic, 8 episodes")
+    assert r["summary"]["intake_completeness"] >= base["summary"]["intake_completeness"]
+
+
+def test_logline_and_synopsis_come_from_the_scripts_coverage(tmp_path, monkeypatch):
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path))
+    from studio import store
+    from studio.server import app
+    c = TestClient(app)
+    cov = {"sections": {"story": {"logline": "A lighthouse keeper hears a voice in the storm.", "synopsis": ["Part one.", "Part two."]}}}
+    rec = store.save_run("coverage", "The Lighthouse Keeper", {"file": "k.pdf", "sha256": "abc"}, {"breakdown": {}, "coverage": cov})
+    sched = store.save_run("schedule", "The Lighthouse Keeper", {"file": "k.pdf", "sha256": "abc"}, {"breakdown": {}})
+    for tool, rid in (("coverage", rec["id"]), ("schedule", sched["id"])):      # the schedule copy finds the same file's coverage
+        pre = c.get(f"/api/tools/sales/engine/prefill?tool={tool}&run_id={rid}").json()
+        assert pre["logline"] == "A lighthouse keeper hears a voice in the storm.\n\nPart one.\n\nPart two." and pre["logline_from"] == "coverage"
+    bare = store.save_run("schedule", "Radio Night", {"file": "r.pdf", "sha256": "zzz"}, {"breakdown": {}})
+    assert "logline" not in c.get(f"/api/tools/sales/engine/prefill?tool=schedule&run_id={bare['id']}").json()

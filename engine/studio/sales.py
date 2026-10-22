@@ -33,6 +33,30 @@ INTAKE = [("title", 6, "Title"), ("genre", 7, "Genre"), ("subgenre", 8, "Subgenr
           ("scale", 33, "Expected production value / scale"), ("rights_summary", 34, "Rights availability summary")]
 OPTIONAL = {"festival", "sales_feedback", "ip"}
 NUMERIC = {"budget", "runtime"}
+# Tim, 22 Oct (1.1.3): Tone and Co-production status are no longer asked. Jon's workbook keeps the rows; they are
+# marked Optional there so the intake still counts as complete without them (no calculation reads either row).
+HIDDEN = {"tone", "coproduction"}
+# Tim's choices for the intake (22 Oct). Jon's engine uses these fields for narrative and completeness only.
+CHOICES = {
+    "script_status": ["Development", "Final"],
+    "sales_stage": ["Package estimate", "Pre-sale", "In production", "Rough cut", "Completed film"],   # Jon's deal stages
+    "format": ["Feature", "Episodic"],
+    "release_model": {"Feature": ["Theatrical-led", "VOD", "TVOD", "Direct to streaming", "Direct to TV"],
+                      "Episodic": ["Direct to streaming", "Direct to TV"]},
+    "festivals": ["Cannes", "Venice", "Berlinale", "Toronto (TIFF)", "Sundance", "SXSW", "Tribeca", "Telluride",
+                  "New York (NYFF)", "BFI London", "San Sebastián", "Locarno", "Karlovy Vary", "Rotterdam (IFFR)",
+                  "Busan", "Tokyo", "Annecy (animation)", "Sitges (genre)", "Fantastic Fest (genre)", "Fantasia (genre)"],
+}
+
+
+def festival_text(v) -> str:
+    """Festival strategy as the workbook takes it: the ticked festivals, then any note, in one line."""
+    if isinstance(v, dict):
+        parts = [str(x) for x in v.get("festivals") or []] + ([str(v["note"]).strip()] if str(v.get("note") or "").strip() else [])
+        return "; ".join(parts)
+    if isinstance(v, (list, tuple)):
+        return "; ".join(str(x) for x in v)
+    return str(v or "")
 
 # attachment ladder as the workbook names it (ACTOR_IMPORT G / DIRECTOR_IMPORT E weights)
 ATTACHMENT = ["Wish list", "Informal interest", "Availability confirmed", "Offer submitted", "Letter of intent",
@@ -145,9 +169,16 @@ def writes(project: dict) -> dict:
         put("CONTROL_PANEL", "B20", p["report"])
     intake = p.get("intake") or {}
     for key, row, _ in INTAKE:
+        if key in HIDDEN:
+            put("PROJECT_INTAKE", f"C{row}", "Optional")
         v = intake.get(key)
+        if key == "festival":
+            v = festival_text(v)
         if v not in (None, ""):
             put("PROJECT_INTAKE", f"B{row}", _num(v) if key in NUMERIC else _date(v) if key == "delivery_date" and _date(v) else str(v))
+    if intake.get("format") == "Episodic" and intake.get("episodes"):
+        scale = str(intake.get("scale") or "").strip()
+        put("PROJECT_INTAKE", "B33", f"Episodic, {intake['episodes']} episodes" + (f"; {scale}" if scale else ""))
     fx = fx_rates(p.get("fx"))
     for r, cur in enumerate(FX_ORDER, 5):
         if cur in fx and cur != "USD":

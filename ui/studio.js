@@ -808,6 +808,9 @@ function tabs(container, defs, start = 0) {
   container.append(bar, body); show(Math.min(start, defs.length - 1));
 }
 
+/* a multi-tick dropdown closes when you click anywhere else (1.1.3) */
+document.addEventListener("click", e => document.querySelectorAll("details.ms[open]").forEach(d => { if (!d.contains(e.target)) d.removeAttribute("open"); }));
+
 /* ---------------- shared: script intake ---------------- */
 function scriptIntake(box, toolId, after) {
   const results = el("div", {});
@@ -1569,7 +1572,37 @@ async function valuationPanel(box) {
     fillSub();
     return { genre, subgenre: sub };
   };
-  const fieldKind = { rating: sel("rating", L.rating || []), release_model: sel("release_model", L.release_model || []),
+  /* Tim's intake changes (22 Oct, 1.1.3): Feature or Episodic first; the release models follow from it; festivals are
+     ticked from a list; script status and sales stage are chosen. Jon's engine uses these for narrative only. */
+  const CH = SALES_OPTS.choices || {};
+  const fmt = () => P.intake.format || "Feature";
+  const releaseOpts = () => (CH.release_model || {})[fmt()] || L.release_model || [];
+  const formatToggle = () => el("div", { class: "tabs", role: "group", "aria-label": "Format", style: "margin:0" }, (CH.format || ["Feature", "Episodic"]).map(f =>
+    el("button", { type: "button", "aria-pressed": String(fmt() === f), onclick: () => {
+      P.intake.format = f;
+      if (P.intake.release_model && !releaseOpts().includes(P.intake.release_model)) P.intake.release_model = null;
+      draw();
+    } }, f)));
+  const festivalPick = () => {
+    let v = P.intake.festival;
+    if (typeof v === "string" || Array.isArray(v)) v = Array.isArray(v) ? { festivals: v, note: "" } : { festivals: [], note: v };   /* an older free-text strategy */
+    v = P.intake.festival = Object.assign({ festivals: [], note: "" }, v || {});
+    const label = el("span", {});
+    const show = () => label.textContent = v.festivals.length ? v.festivals.join(", ") : "Choose festivals";
+    const ticks = (CH.festivals || []).map(f => el("label", { class: "ms-opt" },
+      el("input", { type: "checkbox", checked: v.festivals.includes(f) || null, onchange: e => {
+        v.festivals = e.target.checked ? [...v.festivals, f] : v.festivals.filter(x => x !== f);
+        v.festivals.sort((a, b) => CH.festivals.indexOf(a) - CH.festivals.indexOf(b)); show();
+      } }), f));
+    const note = el("input", { type: "text", value: v.note || "", placeholder: "Anything else: premiere status, markets, dates" });
+    note.addEventListener("change", () => { v.note = note.value; });
+    show();
+    return el("div", { class: "ms-wrap" }, el("details", { class: "ms" }, el("summary", { "aria-label": "Festival strategy" }, label),
+      el("div", { class: "ms-panel" }, el("div", { class: "ms-grid" }, ticks))), note);
+  };
+  const special = () => ({ ...genrePair(), festival: festivalPick() });
+  const fieldKind = { rating: sel("rating", L.rating || []), release_model: { key: "release_model", type: "select", options: releaseOpts() },
+    script_status: sel("script_status", CH.script_status || []), sales_stage: sel("sales_stage", CH.sales_stage || []),
     production_status: sel("production_status", L.production_status || []), budget_currency: sel("budget_currency", L.currencies || []),
     director_attachment: sel("director_attachment", SALES_OPTS.attachment), cast_attachment: sel("cast_attachment", SALES_OPTS.attachment), delivery_date: { type: "date" } };
   const input = (obj, key, kind = {}, w) => {
@@ -1577,6 +1610,11 @@ async function valuationPanel(box) {
     const n = kind.type === "select" ? el("select", {}, ["", ...kind.options].map(o => el("option", { value: o, selected: String(o) === String(v) }, o || "—")))
       : el("input", { type: kind.type === "date" ? "date" : kind.numeric ? "number" : "text", value: v, step: "any", style: w ? `width:${w}px` : "" });
     n.addEventListener("change", () => { obj[key] = n.value === "" ? null : (kind.numeric ? Number(n.value) : n.value); });
+    return n;
+  };
+  const textArea = (obj, key) => {
+    const n = el("textarea", { rows: 4, style: "height:auto;padding:10px 12px;line-height:1.45;resize:vertical" }, obj[key] ?? "");
+    n.addEventListener("change", () => { obj[key] = n.value === "" ? null : n.value; });
     return n;
   };
   const section = (title, sub, body, open) => el("details", { class: "lb-more", open: open || null, style: "margin-top:16px" }, el("summary", {}, title, sub ? el("span", { class: "muted small" }, ` ${sub}`) : null), el("div", { style: "margin-top:14px" }, body));
@@ -1595,11 +1633,16 @@ async function valuationPanel(box) {
     const films = () => P.films.map(f => f.id).filter(Boolean);
     P.rights = Object.fromEntries(T.map(t => [t, P.rights[t] || {}]));
     const rightsRows = T.map(t => Object.assign(P.rights[t], { territory: t }));
-    const gp = genrePair();
+    const sp = special(), episodic = fmt() === "Episodic";
+    fieldKind.release_model.options = releaseOpts();
+    const labelOf = f => f.key === "runtime" && episodic ? "Episode runtime (minutes)" : f.key === "logline" && P.intake.logline_from ? "Logline / synopsis (from the script's coverage)" : f.label;
     put(form,
-      section("Project", "Jon's 27 intake fields; the more you give, the better the package factors", el("div", { class: "row", style: "align-items:flex-end" },
-        SALES_OPTS.intake.map(f => el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
-          f.label + (f.required ? "" : " (optional)"), gp[f.key] || input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {}))))), true),
+      section("Project", "the more you give, the better the package factors", [
+        el("div", { class: "row", style: "align-items:flex-end;margin-bottom:6px" }, el("label", { class: "f" }, "Format", formatToggle()),
+          episodic ? el("label", { class: "f", style: "flex:0 1 160px" }, "Episodes", input(P.intake, "episodes", { numeric: true }, 140)) : null),
+        el("div", { class: "row", style: "align-items:flex-end" },
+        SALES_OPTS.intake.map(f => el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience", "festival"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
+          labelOf(f) + (f.required ? "" : " (optional)"), sp[f.key] || (f.key === "logline" ? textArea(P.intake, "logline") : input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {}))))))], true),
       section("Package", "cast and director from Jon's databases, with attachment status", [actorsDL.dl, dirDL.dl,
         pkgMissing() ? el("div", { class: "notice", style: "margin-bottom:14px" }, el("div", { class: "ic" }, icon("users")),
           el("div", { class: "grow" }, el("div", {}, `${plural(pkgMissing(), "name")} attached on the Actors and Directors tabs ${pkgMissing() === 1 ? "isn't" : "aren't"} in this valuation yet`)),
@@ -1667,7 +1710,10 @@ async function valuationPanel(box) {
     const [tool, id] = from.value.split("/");
     const pre = await api.get(`/api/tools/sales/engine/prefill?tool=${tool}&run_id=${encodeURIComponent(id)}`).catch(() => ({}));
     Object.entries(pre).forEach(([k, v]) => { if (v !== "" && v !== null && (P.intake[k] === undefined || P.intake[k] === null || P.intake[k] === "")) P.intake[k] = v; });
-    draw(); toast("info", "Filled from the Library", Object.keys(pre).join(", "));
+    draw();
+    const got = [pre.title && "title", pre.budget && "budget", pre.logline && "logline and synopsis from its coverage"].filter(Boolean);
+    toast("info", "Filled from the Library", (got.length ? `Took the ${got.join(", ")}.` : "") +
+      (pre.logline ? "" : " No coverage for this script yet: write its coverage in Script Coverage and the logline and synopsis come with it."));
   });
   box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "Jon's Sales Valuation Engine v4.1, run exactly as his workbook calculates. It values each territory from verified deals, public buyer-economics proxies, or a documented worldwide anchor, and never from the budget alone."),
     el("div", { class: "row", style: "align-items:flex-end" }, el("label", { class: "f", style: "flex:1 1 260px" }, "Valuation", pick), el("label", { class: "f", style: "flex:1 1 260px" }, "Prefill", from)),

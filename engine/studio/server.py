@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.2"
+VERSION = "1.1.3"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -881,7 +881,8 @@ def sales_options():
     _warm_sales()
     lists = sales.lists()
     return {"lists": lists, "intake": [{"key": k, "label": label, "required": k not in sales.OPTIONAL, "numeric": k in sales.NUMERIC}
-                                       for k, _, label in sales.INTAKE],
+                                       for k, _, label in sales.INTAKE if k not in sales.HIDDEN],
+            "choices": sales.CHOICES,
             "attachment": sales.ATTACHMENT, "package_factors": [{"key": k, "label": label} for k, _, label in sales.PACKAGE_FACTORS],
             "selection_factors": sales.SELECTION_FACTORS, "fx": sales.fx_rates(), "territories": lists["territories"],
             "genres": GENRES["genres"]}
@@ -889,13 +890,30 @@ def sales_options():
 
 @app.get("/api/tools/sales/engine/prefill")
 def sales_prefill(tool: str, run_id: str):
-    """Intake fields a script already in the Library can give: its title, and from a schedule-and-budget, the budget."""
+    """Intake fields a script already in the Library can give: its title; from a schedule-and-budget, the budget; and
+    from its coverage (Tim, 22 Oct), the logline and synopsis, taken from this item or the same script's coverage."""
     rec, _ = store.get_run(tool, run_id)
     out = {"title": rec.get("title") or ""}
     bud = (rec.get("outputs") or {}).get("budget")
     if bud:
         out["budget"] = round(bud["budget"]["base"]["known_total"])
         out["budget_currency"] = bud.get("currency") or ""
+    cov = (rec.get("outputs") or {}).get("coverage")
+    sha = (rec.get("inputs") or {}).get("sha256")
+    if not cov and sha:                                    # the same file, read with coverage under another tool
+        for t in ("coverage", "brand", "schedule"):
+            seen = store.find_by_hash(t, sha)
+            if seen:
+                other, _ = store.get_run(t, seen["id"])
+                cov = (other.get("outputs") or {}).get("coverage")
+                if cov:
+                    break
+    story = ((cov or {}).get("sections") or {}).get("story") or {}
+    synopsis = story.get("synopsis") or []
+    synopsis = "\n\n".join(synopsis) if isinstance(synopsis, list) else str(synopsis)
+    if story.get("logline") or synopsis:
+        out["logline"] = "\n\n".join(x for x in (story.get("logline") or "", synopsis) if x)
+        out["logline_from"] = "coverage"
     return out
 
 
