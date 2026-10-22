@@ -161,6 +161,10 @@ check("1.0.8 Room pages, call sheets and meetings served",
 check("1.0.8 voice: the mic picker finds the system default, follows it and asks kindly first",
       all(s in mjs for s in (b"micLabel", b"enumerateDevices", b"devicechange", b"micConsent", b"noiseSuppression", b"echoCancellation",
                              b'"Microphone"', b'"automatic"')))
+ag = call("/api/agents")
+check("1.1.4 Sales Agents: Jon's register of 26 companies, provisional, with Saban for distribution",
+      len(ag["agents"]) == 26 and ag["formulaVersion"] == "1.0" and
+      next(a for a in ag["agents"] if a["agentId"] == "sa025")["scoreScope"] == "DISTRIBUTION", ag["dataVersion"])
 HUB = (sys.argv[2] if len(sys.argv) > 2 else "").rstrip("/")
 if HUB == "--host":                                   # host a production here, then check what the team would reach
     made = call("/api/room/host", {"name": "Smoke Test", "production": "SMOKE TEST"})

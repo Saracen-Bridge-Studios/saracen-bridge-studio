@@ -1,0 +1,408 @@
+{
+ "_about": "Jon Chadwick's Sales Agent scoring specification v1.0 (21 Oct 2026): the initial company register, loaded exactly as given. Base scores are provisional internal assessments, not measured sales success rates, estimate-accuracy percentages or assurances of payment reliability. Links support business identity and positioning, not the scores.",
+ "dataVersion": "2026-10-21",
+ "formulaVersion": "1.0",
+ "agents": [
+  {
+   "agentId": "sa001",
+   "displayName": "FilmNation Entertainment",
+   "aliases": [],
+   "specialityText": "Prestige drama; thrillers; intelligent commercial films; comedy",
+   "baseScore": 93,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.filmnation.com/sales"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa002",
+   "displayName": "Black Bear International",
+   "aliases": [],
+   "specialityText": "Action; crime; thrillers; horror; cast-led drama",
+   "baseScore": 93,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://blackbearpictures.com/international"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa003",
+   "displayName": "STUDIOCANAL International Sales",
+   "aliases": [],
+   "specialityText": "Family; literary adaptations; comedy; prestige drama",
+   "baseScore": 93,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.studiocanal.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa004",
+   "displayName": "HanWay Films",
+   "aliases": [],
+   "specialityText": "Auteur drama; period films; literary adaptations; thrillers",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.hanwayfilms.com/about"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa005",
+   "displayName": "Protagonist Pictures",
+   "aliases": [],
+   "specialityText": "Independent drama; psychological horror; dark comedy",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://protagonistpictures.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa006",
+   "displayName": "Rocket Science",
+   "aliases": [],
+   "specialityText": "Biopics; prestige drama; thrillers; action",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.rocket-science.net/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa007",
+   "displayName": "AGC International / AGC Studios",
+   "aliases": [],
+   "specialityText": "Action; thrillers; action-comedy; larger commercial films",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.agcstudios.com/press"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa008",
+   "displayName": "Goodfellas",
+   "aliases": [],
+   "specialityText": "International arthouse; auteur drama; festival crossover films",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://goodfellas.film/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa009",
+   "displayName": "mk2 Films",
+   "aliases": [],
+   "specialityText": "Auteur drama; international arthouse; documentary",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://mk2films.com/en/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa010",
+   "displayName": "Pathé International",
+   "aliases": [],
+   "specialityText": "Prestige drama; biopics; historical films; European cinema",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://international.pathefilms.com/en/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa011",
+   "displayName": "XYZ Films",
+   "aliases": [],
+   "specialityText": "Action; horror; science fiction; crime",
+   "baseScore": 88,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.xyzfilms.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa012",
+   "displayName": "Mister Smith Entertainment",
+   "aliases": [],
+   "specialityText": "Commercial drama; comedy; romance",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.mistersmithent.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa013",
+   "displayName": "Cornerstone Films",
+   "aliases": [],
+   "specialityText": "Auteur drama; psychological thrillers; horror; dark comedy",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://cornerstonefilm.com/about/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa014",
+   "displayName": "Bankside Films",
+   "aliases": [],
+   "specialityText": "Independent drama; true stories; comedy; psychological horror",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.bankside-films.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa015",
+   "displayName": "Anton",
+   "aliases": [],
+   "specialityText": "Action-thrillers; psychological thrillers; horror; science fiction; animation",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://antonstudios.com/works"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa016",
+   "displayName": "Charades",
+   "aliases": [],
+   "specialityText": "Auteur drama; animation; distinctive comedy; horror",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.charades.eu/line-up"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa017",
+   "displayName": "Beta Cinema",
+   "aliases": [],
+   "specialityText": "European drama; historical films; literary adaptations; feel-good comedy",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.betacinema.com/141/Line-Up.htm"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa018",
+   "displayName": "TrustNordisk",
+   "aliases": [],
+   "specialityText": "Nordic drama; crime; thrillers; horror; family and animation",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://trustnordisk.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa019",
+   "displayName": "Embankment Films",
+   "aliases": [],
+   "specialityText": "British drama; biopics; literary adaptations; feel-good films; documentary",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://embankmentfilms.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa020",
+   "displayName": "Altitude Film Sales",
+   "aliases": [],
+   "specialityText": "Independent drama; documentary; thrillers; commercial genre films",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.altitudefilment.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa021",
+   "displayName": "Capture Entertainment",
+   "aliases": [
+    "Capture"
+   ],
+   "specialityText": "Action; crime; survival thrillers; creature horror; commercial comedy",
+   "baseScore": 83,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://capture-ent.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa022",
+   "displayName": "Essential Film Group / Essential Films International",
+   "aliases": [],
+   "specialityText": "Horror; crime thrillers; action; commercial comedy",
+   "baseScore": 80,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.essentialfilmgroup.com/story"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa023",
+   "displayName": "Noora Films",
+   "aliases": [
+    "Nora Films"
+   ],
+   "specialityText": "Cast-led drama; political and crime thrillers; action; supernatural thrillers",
+   "baseScore": 80,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://noorafilms.com/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa024",
+   "displayName": "High Fliers Films",
+   "aliases": [
+    "High flyers"
+   ],
+   "specialityText": "Commercial horror; action; crime; thrillers; lower-budget genre films",
+   "baseScore": 80,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.highfliersfilms.co.uk/about"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa025",
+   "displayName": "Saban Films",
+   "aliases": [
+    "Saban"
+   ],
+   "specialityText": "Action; crime; thrillers; horror; westerns. Score applies to distribution",
+   "baseScore": 83,
+   "scoreScope": "DISTRIBUTION",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.sabanfilms.com/about/"
+   ],
+   "reviewedAt": "2026-10-21"
+  },
+  {
+   "agentId": "sa026",
+   "displayName": "International Film Trust IFT",
+   "aliases": [
+    "International Film Trust",
+    "IFT"
+   ],
+   "specialityText": "Action and crime thrillers; psychological and historical thrillers; drama; comedy",
+   "baseScore": 80,
+   "scoreScope": "INTERNATIONAL_SALES",
+   "baseScoreStatus": "PROVISIONAL",
+   "estimateAccuracyScore": null,
+   "trustworthinessScore": null,
+   "sourceUrls": [
+    "https://www.thefilmcatalogue.com/companies/international-film-trust"
+   ],
+   "reviewedAt": "2026-10-21"
+  }
+ ]
+}

@@ -17,7 +17,7 @@ def client(tmp_path, monkeypatch):
 
 def test_catalog_lists_all_tools(client):
     ids = [t["id"] for t in client.get("/api/catalog").json()["tools"]]
-    assert ids == ["coverage", "lookbook", "schedule", "incentives", "bfi", "sales", "brand",
+    assert ids == ["coverage", "lookbook", "schedule", "incentives", "bfi", "sales", "agents", "brand",
                    "finance", "greenlight", "agreement", "aiden", "frat"]
 
 

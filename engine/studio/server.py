@@ -20,9 +20,9 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
-from . import agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
+from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.3"
+VERSION = "1.1.4"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -1039,6 +1039,105 @@ def reference():
 @app.get("/favicon.ico", status_code=204)
 def favicon():
     return Response(status_code=204)
+
+
+# ---------- sales agents: Jon's scoring specification v1.0 (22 Oct 2026) ----------
+@app.get("/api/agents")
+def agents_register():
+    return agents.register() | {"genres": [{"id": g["id"], "name": g["name"]} for g in agents.genres()],
+                                "fits": agents.FIT_LEVELS, "fit_labels": agents.FIT_LABEL, "scopes": agents.SCOPE_LABEL}
+
+
+@app.get("/api/agents/history")
+def agents_history():
+    return agents.history()
+
+
+@app.put("/api/agents/{agent_id}")
+def agents_edit(agent_id: str, body: dict = Body(...)):
+    try:
+        return agents.edit(agent_id, {k: body[k] for k in agents.EDITABLE if k in body}, body.get("editor") or "", body.get("reason") or "")
+    except KeyError as e:
+        raise HTTPException(404, "No such company in the register.") from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+def _project_or_404(project: str | None):
+    if not project:
+        return None
+    try:
+        store.get_run("sales", project)
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That valuation is no longer in the Library.") from e
+    return project
+
+
+@app.get("/api/agents/compare")
+def agents_compare(project: str | None = None, scope: str = "INTERNATIONAL_SALES"):
+    if scope not in agents.SCOPES:
+        raise HTTPException(400, "Mandate is international sales or distribution.")
+    return agents.compare(_project_or_404(project), scope)
+
+
+@app.get("/api/agents/compare.csv")
+def agents_compare_csv(project: str | None = None, scope: str = "INTERNATIONAL_SALES"):
+    c = agents.snapshot(_project_or_404(project), scope) if project else agents.compare(None, scope)
+    name = re.sub(r"[^\w\- ]+", "", ((c.get("project") or {}).get("title") or "Sales agents")).strip() or "Sales agents"
+    return Response(agents.csv_bytes(c), media_type="text/csv",
+                    headers={"Content-Disposition": f'attachment; filename="{name} - Sales agents.csv"'})
+
+
+@app.post("/api/agents/fit")
+def agents_fit(body: dict = Body(...)):
+    _project_or_404(body.get("project"))
+    try:
+        return agents.assess(body.get("agent") or "", body["project"], body.get("genre") or "", body.get("fit") or "",
+                             body.get("rationale") or "", body.get("evidence") or "", body.get("assessor") or "",
+                             body.get("evidence_status") or "PROVISIONAL", body.get("mandate") or "", bool(body.get("save_mapping")))
+    except KeyError as e:
+        raise HTTPException(404, "No such company in the register.") from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+@app.put("/api/agents/project/{project}")
+def agents_project_genres(project: str, body: dict = Body(...)):
+    """The project's two scoring genres, set from the Sales Agents page: they are the valuation's own (Jon: one
+    classification for every company; changing it is a new revision and every result is recalculated)."""
+    _project_or_404(project)
+    p, s = agents.genre_id(body.get("primary")), agents.genre_id(body.get("secondary")) if body.get("secondary") else None
+    if not p:
+        raise HTTPException(400, "Choose the primary genre.")
+    if s == p:
+        raise HTTPException(400, "The secondary genre must differ from the primary.")
+    rec, _ = store.get_run("sales", project)
+    inputs = rec.get("inputs") or {}
+    intake = inputs.setdefault("intake", {})
+    intake["genre"], intake["secondary_genre"] = agents.genre_name(p), agents.genre_name(s) if s else None
+    if intake.get("subgenre") and intake["subgenre"] not in next(g["subgenres"] for g in GENRES["genres"] if g["genre"] == intake["genre"]):
+        intake["subgenre"] = None
+    store.update_inputs("sales", project, inputs)
+    return agents.project(project)
+
+
+@app.post("/api/agents/suggest")
+def agents_suggest(body: dict = Body(...)):
+    project = _project_or_404(body.get("project"))
+    if not project:
+        raise HTTPException(400, "Choose a valuation first.")
+    settings = store.load_settings()
+    mode = llm.mode_settings(settings, body.get("mode"))["mode"]
+    engine, why = llm.resolve(settings, mode)
+    if not engine:
+        raise HTTPException(409, why)
+    try:
+        done = agents.suggest(project, engine, settings)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    except llm.EngineError as e:
+        raise HTTPException(502, f"The AI engine couldn't assess the fits: {e}") from e
+    return {"assessed": len(done), "fits": done}
 
 
 from .room.routes import router as _room_router   # noqa: E402 - the Room (1.0.8)

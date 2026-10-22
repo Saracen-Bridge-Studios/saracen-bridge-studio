@@ -64,6 +64,7 @@ const ICONS = {
   reel: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM12 5.5h.01M12 18.5h.01M5.5 12h.01M18.5 12h.01",
   play: "M8 5.5v13l10.5-6.5z",
   external: "M14 4h6v6M20 4l-9 9M18 14.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h4.5",
+  agents: "M4 8.5h16V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM9 8.5V6a1.5 1.5 0 0 1 1.5-1.5h3A1.5 1.5 0 0 1 15 6v2.5M4 13.5h16M11 13.5v2h2v-2",
   cloud: "M7 18.5h10.5a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.6 9.1 4.75 4.75 0 0 0 7 18.5z",
   chat: "M4.5 5.5h15v10h-8l-4.5 3.5v-3.5h-2.5z",
   lock: "M6.5 11h11v9h-11zM9 11V8a3 3 0 0 1 6 0v3",
@@ -172,6 +173,7 @@ function modal({ icon: ic = "info", title, body, actions = [] }) {
 
 /* ---------------- command palette (Ctrl/Cmd+K, or /): opens instantly, no animation ---------------- */
 let PAL = null;
+let AGENTS_PROJECT = "", SALES_AGENTS = null;             /* the film last compared on Sales Agents */
 function openPalette() {
   if (PAL) return;
   const input = el("input", { type: "text", placeholder: "Search tools, your scripts and actions", "aria-label": "Search", autocomplete: "off", spellcheck: "false" });
@@ -1542,6 +1544,7 @@ function salesResult(res) {
 async function valuationPanel(box) {
   const wait = el("div", { class: "clapper" }); box.append(wait);
   SALES_OPTS = SALES_OPTS || await api.get("/api/tools/sales/engine/options");
+  SALES_AGENTS = SALES_AGENTS || (await api.get("/api/agents").catch(() => ({ agents: [] }))).agents;
   wait.remove();
   const L = SALES_OPTS.lists, T = SALES_OPTS.territories;
   const [{ runs: saved }, { runs: scripts }] = await Promise.all([api.get("/api/runs?tool=sales&limit=200"), api.get("/api/runs?limit=200").then(r => ({ runs: r.runs.filter(x => ["schedule", "coverage", "brand"].includes(x.tool)) }))]);
@@ -1570,7 +1573,14 @@ async function valuationPanel(box) {
     });
     sub.addEventListener("change", () => { P.intake.subgenre = sub.value || null; });
     fillSub();
-    return { genre, subgenre: sub };
+    /* the secondary genre (22 Oct): optional, never the primary; Sales Agents scores companies on the two */
+    const second = el("select", { "aria-label": "Secondary genre" }, ["", ...withCurrent(GENRE_NAMES, P.intake.secondary_genre)].map(o =>
+      el("option", { value: o, selected: o === (P.intake.secondary_genre || "") }, o || "None")));
+    second.addEventListener("change", () => {
+      if (second.value && second.value === P.intake.genre) { toast("bad", "Two different genres", "The secondary genre must differ from the primary."); second.value = P.intake.secondary_genre || ""; return; }
+      P.intake.secondary_genre = second.value || null;
+    });
+    return { genre, subgenre: sub, secondary_genre: second };
   };
   /* Tim's intake changes (22 Oct, 1.1.3): Feature or Episodic first; the release models follow from it; festivals are
      ticked from a list; script status and sales stage are chosen. Jon's engine uses these for narrative only. */
@@ -1600,7 +1610,19 @@ async function valuationPanel(box) {
     return el("div", { class: "ms-wrap" }, el("details", { class: "ms" }, el("summary", { "aria-label": "Festival strategy" }, label),
       el("div", { class: "ms-panel" }, el("div", { class: "ms-grid" }, ticks))), note);
   };
-  const special = () => ({ ...genrePair(), festival: festivalPick() });
+  /* Known sales feedback (22 Oct): which company it came from, from Jon's register, then the feedback itself */
+  const feedbackPick = () => {
+    let v = P.intake.sales_feedback;
+    if (typeof v === "string") v = { agent: "", note: v };
+    v = P.intake.sales_feedback = Object.assign({ agent: "", note: "" }, v || {});
+    const who = el("select", { "aria-label": "Sales company", style: "flex:0 1 300px" }, el("option", { value: "" }, "Sales company"),
+      (SALES_AGENTS || []).map(a => el("option", { value: a.agentId, selected: a.agentId === v.agent }, a.displayName)));
+    who.addEventListener("change", () => { v.agent = who.value; });
+    const note = el("input", { type: "text", value: v.note || "", placeholder: "What they said, and when", style: "flex:1 1 300px" });
+    note.addEventListener("change", () => { v.note = note.value; });
+    return el("div", { class: "row", style: "gap:10px" }, who, note);
+  };
+  const special = () => ({ ...genrePair(), festival: festivalPick(), sales_feedback: feedbackPick() });
   const fieldKind = { rating: sel("rating", L.rating || []), release_model: { key: "release_model", type: "select", options: releaseOpts() },
     script_status: sel("script_status", CH.script_status || []), sales_stage: sel("sales_stage", CH.sales_stage || []),
     production_status: sel("production_status", L.production_status || []), budget_currency: sel("budget_currency", L.currencies || []),
@@ -1641,8 +1663,9 @@ async function valuationPanel(box) {
         el("div", { class: "row", style: "align-items:flex-end;margin-bottom:6px" }, el("label", { class: "f" }, "Format", formatToggle()),
           episodic ? el("label", { class: "f", style: "flex:0 1 160px" }, "Episodes", input(P.intake, "episodes", { numeric: true }, 140)) : null),
         el("div", { class: "row", style: "align-items:flex-end" },
-        SALES_OPTS.intake.map(f => el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience", "festival"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
-          labelOf(f) + (f.required ? "" : " (optional)"), sp[f.key] || (f.key === "logline" ? textArea(P.intake, "logline") : input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {}))))))], true),
+        SALES_OPTS.intake.flatMap(f => [el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience", "festival", "sales_feedback"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
+          labelOf(f) + (f.required ? "" : " (optional)"), sp[f.key] || (f.key === "logline" ? textArea(P.intake, "logline") : input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {})))),
+          f.key === "genre" ? el("label", { class: "f", style: "flex:1 1 200px" }, "Secondary genre (optional)", sp.secondary_genre) : null]))], true),
       section("Package", "cast and director from Jon's databases, with attachment status", [actorsDL.dl, dirDL.dl,
         pkgMissing() ? el("div", { class: "notice", style: "margin-bottom:14px" }, el("div", { class: "ic" }, icon("users")),
           el("div", { class: "grow" }, el("div", {}, `${plural(pkgMissing(), "name")} attached on the Actors and Directors tabs ${pkgMissing() === 1 ? "isn't" : "aren't"} in this valuation yet`)),
@@ -1860,6 +1883,129 @@ const PANELS = {
         open: async (d, out) => put(out, directorCard(await api.get(`/api/lookup/director?id=${encodeURIComponent(d.director_id)}`))) })],
       ["Territory valuation", b => valuationPanel(b), true]], SALES_OPEN ? 2 : 0);
     SALES_OPEN = false;
+  },
+  /* Sales Agents (22 Oct): Jon's Sales Agent scoring specification v1.0. Each company's base score, reduced where it
+     fits the film's genre less well, worked out on the server by his formula and shown with its explanation. */
+  async agents(box) {
+    const R = await api.get("/api/agents");
+    const FL = R.fit_labels, FITS = R.fits, GN = Object.fromEntries(R.genres.map(g => [g.id, g.name]));
+    const me = () => { try { return localStorage.getItem("sb-assessor") || ""; } catch (_) { return ""; } };
+    const rememberMe = n => { try { localStorage.setItem("sb-assessor", n); } catch (_) {} };
+    const scoreCell = r => r.result && r.result.status === "SCORED"
+      ? el("b", { style: "font-size:18px" }, `${r.result.adjustedScore}`, el("span", { class: "muted small" }, "/100")) : el("span", { class: "muted small" },
+        { NEEDS_REVIEW: "Genre fit unverified", SCOPE_MISMATCH: "Score unavailable for this mandate", INVALID_INPUT: "Unrated" }[(r.result || {}).status] || "—");
+    const links = a => (a.sourceUrls || []).map(u => el("a", { href: u, target: "_blank", rel: "noopener", class: "small", style: "margin-left:8px" }, "profile"));
+    box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "Jon's register of sales companies, scored for a film by his specification: the base score, reduced where the company fits the film's genre less well. Base scores and fits are provisional internal assessments, not measured sales success, estimate accuracy or payment reliability, and they never change the valuation's figures."));
+    tabs(box, [["Compare for a film", async b => {
+      const { runs } = await api.get("/api/runs?tool=sales&limit=200");
+      let project = AGENTS_PROJECT && runs.some(r => r.id === AGENTS_PROJECT) ? AGENTS_PROJECT : (runs[0] || {}).id || "", scope = "INTERNATIONAL_SALES";
+      const pick = el("select", { "aria-label": "Valuation" }, el("option", { value: "" }, runs.length ? "No film: base scores only" : "No valuations yet"),
+        runs.map(r => el("option", { value: r.id, selected: r.id === project }, r.title)));
+      const who = el("input", { type: "text", value: me(), placeholder: "Your name", "aria-label": "Assessor" });
+      who.addEventListener("change", () => rememberMe(who.value.trim()));
+      const scopeBar = el("div", { class: "tabs", role: "group", "aria-label": "Mandate", style: "margin:0" });
+      const genresBox = el("div", {}), out = el("div", { style: "margin-top:16px" });
+      const fitAsk = async (row, gid, fit) => {
+        if (!who.value.trim()) { toast("bad", "Your name first", "Each fit is recorded with who assessed it."); who.focus(); return false; }
+        const rationale = el("textarea", { rows: 3, style: "height:auto;padding:10px 12px;width:100%", placeholder: fit === "OUTSIDE" ? "Why its focus sits substantially elsewhere" : "Why this fit, in a sentence" });
+        const evidence = el("input", { type: "text", style: "width:100%", value: "Company register speciality text (" + R.dataVersion + ")", "aria-label": "Evidence" });
+        const verified = el("input", { type: "checkbox" }), keep = el("input", { type: "checkbox" });
+        const ok = fit === "UNVERIFIED" ? true : await modal({ icon: "users", title: `${row.displayName}: ${FL[fit]} for ${GN[gid]}`, body: [
+          el("label", { class: "f" }, "Rationale", rationale), el("label", { class: "f", style: "margin-top:10px" }, "Source or internal evidence reference", evidence),
+          el("label", { class: "small", style: "display:flex;align-items:center;margin-top:12px" }, verified, "Verified evidence (otherwise provisional)"),
+          el("label", { class: "small", style: "display:flex;align-items:center;margin-top:8px" }, keep, `Approve as ${row.displayName}'s fit for ${GN[gid]} on later films`)],
+          actions: [["Cancel", false], ["Save", true, true]] });
+        if (!ok) return false;
+        try {
+          await api.post("/api/agents/fit", { project, agent: row.agentId, genre: gid, fit, rationale: rationale.value, evidence: evidence.value,
+            assessor: who.value.trim(), evidence_status: verified.checked ? "VERIFIED" : "PROVISIONAL", mandate: scope, save_mapping: keep.checked });
+          return true;
+        } catch (e) { toast("bad", "Fit not saved", e.message); return false; }
+      };
+      const fitSel = (row, side) => {
+        const gid = side === "primary" ? C.project.primaryGenreId : C.project.secondaryGenreId, f = row[side] || {};
+        if (!gid) return el("span", { class: "muted small" }, "—");
+        const s = el("select", { "aria-label": `${side} fit for ${row.displayName}`, style: "min-width:150px" }, FITS.map(x => el("option", { value: x, selected: x === f.fit }, FL[x])));
+        s.addEventListener("change", async () => { if (await fitAsk(row, gid, s.value)) draw(); else s.value = f.fit; });
+        const by = f.assessedBy ? `${f.from === "approved mapping" ? "Approved mapping" : "Assessed"} by ${f.assessedBy}, ${String(f.assessedAt || "").slice(0, 10)}${f.evidenceStatus === "VERIFIED" ? " · verified" : ""}${f.rationale ? ": " + f.rationale : ""}` : "";
+        return el("div", { title: by }, s, by ? el("div", { class: "small muted", style: "margin-top:4px;max-width:220px" }, f.from === "approved mapping" ? "Approved mapping" : (f.assessedBy || "")) : null);
+      };
+      const rowEl = (r, i) => el("tr", {},
+        el("td", { class: "num" }, i == null ? "" : i + 1),
+        el("td", { style: "min-width:280px" }, el("b", {}, r.displayName), links(r), el("div", { class: "small muted", style: "margin-top:4px;max-width:360px" }, r.explanation || ""),
+          r.provisional ? el("span", { class: "pill PRELIMINARY", style: "margin-top:6px" }, "Provisional") : null),
+        el("td", { class: "small", style: "max-width:240px" }, r.specialityText),
+        el("td", { class: "num" }, r.baseScore == null ? "Unrated" : `${r.baseScore}/100`),
+        el("td", {}, C.project ? fitSel(r, "primary") : "—"), el("td", {}, C.project && C.project.secondaryGenreId ? fitSel(r, "secondary") : el("span", { class: "muted small" }, "—")),
+        el("td", { class: "num" }, r.result && r.result.status === "SCORED" ? `${+r.result.discountPercent.toFixed(2)}%` : "—"),
+        el("td", { class: "num" }, scoreCell(r)),
+        el("td", { class: "small muted" }, r.estimateAccuracyScore == null ? "Unrated" : r.estimateAccuracyScore),
+        el("td", { class: "small muted" }, r.trustworthinessScore == null ? "Unrated" : r.trustworthinessScore));
+      const heads = ["#", "Company", "Genre speciality", "#Base score", "Primary fit", "Secondary fit", "#Genre discount", "#Adjusted score", "Estimate accuracy", "Trustworthiness"];
+      let C = null;
+      const draw = async () => {
+        AGENTS_PROJECT = project;
+        put(scopeBar, Object.entries(R.scopes).map(([k, label]) => el("button", { type: "button", "aria-pressed": String(scope === k), onclick: () => { scope = k; draw(); } }, label)));
+        C = await api.get(`/api/agents/compare?scope=${scope}` + (project ? `&project=${encodeURIComponent(project)}` : ""));
+        if (C.project) {
+          const g1 = el("select", { "aria-label": "Primary genre" }, el("option", { value: "" }, "—"), R.genres.map(g => el("option", { value: g.id, selected: g.id === C.project.primaryGenreId }, g.name)));
+          const g2 = el("select", { "aria-label": "Secondary genre" }, el("option", { value: "" }, "None"), R.genres.map(g => el("option", { value: g.id, selected: g.id === C.project.secondaryGenreId }, g.name)));
+          const save = async () => {
+            if (g1.value && g1.value === g2.value) { toast("bad", "Two different genres", "The secondary genre must differ from the primary."); g2.value = C.project.secondaryGenreId || ""; return; }
+            try { await api.put(`/api/agents/project/${encodeURIComponent(project)}`, { primary: g1.value, secondary: g2.value || null }); toast("ok", "Genres saved to the valuation", "Every company is scored again for them."); draw(); }
+            catch (e) { toast("bad", "Genres not saved", e.message); }
+          };
+          g1.addEventListener("change", save); g2.addEventListener("change", save);
+          const suggest = el("button", { type: "button", class: "btn sm", onclick: async ev => {
+            const btn = ev.currentTarget; btn.disabled = true; const w = toast("ai", "Jonny is assessing the fits", "From each company's speciality; a minute or so on this computer.", 120000);
+            try { const r = await api.post("/api/agents/suggest", { project, mode: MODE }); toast("ok", `${plural(r.assessed, "fit")} suggested`, "Marked provisional, with Jonny as the assessor. Change any you disagree with."); draw(); }
+            catch (e) { toast("bad", "No suggestions", e.message); } finally { btn.disabled = false; typeof w === "function" && w(); }
+          } }, icon("sparkle"), "Suggest unassessed fits");
+          put(genresBox, el("div", { class: "row", style: "align-items:flex-end;margin-top:14px" },
+            el("label", { class: "f", style: "flex:0 1 220px" }, "Primary genre", g1), el("label", { class: "f", style: "flex:0 1 220px" }, "Secondary genre (if material)", g2),
+            el("div", { class: "row", style: "gap:8px" }, suggest, el("a", { class: "btn sm", href: `/api/agents/compare.csv?scope=${scope}&project=${encodeURIComponent(project)}` }, icon("download"), "Export (.csv)"))),
+            el("p", { class: "muted small", style: "margin:8px 0 0" }, "The valuation's own genres, one classification for every company. With two genres the score weighs the primary 70% and the secondary 30%."));
+        } else put(genresBox, el("p", { class: "muted small", style: "margin:12px 0 0" }, runs.length ? "Choose a valuation to score the companies for its film." : "Save a valuation in Sales Estimates first: its genres decide each company's fit."));
+        put(out,
+          C.scored.length ? [el("h2", {}, `Ranked for ${R.scopes[scope].toLowerCase()}`), el("div", { class: "card flush" }, table(heads, C.scored.map(rowEl)))] : null,
+          C.unscored.length ? [el("h2", { style: "margin-top:20px" }, C.project ? "Not scored yet" : "Base scores"),
+            C.project ? el("p", { class: "muted small", style: "margin:0 0 10px" }, "Set each company's fit for the film's genres to score it. A company scored for another mandate isn't ranked here.") : null,
+            el("div", { class: "card flush" }, table(heads, C.unscored.map(r => rowEl(r, C.project ? null : C.unscored.indexOf(r)))))] : null,
+          el("p", { class: "muted small", style: "margin-top:12px" }, `Register data version ${C.dataVersion} · formula ${C.formulaVersion}. Estimate accuracy and trustworthiness stay unrated until there is an evidence-based method for them.`));
+      };
+      pick.addEventListener("change", () => { project = pick.value; draw(); });
+      b.append(el("div", { class: "row", style: "align-items:flex-end" }, el("label", { class: "f", style: "flex:1 1 260px" }, "Film (a Sales Estimates valuation)", pick),
+        el("label", { class: "f" }, "Mandate", scopeBar), el("label", { class: "f", style: "flex:0 1 200px" }, "Assessor", who)), genresBox, out);
+      await draw();
+    }, true], ["Register", async b => {
+      const draw = async () => {
+        const reg = await api.get("/api/agents");
+        put(b, el("div", { class: "card flush" }, table(["ID", "Company", "Genre speciality", "#Base score", "Mandate", "Status", ""], reg.agents.map(a => el("tr", {},
+          el("td", { class: "small muted" }, a.agentId), el("td", {}, el("b", {}, a.displayName), links(a), a.aliases && a.aliases.length ? el("div", { class: "small muted" }, "Also: " + a.aliases.join(", ")) : null),
+          el("td", { class: "small" }, a.specialityText), el("td", { class: "num" }, a.baseScore == null ? "Unrated" : `${a.baseScore}/100`), el("td", { class: "small" }, R.scopes[a.scoreScope]),
+          el("td", {}, el("span", { class: "pill PRELIMINARY" }, a.baseScoreStatus === "PROVISIONAL" ? "Provisional" : a.baseScoreStatus)),
+          el("td", {}, el("button", { type: "button", class: "btn sm quiet", onclick: async () => {
+            const base = el("input", { type: "number", min: 0, max: 100, step: 1, value: a.baseScore ?? "" }), spec = el("input", { type: "text", value: a.specialityText, style: "width:100%" });
+            const sc = el("select", {}, Object.entries(R.scopes).map(([k, v]) => el("option", { value: k, selected: k === a.scoreScope }, v)));
+            const ed = el("input", { type: "text", value: me(), placeholder: "Your name" }), why = el("input", { type: "text", placeholder: "Why the change", style: "width:100%" });
+            const ok = await modal({ icon: "users", title: `Edit ${a.displayName}`, body: [el("label", { class: "f" }, "Base score (0–100, whole number; empty for unrated)", base),
+              el("label", { class: "f", style: "margin-top:10px" }, "Genre speciality", spec), el("label", { class: "f", style: "margin-top:10px" }, "Mandate this score is for", sc),
+              el("label", { class: "f", style: "margin-top:10px" }, "Your name", ed), el("label", { class: "f", style: "margin-top:10px" }, "Reason", why),
+              el("p", { class: "muted small" }, "Kept in the history with the old value. A base-score change makes a new data version.")], actions: [["Cancel", false], ["Save", true, true]] });
+            if (!ok) return;
+            const v = base.value.trim() === "" ? null : Number(base.value);
+            try { await api.put(`/api/agents/${a.agentId}`, { baseScore: v, specialityText: spec.value, scoreScope: sc.value, editor: ed.value, reason: why.value }); rememberMe(ed.value.trim()); toast("ok", "Saved", a.displayName); draw(); }
+            catch (e) { toast("bad", "Not saved", e.message); }
+          } }, "Edit")))))),
+          el("p", { class: "muted small", style: "margin-top:12px" }, `Data version ${reg.dataVersion} (seeded ${reg.seedVersion}) · ${plural(reg.edits, "recorded edit")}.`));
+      };
+      await draw();
+    }, true], ["History", async b => {
+      const h = await api.get("/api/agents/history");
+      put(b, h.length ? el("div", { class: "card flush" }, table(["When", "Company", "Field", "Was", "Now", "By", "Reason", "Data version"], h.map(e => el("tr", {},
+        el("td", { class: "small" }, e.at), el("td", {}, e.agent_id), el("td", {}, e.field), el("td", {}, String(e.old ?? "Unrated")), el("td", {}, String(e.new ?? "Unrated")),
+        el("td", {}, e.editor), el("td", { class: "small" }, e.reason), el("td", { class: "small muted" }, e.data_version))))) : el("p", { class: "muted" }, "No edits yet: the register is Jon's as seeded on 21 October 2026."));
+    }]]);
   },
   async incentives(box) {
     const country = el("input", { type: "search", placeholder: "Filter by country or region", "aria-label": "Filter programmes" });

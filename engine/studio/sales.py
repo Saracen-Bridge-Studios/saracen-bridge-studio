@@ -49,6 +49,16 @@ CHOICES = {
 }
 
 
+def feedback_text(v) -> str:
+    """Known sales feedback: the sales company chosen from Jon's register (Sales Agents), then the feedback."""
+    if not isinstance(v, dict):
+        return str(v or "")
+    from . import agents
+    a = agents.agent(v.get("agent") or "") if v.get("agent") else None
+    note = str(v.get("note") or "").strip()
+    return ": ".join(x for x in ((a or {}).get("displayName", ""), note) if x)
+
+
 def festival_text(v) -> str:
     """Festival strategy as the workbook takes it: the ticked festivals, then any note, in one line."""
     if isinstance(v, dict):
@@ -174,6 +184,8 @@ def writes(project: dict) -> dict:
         v = intake.get(key)
         if key == "festival":
             v = festival_text(v)
+        if key == "sales_feedback":
+            v = feedback_text(v)
         if v not in (None, ""):
             put("PROJECT_INTAKE", f"B{row}", _num(v) if key in NUMERIC else _date(v) if key == "delivery_date" and _date(v) else str(v))
     if intake.get("format") == "Episodic" and intake.get("episodes"):
