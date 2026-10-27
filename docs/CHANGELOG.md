@@ -12,7 +12,7 @@ One codebase, two installers: the Windows Setup.exe as before, and a Mac disk im
 - Added: the smoke test can host a production and open a huddle (`smoke.py <studio> --host`). (S-91)
 
 ## 1.1.5 (27 Oct 2026), Tim's 27 Oct notes: release order, Sales Agents moved, Saracen Bridge naming
-Setup `SETUPHASH`, in Tim's Downloads and posted in chat. TESTLINE
+Setup `45b45a73`, 82.4 MB, in Tim's Downloads and posted in chat. Upgraded over 1.1.4 here: the 41-check smoke test passes (hosting and a huddle included), and the installed Sales Estimates page was driven in a browser (release order, None, casting director, the Sales Agents tab, and no Sales Agents in the menu or on the home page). 234 tests pass under Windows Python, 241 under Linux.
 - Changed (Tim, 27 Oct): Sales Estimates' release model. The routes are Theatrical, VOD, TVOD, Straight to streaming and Straight to TV (Straight to streaming and Straight to TV for episodic), and each is numbered in the order it comes, 1 first; a route left at "—" isn't used. Choosing a number puts the route there and moves the others along. The workbook reads "1 Theatrical; 2 VOD; 3 Straight to streaming". A valuation saved before keeps its choice as number 1, under the new name. (S-101)
 - Added: Known sales feedback can say **None** for the sales company. (S-101)
 - Added: a Casting director field in the Package section, before the actors. It follows the principal cast summary in the workbook ("…; Casting director: name"), and alone doesn't count as a cast summary. (S-101)
