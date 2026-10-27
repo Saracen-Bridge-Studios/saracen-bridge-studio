@@ -20,9 +20,9 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
-from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
+from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.5"
+VERSION = "1.1.6"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -428,10 +428,20 @@ def budget_build(body: dict = Body(...)):
     known = {j["jurisdiction"] for j in budget.jurisdictions()}
     if body.get("jurisdiction") not in known:
         raise HTTPException(400, f"Pick a jurisdiction from the list ({len(known)} have the Saracen Bridge rate cards).")
+    use = body.get("use_order") or ("reasoned" if body.get("use_reasoned") else "first")
+    outs = rec.get("outputs") or {}
+    reasoned = outs.get("schedule_reasoned") if use == "reasoned" else outs.get("schedule_optimised") if use == "optimised" else None
+    if reasoned and reasoned.get("scene_count") != len(b["scenes"]):
+        reasoned = None                       # the script was read again since: the order no longer fits it
+    if reasoned and use == "optimised":
+        reasoned = {"order": reasoned["order"], "date": reasoned.get("date")}
     res = budget.build(b, jurisdiction=body["jurisdiction"], region=body.get("region"), tier=body.get("tier") or 2,
                        pages_per_day=body.get("pages_per_day"), inputs=body.get("inputs") or {},
-                       elements=(rec.get("outputs") or {}).get("elements") if body.get("use_elements", True) else None)
+                       elements=(rec.get("outputs") or {}).get("elements") if body.get("use_elements", True) else None,
+                       reasoned=reasoned)
     res["settings"] = {k: body.get(k) for k in ("jurisdiction", "region", "tier", "pages_per_day", "inputs")}
+    res["settings"]["use_order"] = use if reasoned else "first"
+    res["settings"]["use_reasoned"] = bool(reasoned) and use == "reasoned"
     res["built"] = time.strftime("%Y-%m-%d %H:%M:%S")
     base = res["budget"]["base"]
     store.update_run(tool, run_id, outputs={"budget": res},
@@ -608,6 +618,149 @@ def elements_tag(body: dict = Body(...)):
         queued.append(store.enqueue("elements", tool, rid, rec["title"], {"mode": mode}))
     jobs.ensure_worker()
     return {"queued": len(queued), "jobs": queued, "engine": engine.describe(), "mode": mode}
+
+
+# ---------- schedule: the optimised and the reasoned shooting order (1.1.6) ----------
+@app.post("/api/tools/schedule/optimise")
+def schedule_optimise(body: dict = Body(...)):
+    """The Studio's own shooting order, by arithmetic (no AI): saved with the script."""
+    tool, rid = body.get("tool") or "schedule", body.get("run_id")
+    try:
+        rec = fresh_breakdown(tool, rid)
+    except (FileNotFoundError, KeyError, TypeError) as e:
+        raise HTTPException(404, "That script is no longer in the Library.") from e
+    b = (rec.get("outputs") or {}).get("breakdown") or {}
+    if not b.get("scenes"):
+        raise HTTPException(400, "This item has no script breakdown to schedule.")
+    res = schedreason.optimise(b, sales._num(body.get("pages_per_day")) or None)
+    store.update_run(tool, rid, outputs={"schedule_optimised": res})
+    return res
+
+
+
+@app.post("/api/tools/schedule/reason")
+def schedule_reason(body: dict = Body(...)):
+    """Queue the model's reasoned shooting order for a script (Deep reasoning unless Quick is asked for)."""
+    tool, rid = body.get("tool") or "schedule", body.get("run_id")
+    if not rid:
+        raise HTTPException(400, "Pick a script first.")
+    try:
+        rec = fresh_breakdown(tool, rid)
+    except (FileNotFoundError, KeyError) as e:
+        raise HTTPException(404, "That script is no longer in the Library.") from e
+    if not ((rec.get("outputs") or {}).get("breakdown") or {}).get("scenes"):
+        raise HTTPException(400, "This item has no script breakdown to schedule.")
+    settings = store.load_settings()
+    mode = llm.mode_settings(settings, body.get("mode") or "deep")["mode"]
+    engine, why = llm.resolve(settings, mode)
+    if not engine:
+        raise HTTPException(409, why)
+    ppd = sales._num(body.get("pages_per_day")) or None
+    job = store.enqueue("schedreason", tool, rid, rec["title"], {"mode": mode, "pages_per_day": ppd})
+    jobs.ensure_worker()
+    return {"queued": 1, "jobs": [job], "engine": engine.describe(), "mode": mode}
+
+
+# ---------- Casting Director (1.1.6) ----------
+def _casting_run(tool: str, run_id: str):
+    if tool not in SCRIPT_TOOLS:
+        raise HTTPException(404, "Unknown tool")
+    try:
+        fresh_breakdown(tool, run_id)
+        rec, folder = store.get_run(tool, run_id)
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That script is no longer in the Library. Drop it in again.") from e
+    if not (rec.get("outputs", {}).get("breakdown") or {}).get("scenes"):
+        raise HTTPException(400, "This item has no script breakdown to cast from.")
+    return rec, folder
+
+
+def _casting_prefill(rec: dict) -> dict:
+    """The film's genre and budget (USD) from the latest Sales Estimates valuation with the same title, if there is one."""
+    title = (rec.get("title") or "").strip().lower()
+    for r in store.list_runs(tool="sales", limit=200)["runs"]:
+        if (r.get("title") or "").strip().lower() != title:
+            continue
+        try:
+            v, _ = store.get_run("sales", r["id"])
+        except FileNotFoundError:
+            continue
+        intake = (v.get("inputs") or {}).get("intake") or {}
+        out = {"from": r["title"]}
+        if intake.get("genre"):
+            out["genre"] = intake["genre"]
+        amt, cur = sales._num(intake.get("budget")), intake.get("budget_currency") or "USD"
+        rate = sales.fx_rates().get(cur)
+        if amt and rate:
+            out["budget_usd"] = round(amt * rate)
+        return out
+    return {}
+
+
+@app.get("/api/casting/{tool}/{run_id}")
+def casting_get(tool: str, run_id: str):
+    """The script's roles, each with its reading and a shortlist from the Saracen Bridge actor database."""
+    rec, folder = _casting_run(tool, run_id)
+    out = rec["outputs"]
+    read = out.get("casting_read") or {}
+    reading = read.get("roles")
+    if reading is None:                       # before the model has read the roles: the ages the script prints
+        try:
+            reading = casting.script_ages(rec["inputs"]["file"], (folder / rec["inputs"]["file"]).read_bytes(), out["breakdown"])
+        except Exception:  # noqa: BLE001 - a script that can't be re-read still gets its roles
+            reading = {}
+    saved = out.get("casting") or {}
+    pre = _casting_prefill(rec) if not saved else {}
+    genre = saved.get("genre", pre.get("genre"))
+    budget_usd = saved.get("budget_usd", pre.get("budget_usd"))
+    res = casting.suggest(out["breakdown"], reading, genre=genre or None, budget_usd=budget_usd or None, edits=saved.get("edits"))
+    res.update(title=rec["title"], prefill_from=pre.get("from"), read={k: read.get(k) for k in ("mode", "engine", "date", "seconds")} if read else None)
+    return res
+
+
+@app.put("/api/casting/{tool}/{run_id}")
+def casting_put(tool: str, run_id: str, body: dict = Body(...)):
+    """Keep the film's genre and budget for casting, and any correction to a role's reading or size of part."""
+    rec, _ = _casting_run(tool, run_id)
+    saved = dict(rec["outputs"].get("casting") or {})
+    if "genre" in body:
+        saved["genre"] = body["genre"] if body["genre"] in casting.GENRE_WORDS else None
+    if "budget_usd" in body:
+        b = sales._num(body["budget_usd"])
+        saved["budget_usd"] = b if b and b > 0 else None
+    edits = dict(saved.get("edits") or {})
+    for name, e in (body.get("edits") or {}).items():
+        clean = {}
+        if e.get("gender") in casting.GENDERS or e.get("gender") == "Unknown":
+            clean["gender"] = "Any" if e["gender"] == "Unknown" else e["gender"]
+        if e.get("size") in casting.SIZES:
+            clean["size"] = e["size"]
+        for k in ("age_low", "age_high"):
+            if e.get(k) not in (None, ""):
+                clean[k] = max(0, min(100, int(float(e[k]))))
+        if str(e.get("description") or "").strip():
+            clean["description"] = str(e["description"]).strip()[:400]
+        if clean:
+            edits[name] = {**edits.get(name, {}), **clean}
+        elif name in edits and e.get("reset"):
+            edits.pop(name)
+    saved["edits"] = edits
+    store.update_run(tool, run_id, outputs={"casting": saved})
+    return casting_get(tool, run_id)
+
+
+@app.post("/api/casting/{tool}/{run_id}/read")
+def casting_read(tool: str, run_id: str, body: dict = Body(default={})):
+    """Queue the model's reading of the principal roles (gender, playing age, a one-line description)."""
+    rec, _ = _casting_run(tool, run_id)
+    settings = store.load_settings()
+    mode = llm.mode_settings(settings, (body or {}).get("mode"))["mode"]
+    engine, why = llm.resolve(settings, mode)
+    if not engine:
+        raise HTTPException(409, why)
+    job = store.enqueue("casting", tool, run_id, rec["title"], {"mode": mode})
+    jobs.ensure_worker()
+    return {"queued": 1, "jobs": [job], "engine": engine.describe(), "mode": mode}
 
 
 # ---------- brand: scene-by-scene opportunities (1.0.7) ----------
@@ -862,6 +1015,55 @@ async def agreement_build(file: UploadFile = File(...), draft_name: str = Form("
                "warnings": r.get("warnings", []), "population": r.get("population")}
     rec = store.save_run("agreement", draft_name, {"file": file.filename, "include_proposed": include_proposed}, summary, res["files"])
     return {"ok": True, "run_id": rec["id"], "files": rec["files"], **summary}
+
+
+# ---------- sales: an existing sales estimate, read and set beside the valuation (1.1.6) ----------
+@app.post("/api/tools/sales/estimate/read")
+async def sales_estimate_read(file: UploadFile = File(...)):
+    """Read a sales company's estimate (spreadsheet, CSV, Word or PDF) into the workbook's territories, for checking."""
+    data = await file.read()
+    try:
+        return estimates.read(file.filename or "estimate", data)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    except Exception as e:  # noqa: BLE001 - a file we can't parse is the user's to see, not a server fault
+        raise HTTPException(400, f"Couldn't read {file.filename}: {e.__class__.__name__}. Send it as a spreadsheet or CSV.") from e
+
+
+def _estimate_view(rec: dict) -> dict:
+    est = (rec.get("outputs") or {}).get("existing_estimate")
+    if not est:
+        return {"estimate": None, "comparison": []}
+    rate = sales.fx_rates().get(est.get("currency") or "USD") or 1.0
+    return {"estimate": est, "comparison": estimates.compare(est, (rec.get("outputs") or {}).get("valuation") or {}, rate), "usd_per_unit": rate}
+
+
+@app.get("/api/tools/sales/{run_id}/estimate")
+def sales_estimate_get(run_id: str):
+    try:
+        rec, _ = store.get_run("sales", run_id)
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That valuation is no longer in the Library.") from e
+    return _estimate_view(rec)
+
+
+@app.put("/api/tools/sales/{run_id}/estimate")
+def sales_estimate_put(run_id: str, body: dict = Body(...)):
+    """Keep the estimate (as checked) with the valuation; null removes it."""
+    try:
+        store.get_run("sales", run_id)
+    except FileNotFoundError as e:
+        raise HTTPException(404, "Value the film first, then add the existing estimate to it.") from e
+    est = body.get("estimate")
+    if est:
+        rows = [{"territory": x["territory"], "as_written": str(x.get("as_written") or "")[:80],
+                 **{k: sales._num(x.get(k)) for k in ("ask", "take", "floor")}} for x in est.get("rows") or [] if x.get("territory")]
+        est = {"file": str(est.get("file") or "")[:200], "company": str(est.get("company") or "")[:120], "date": str(est.get("date") or "")[:10],
+               "currency": est.get("currency") if est.get("currency") in sales.fx_rates() else "USD", "rows": rows,
+               "total": {k: sum(x[k] or 0 for x in rows) for k in ("ask", "take")}, "added": time.strftime("%Y-%m-%d")}
+    store.update_run("sales", run_id, outputs={"existing_estimate": est or None})
+    rec, _ = store.get_run("sales", run_id)
+    return _estimate_view(rec)
 
 
 # ---------- sales valuation: Jon's engine (1.0.5) ----------

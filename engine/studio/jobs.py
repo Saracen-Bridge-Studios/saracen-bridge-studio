@@ -8,7 +8,7 @@ from __future__ import annotations
 import threading
 import traceback
 
-from . import bfiread, brandspot, coverage, elements, lookbook, report, store
+from . import bfiread, brandspot, casting, coverage, elements, lookbook, report, schedreason, store
 
 _lock = threading.Lock()
 _thread: threading.Thread | None = None
@@ -151,4 +151,30 @@ def run_bfiread(job: dict) -> None:
                      summary={"bfi_a": sum(c["proposed"] for k, c in result["criteria"].items() if k.startswith("A"))})
 
 
-HANDLERS = {"coverage": run_coverage, "lookbook": run_lookbook, "brandspot": run_brandspot, "elements": run_elements, "bfiread": run_bfiread}
+def run_casting(job: dict) -> None:
+    from .server import fresh_breakdown
+    fresh_breakdown(job["tool"], job["run_id"])
+    rec, folder = store.get_run(job["tool"], job["run_id"])
+    name = rec["inputs"]["file"]
+    jid = job["id"]
+    result = casting.read_roles(name, (folder / name).read_bytes(), rec["outputs"]["breakdown"], store.load_settings(),
+                                mode=(job.get("options") or {}).get("mode"), progress=lambda m: store.set_job(jid, progress=m),
+                                cancelled=lambda: store.get_job(jid)["status"] == "cancelled")
+    result["date"] = __import__("datetime").date.today().isoformat()
+    store.update_run(job["tool"], job["run_id"], outputs={"casting_read": result}, summary={"roles_read": len(result["roles"])})
+
+
+def run_schedreason(job: dict) -> None:
+    from .server import fresh_breakdown
+    fresh_breakdown(job["tool"], job["run_id"])
+    rec, _ = store.get_run(job["tool"], job["run_id"])
+    jid, opts = job["id"], job.get("options") or {}
+    result = schedreason.reason(rec["outputs"]["breakdown"], store.load_settings(), pages_per_day=opts.get("pages_per_day"),
+                                elements=rec["outputs"].get("elements"), mode=opts.get("mode") or "deep",
+                                progress=lambda m: store.set_job(jid, progress=m), cancelled=lambda: store.get_job(jid)["status"] == "cancelled")
+    store.update_run(job["tool"], job["run_id"], outputs={"schedule_reasoned": result},
+                     summary={"reasoned_days": len(result["days"])})
+
+
+HANDLERS = {"coverage": run_coverage, "lookbook": run_lookbook, "brandspot": run_brandspot, "elements": run_elements, "bfiread": run_bfiread,
+            "casting": run_casting, "schedreason": run_schedreason}

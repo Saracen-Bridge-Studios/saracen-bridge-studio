@@ -36,6 +36,7 @@ const ICONS = {
   home: "M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z",
   coverage: "M7 3h7l4 4v14H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM14 3v4h4M9.5 11h6M9.5 14.5h6M9.5 18h3.5",
   lookbook: "M3.5 6.5h12v12h-12zM8.5 3.5h12v12M3.5 15l3.5-3.5 3 3 2-2 3.5 3.5",
+  casting: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21v-1a6 6 0 0 1 12 0v1M18.5 4l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z",
   schedule: "M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 9l1.2-4.2a1 1 0 0 1 1.2-.7l13 3.4M8.5 4.9l-1.2 4.1M13.3 6.2l-1.1 2.8M8 13.5h3M8 17h6",
   incentives: "M12 21s-6.5-5.4-6.5-11a6.5 6.5 0 0 1 13 0c0 5.6-6.5 11-6.5 11zM9.8 12.4l4.4-4.4M10 8.6h.01M14 12h.01",
   bfi: "M12 3.5l2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4L4.2 9.2l5.4-.8z",
@@ -1350,7 +1351,7 @@ const RESULT_VIEWS = {
 /* ---------------- schedule & budget (1.0.4) ---------------- */
 let BUDGET_RUN = null, BUDGET_OPEN = false;   /* a Library item, and whether to open the Schedule & budget tab on it */
 let BUDGET_OPTS = null;
-const BSTATUS = { benchmark: ["", "Rate card"], input: ["PASS", "Your figure"], unknown: ["PRELIMINARY", "Unknown"] };
+const BSTATUS = { benchmark: ["", "Rate card"], input: ["PASS", "Your figure"], unknown: ["PRELIMINARY", "Unknown"], allowance: ["PRELIMINARY", "Allowance"] };
 const money = (cur, n) => n === null || n === undefined ? "—" : `${cur} ${fmt(n)}`;
 async function budgetPanel(box) {
   BUDGET_OPTS = BUDGET_OPTS || await api.get("/api/tools/schedule/budget/options");
@@ -1368,12 +1369,12 @@ async function budgetPanel(box) {
   const tier = el("select", { "aria-label": "Crew experience tier" }, [1, 2, 3, 4].map(n => el("option", { value: n, selected: n === 2 }, `Tier ${n}`)));
   const pace = Object.fromEntries(["lean", "base", "conservative"].map(k => [k, num(BUDGET_OPTS.pages_per_day[k], `Pages a day, ${k}`, 70, 0.25)]));
   const fringe = num("", "Payroll load %", 90), bg = num("", "Background artists a day", 90, 1), vfx = num("", "VFX shots", 90, 1);
-  let state = { overrides: {}, cast: {} };
+  let state = { overrides: {}, cast: {}, useOrder: "first" }, RUNREC = null;
   const out = el("div", { style: "margin-top:22px" }), elBox = el("div", {});
   const settings = () => ({ tool: "schedule", run_id: pick.value, jurisdiction: jur.value, region: reg.value, tier: Number(tier.value),
     pages_per_day: Object.fromEntries(Object.entries(pace).map(([k, i]) => [k, Number(i.value) || BUDGET_OPTS.pages_per_day[k]])),
     inputs: { fringe_pct: fringe.value === "" ? null : Number(fringe.value), background_per_day: bg.value === "" ? null : Number(bg.value),
-      vfx_shots: vfx.value === "" ? null : Number(vfx.value), overrides: state.overrides, cast: state.cast } });
+      vfx_shots: vfx.value === "" ? null : Number(vfx.value), overrides: state.overrides, cast: state.cast }, use_order: state.useOrder || "first" });
   const go = async btn => {
     if (btn) btn.disabled = true;
     put(out, el("div", { class: "clapper" }));
@@ -1384,27 +1385,76 @@ async function budgetPanel(box) {
   const restore = async () => {
     BUDGET_RUN = pick.value;
     const r = await api.get(`/api/runs/schedule/${pick.value}`).catch(() => null);
+    RUNREC = r;
     put(elBox, r ? elementsBox(r, () => restore()) : null);
     const res = r && r.outputs && r.outputs.budget;
-    if (!res) { state = { overrides: {}, cast: {} }; return put(out, el("p", { class: "muted" }, "No budget yet for this script. Choose the settings and press Build.")); }
+    if (!res) { state = { overrides: {}, cast: {}, useOrder: "first" }; return put(out, el("p", { class: "muted" }, "No budget yet for this script. Choose the settings and press Build.")); }
     const st = res.settings || {}, inp = st.inputs || {};
     if (st.jurisdiction) { jur.value = st.jurisdiction; fillReg(st.region); }
     if (st.tier) tier.value = st.tier;
     Object.entries(st.pages_per_day || {}).forEach(([k, v]) => pace[k] && (pace[k].value = v));
     fringe.value = inp.fringe_pct ?? ""; bg.value = inp.background_per_day ?? ""; vfx.value = inp.vfx_shots ?? "";
-    state = { overrides: inp.overrides || {}, cast: inp.cast || {} };
+    state = { overrides: inp.overrides || {}, cast: inp.cast || {}, useOrder: st.use_order || (st.use_reasoned ? "reasoned" : "first") };
     render(res);
   };
   pick.addEventListener("change", restore);
+  /* 1.1.6 (Tim, 27 Oct: "deep reasoning on schedule"): the AI reasons out a better shooting order; the user chooses
+     whether the budget uses it */
+  const reasonedBox = res => {
+    const outs = (RUNREC && RUNREC.outputs) || {}, opt = outs.schedule_optimised, rs = outs.schedule_reasoned;
+    const watch = jobWatch("schedreason", "schedule", pick.value, () => restore());
+    const pace0 = () => Number(pace.base.value) || null;
+    const optimise = async ev => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try { const r = await api.post("/api/tools/schedule/optimise", { run_id: pick.value, pages_per_day: pace0() });
+        toast("ok", "Order optimised", `${r.measures.days} days, ${plural(r.measures.moves, "company move")}, ${plural(r.measures.hold_days, "day")} actors are held (first pass ${r.first_pass.hold_days}).`); await restore(); }
+      catch (e) { toast("bad", "Couldn't optimise", e.message); btn.disabled = false; }
+    };
+    const reason = async ev => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try { await api.post("/api/tools/schedule/reason", { run_id: pick.value, mode: "deep", pages_per_day: pace0() });
+        toast("ai", "Reasoning out the shooting order", `Deep reasoning on ${runsOn()}: the AI thinks before it answers, so this takes a few minutes.`); pollJobs(); watch.start(); }
+      catch (e) { toast("bad", "Couldn't start", el("span", {}, e.message, " ", el("a", { href: "#/settings" }, "Settings"))); }
+      btn.disabled = false;
+    };
+    const inUse = res.schedule_source || "first";
+    const useBtn = (which, label) => inUse === which ? el("span", { class: "pill PASS" }, icon("check"), `The budget uses ${label}`)
+      : el("button", { type: "button", class: "btn sm" + (which === "first" ? " quiet" : " primary"), onclick: ev => { state.useOrder = which; go(ev.currentTarget); } }, `Use ${label}`);
+    const intro = el("p", { class: "muted", style: "margin:0 0 12px" }, "The first pass is mechanical. Optimise works the order out by arithmetic: fewest shooting days, then fewest company moves, then fewest days actors are paid to wait between their scenes. Reason it through then has the AI, with Deep reasoning, adjust that order for what arithmetic can't see (weather cover, child, stunt, water and intimacy days) and say why. Every scene is checked back in; nothing changes until you choose an order.");
+    const cols = [["First pass", (opt || (rs && rs.optimised) || {}).first_pass || (rs && rs.measures.first_pass)], ["Optimised", (opt || (rs && rs.optimised) || {}).measures], ["AI reasoned", rs && rs.measures.reasoned]].filter(([, m]) => m);
+    const row = (l, k, lowerBetter) => el("tr", {}, el("td", {}, l), cols.map(([, m], i) => {
+      const v = m[k], f = cols[0][1][k];
+      return el("td", { class: "num" }, i ? el("b", {}, fmt(v)) : fmt(v), i && v !== f ? el("span", { class: "small" + (lowerBetter && v < f ? "" : " muted"), style: lowerBetter && v < f ? "color:var(--ok)" : null }, ` (${v > f ? "+" : ""}${fmt(v - f)})`) : null);
+    }));
+    const board = rs ? rs.board : opt ? opt.board : null;
+    return el("div", {}, intro,
+      el("div", { class: "row", style: "align-items:center;gap:10px;margin-bottom:12px" },
+        el("button", { type: "button", class: "btn sm" + (opt ? " quiet" : " primary"), onclick: optimise }, icon("schedule"), opt ? "Optimise again" : "Optimise the order"),
+        el("button", { type: "button", class: "btn sm" + (rs ? " quiet" : opt ? " primary" : ""), onclick: reason }, icon("sparkle"), rs ? "Reason it through again" : "Reason it through (Deep)")), watch,
+      cols.length > 1 ? [el("div", { class: "card flush" }, table(["Measure", ...cols.map(([l]) => "#" + l)], [row("Shooting days", "days", true), row("Company moves", "moves", true),
+          row("Days actors are held between work days", "hold_days", true), row("…of which the two largest parts", "lead_hold_days", true), row("Days over the pace", "over_pace", true), row("Night days", "night_days", false)])),
+        el("div", { class: "row", style: "align-items:center;gap:10px;margin-top:12px" }, useBtn("first", "the first pass"), opt || (rs && rs.optimised) ? useBtn("optimised", "the optimised order") : null, rs ? useBtn("reasoned", "the AI's order") : null)] : null,
+      rs ? el("p", { class: "small muted", style: "margin-top:10px" }, `AI order by ${rs.engine}, ${rs.mode} reasoning, ${rs.date}${rs.seconds ? `, in ${Math.round(rs.seconds / 60) || "under a"} min` : ""}, at ${rs.pages_per_day} pages a day, starting from the optimised order.`) : null,
+      rs && (rs.repairs || []).length ? el("p", { class: "note PRELIMINARY" }, "The AI's answer needed checking: ", rs.repairs.join(" ")) : null,
+      rs && (rs.changes || []).length ? [el("h2", { style: "margin-top:18px" }, "What the AI changed, and why"), el("ul", { class: "plain", style: "line-height:1.6" }, rs.changes.map(c => el("li", {}, el("b", {}, c.change), c.reason ? `: ${c.reason}` : "")))] : null,
+      rs && (rs.risks || []).length ? [el("h2", { style: "margin-top:18px" }, "Risks it still carries"), el("ul", { class: "plain", style: "line-height:1.6" }, rs.risks.map(r => el("li", {}, icon("alert"), " ", r)))] : null,
+      board ? [el("h2", { style: "margin-top:18px" }, rs ? "The AI's order, base case" : "The optimised order, base case"),
+        el("div", { class: "card flush" }, table(["#Day", "D/N", "#Pages", "Scenes", "Locations", "#Moves", "Cast", "Note"],
+          board.map(x => el("tr", {}, el("td", { class: "num" }, x.day), el("td", { class: "small" }, x.night ? "Night" : "Day"), el("td", { class: "num" }, x.pages),
+            el("td", { class: "small" }, x.scenes.join(", ")), el("td", { class: "small" }, x.locations.join("; ")), el("td", { class: "num" }, x.moves),
+            el("td", { class: "small muted" }, x.cast.join(", ")), el("td", { class: "small muted" }, x.note || "")))))] : null,
+      el("p", { class: "muted small" }, "Used for the budget, the optimised order is packed at each case's pace; the AI's order keeps its own days in the base case, and lean and conservative take the same order at their pace. Check either with the 1st AD."));
+  };
   const render = res => {
     const b = res.budget, base = b.base, cur = res.currency;
     const lineKey = l => `${l.account}|${l.description}`;
     const castNames = new Set(res.dood.map(c => c.name));
-    const toPrice = base.lines.filter(l => l.status === "unknown" || state.overrides[lineKey(l)] !== undefined || (l.account === "1401" && state.cast[l.description]));
+    const isAllowance = l => l.status === "allowance";     /* 1.1.6: a planning figure from the card, kept out of the priced total */
+    const toPrice = base.lines.filter(l => l.status === "unknown" || isAllowance(l) || state.overrides[lineKey(l)] !== undefined || (l.account === "1401" && state.cast[l.description]));
     const priceRow = l => {
       const isCast = l.account === "1401" && castNames.has(l.description);
       const prev = isCast ? (state.cast[l.description] || {}) : { amount: state.overrides[lineKey(l)] };
-      const amt = el("input", { type: "number", min: 0, step: "any", value: prev.amount ?? "", placeholder: "Amount", "aria-label": `Amount for ${l.description}`, style: "width:130px" });
+      const amt = el("input", { type: "number", min: 0, step: "any", value: prev.amount ?? "", placeholder: isAllowance(l) && l.amount !== null ? `Allowance ${fmt(l.amount)}` : "Amount", "aria-label": `Amount for ${l.description}`, style: "width:150px" });
       const basis = isCast ? el("select", { "aria-label": `Basis for ${l.description}` }, [["flat", "Total fee"], ["day", "Per day"], ["week", "Per week"]].map(([v, t]) => el("option", { value: v, selected: v === (prev.basis || "flat") }, t))) : null;
       const save = () => {
         if (isCast) { if (amt.value === "") delete state.cast[l.description]; else state.cast[l.description] = { amount: Number(amt.value), basis: basis.value }; }
@@ -1412,7 +1462,7 @@ async function budgetPanel(box) {
       };
       amt.addEventListener("change", save); basis && basis.addEventListener("change", save);
       return el("tr", {}, el("td", { class: "mono small" }, l.account), el("td", {}, el("b", {}, l.description), el("div", { class: "small muted" }, l.category_name)),
-        el("td", { class: "small muted" }, isCast ? `${plural(l.qty, "day")} worked` : (l.note || "")), el("td", {}, el("div", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, amt, basis)));
+        el("td", { class: "small muted" }, isCast ? `${plural(l.qty, "day")} worked` : (l.note || ""), isAllowance(l) ? el("div", {}, l.basis) : null), el("td", {}, el("div", { class: "row", style: "gap:8px;flex-wrap:nowrap" }, amt, basis)));
     };
     const catRows = base.categories.map(c => el("tr", {}, el("td", { class: "mono small" }, c.category), el("td", {}, c.name, el("div", { class: "small muted" }, c.phase)),
       ["lean", "base", "conservative"].map(s => el("td", { class: "num" }, fmt((b[s].categories.find(x => x.category === c.category) || {}).known || 0))),
@@ -1423,9 +1473,10 @@ async function budgetPanel(box) {
     put(out,
       el("div", { class: "kpis" }, kpi("Shooting days", ["lean", "base", "conservative"].map(s => res.schedule[s].shoot_days).join(" / ")),
         kpi("Base case, priced lines", money(cur, base.known_total), true), kpi("Still to price", plural(base.unknown_lines, "line")),
+        kpi("Allowances, not in the total", base.allowance_lines ? money(cur, base.allowance_total) : "None"),
         kpi("Company moves", res.schedule.base.moves)),
       el("p", { class: "muted small", style: "margin:6px 0 0" }, `Lean / base / conservative at ${["lean", "base", "conservative"].map(s => res.pages_per_day[s]).join(" / ")} pages a day. ${res.jurisdiction}, ${res.region}, crew tier ${res.tier}. Built ${savedAt(res.built)}.`),
-      base.unknown_lines ? el("p", { class: "note PRELIMINARY" }, `PRELIMINARY: ${plural(base.unknown_lines, "line")} can't be priced from a script or the Saracen Bridge rate card (fees, negotiated roles, items the card doesn't list). They are not counted as zero. Price them under Lines to price.`) : el("p", { class: "note PASS" }, "Every line is priced. Still a script-only estimate: confirm with a line producer and production accountant."),
+      base.unknown_lines ? el("p", { class: "note PRELIMINARY" }, `PRELIMINARY: ${plural(base.unknown_lines, "line")} can't be priced from a script or the Saracen Bridge rate card (fees, negotiated roles, items the card doesn't list). They are not counted as zero. Price them under Lines to price.${base.allowance_lines ? ` ${plural(base.allowance_lines, "of them has", "of them have")} a planning allowance from the card (${money(cur, base.allowance_total)} in all), shown beside the line but kept out of the priced total until you enter a figure.` : ""}`) : el("p", { class: "note PASS" }, "Every line is priced. Still a script-only estimate: confirm with a line producer and production accountant."),
       (res.warnings || []).map(w => el("p", { class: "note " + (/no scenes/i.test(w) ? "FAIL" : "PRELIMINARY") }, w)),
       el("div", { class: "row", style: "margin:16px 0 4px" }, el("a", { class: "btn", href: `/api/runs/schedule/${pick.value}/budget.xlsx` }, icon("download"), "Download the workbook (.xlsx)")),
       el("div", { class: "card flush", style: "margin-top:16px" }, el("h2", { style: "padding:20px 20px 0" }, `Top sheet (${cur})`),
@@ -1443,7 +1494,10 @@ async function budgetPanel(box) {
       [`Stripboard (${res.schedule.base.shoot_days} days)`, d => d.append(el("div", { class: "card flush" }, table(["#Day", "D/N", "#Pages", "Scenes", "Locations", "#Moves", "Cast"],
         res.stripboard.map(x => el("tr", {}, el("td", { class: "num" }, x.day), el("td", { class: "small" }, x.night ? "Night" : "Day"), el("td", { class: "num" }, x.pages),
           el("td", { class: "small" }, x.scenes.join(", ")), el("td", { class: "small" }, x.locations.join("; ")), el("td", { class: "num" }, x.moves), el("td", { class: "small muted" }, x.cast.join(", ")))))),
-        el("p", { class: "muted small" }, "Base case. Day scenes, then night scenes, grouped by site; day and night work never share a day, and a scene that runs over carries on the next day. A first pass for the 1st AD, not a final schedule.")), true],
+        el("p", { class: "muted small" }, res.schedule_source === "reasoned" ? "Base case, in the AI's reasoned order (see Shooting order). Check it with the 1st AD before relying on it."
+          : res.schedule_source === "optimised" ? "Base case, in the Studio's optimised order (see Shooting order). Check it with the 1st AD before relying on it."
+          : "Base case. Day scenes, then night scenes, grouped by site; day and night work never share a day, and a scene that runs over carries on the next day. A first pass for the 1st AD, not a final schedule.")), true],
+      [res.schedule_source && res.schedule_source !== "first" ? `Shooting order (${res.schedule_source} in use)` : "Shooting order", d => d.append(reasonedBox(res)), true],
       ["Day out of days", d => d.append(el("div", { class: "card flush" }, table(["Character", "#Work days", "#First", "#Last", "#Holds"],
         res.dood.map(c => el("tr", {}, el("td", {}, el("b", {}, c.name)), el("td", { class: "num" }, c.work_days), el("td", { class: "num" }, c.first), el("td", { class: "num" }, c.last), el("td", { class: "num" }, c.hold_days))))))],
       ["Assumptions", d => d.append(el("ul", { class: "plain", style: "line-height:1.7" }, res.assumptions.map(a => el("li", {}, a))),
@@ -1540,6 +1594,21 @@ function salesResult(res) {
         el("td", { class: "num" }, el("b", {}, fmt(x.net))), el("td", { class: "num" }, x.coverage === "" ? "—" : pct(x.coverage))))),
       el("p", { class: "small", style: "padding:0 20px 16px" }, `Budget ${usdFull(f.budget_usd)}; net finance requirement ${usdFull(f.requirement_usd)}. Lender test: unsold Take ${usdFull(f.unsold_take)}, bankable value ${usdFull(f.bankable)}: `, el("b", {}, f.lender_result || "—"), ".")),
     el("p", { class: "muted small" }, "This is an independent indicative valuation produced by Saracen Bridge Analytics using available market evidence, comparable-title performance, package analysis and proprietary modelling. It is not a formal sales-agent estimate, distributor offer or guarantee of sales performance. Territory values should be validated through direct buyer and recognised sales-agent market testing before being relied upon for binding financing, lending or production decisions.")];
+}
+/* an existing estimate beside the Saracen Bridge valuation, in USD at the engine's rates (1.1.6) */
+function estimateCompare(e, res) {
+  if (!e || !(e.rows || []).length || !res) return null;
+  const rate = (SALES_OPTS && SALES_OPTS.fx && SALES_OPTS.fx[e.currency]) || 1;
+  const ours = Object.fromEntries((res.territories || []).map(t => [t.territory, t]));
+  const usdOf = v => v === null || v === undefined ? null : v * rate;
+  const rows = e.rows.map(x => { const o = ours[x.territory] || {}, a = usdOf(x.ask), d = a && o.ask ? a / o.ask - 1 : null;
+    return el("tr", {}, el("td", {}, x.territory), el("td", { class: "num" }, fmt(a)), el("td", { class: "num" }, fmt(usdOf(x.take))),
+      el("td", { class: "num" }, fmt(o.ask)), el("td", { class: "num" }, fmt(o.take)), el("td", { class: "num" }, d === null ? "—" : `${d > 0 ? "+" : ""}${Math.round(d * 100)}%`)); });
+  const tot = k => e.rows.reduce((s, x) => s + (usdOf(x[k]) || 0), 0);
+  return el("div", { class: "card flush", style: "margin-top:16px" },
+    el("h2", { style: "padding:20px 20px 0" }, `Beside ${e.company || "the existing estimate"}${e.date ? ` (${e.date})` : ""}`),
+    el("p", { class: "muted small", style: "padding:0 20px" }, `Their figures in USD${e.currency !== "USD" ? ` (from ${e.currency} at the engine's rate)` : ""}. Difference is their ask against the Saracen Bridge ask. Their total: ask ${usdFull(tot("ask"))}, take ${usdFull(tot("take"))}.`),
+    table(["Territory", "#Their ask", "#Their take", "#Saracen Bridge ask", "#Saracen Bridge take", "#Difference"], rows));
 }
 async function valuationPanel(box) {
   const wait = el("div", { class: "clapper" }); box.append(wait);
@@ -1644,7 +1713,67 @@ async function valuationPanel(box) {
     note.addEventListener("change", () => { v.note = note.value; });
     return el("div", { class: "row", style: "gap:10px" }, who, note);
   };
-  const special = () => ({ ...genrePair(), festival: festivalPick(), sales_feedback: feedbackPick(), release_model: releasePick() });
+  /* Existing sales estimate (Tim, 22 and 27 Oct, 1.1.6): a sales company's estimate by territory, ingested from its file,
+     checked here, kept with the valuation and set beside it. It never changes the valuation. */
+  const estimateBox = () => {
+    const wrap = el("div", { style: "margin-top:4px" });
+    const cur = e => (SALES_OPTS.fx && SALES_OPTS.fx[e.currency] ? e.currency : "USD");
+    const show = () => {
+      const e = P.existing_estimate;
+      if (e) return put(wrap, el("div", { class: "row", style: "align-items:center;gap:10px" }, el("span", { class: "pill PASS" }, icon("check"), "Existing estimate kept"),
+        el("span", { class: "small" }, `${e.company || "Sales company not named"}${e.date ? `, ${e.date}` : ""}: ${plural(e.rows.length, "territory", "territories")}, ask ${money(cur(e), e.total.ask)}, take ${money(cur(e), e.total.take)}`),
+        el("button", { type: "button", class: "btn sm quiet", onclick: () => { P.existing_estimate = null; show(); } }, "Remove")),
+        el("p", { class: "muted small", style: "margin:6px 0 0" }, "Set beside the Saracen Bridge valuation, territory by territory, when you value. It doesn't change the valuation: an estimate is a sales company's opinion, not a deal."));
+      const file = el("input", { type: "file", accept: ".xlsx,.xlsm,.csv,.tsv,.txt,.docx,.pdf", "aria-label": "Existing sales estimate file" });
+      const ingest = el("button", { type: "button", class: "btn sm primary", onclick: async () => {
+        if (!file.files[0]) return toast("info", "Choose the estimate file first");
+        ingest.disabled = true;
+        const fd = new FormData(); fd.append("file", file.files[0], file.files[0].name);
+        try { review(await api.form("/api/tools/sales/estimate/read", fd)); } catch (err) { toast("bad", "Couldn't read the estimate", err.message); }
+        ingest.disabled = false;
+      } }, icon("upload"), "Ingest");
+      put(wrap, el("div", { class: "row", style: "gap:10px;align-items:center" }, file, ingest),
+        el("p", { class: "muted small", style: "margin:6px 0 0" }, "A sales company's estimate by territory, as a spreadsheet, CSV, Word or PDF. You check what was read before it's kept."));
+    };
+    const review = r => {
+      const fb = P.intake.sales_feedback || {}, agent = (SALES_AGENTS || []).find(a => a.agentId === fb.agent);
+      const company = el("input", { type: "text", value: agent ? agent.displayName : "", placeholder: "Sales company", "aria-label": "Sales company" });
+      const date = el("input", { type: "date", "aria-label": "Date of the estimate" });
+      const currency = el("select", { "aria-label": "Currency" }, Object.keys(SALES_OPTS.fx || { USD: 1 }).map(c => el("option", { selected: c === r.currency }, c)));
+      const rows = r.rows.map(x => Object.assign({}, x));
+      const body = el("tbody");
+      const drawRows = () => put(body, rows.map((x, i) => el("tr", {},
+        el("td", {}, (() => { const t = el("select", { "aria-label": `Territory for ${x.as_written}` }, (SALES_OPTS.territories || []).map(o => el("option", { selected: o === x.territory }, o)));
+          t.addEventListener("change", () => { x.territory = t.value; }); return t; })()),
+        el("td", { class: "small muted" }, x.as_written, el("div", {}, x.how || "")),
+        ["ask", "take"].map(k => el("td", {}, (() => { const n = el("input", { type: "number", step: "any", value: x[k] ?? "", style: "width:130px", "aria-label": `${k} for ${x.territory}` });
+          n.addEventListener("change", () => { x[k] = n.value === "" ? null : Number(n.value); }); return n; })())),
+        el("td", {}, el("button", { type: "button", class: "btn sm quiet", "aria-label": `Leave out ${x.territory}`, onclick: () => { rows.splice(i, 1); drawRows(); } }, icon("x"))))));
+      drawRows();
+      const keepIt = () => {
+        const kept = rows.filter(x => x.territory);
+        P.existing_estimate = { file: r.file, company: company.value.trim(), date: date.value, currency: currency.value, rows: kept,
+          total: { ask: kept.reduce((a, x) => a + (x.ask || 0), 0), take: kept.reduce((a, x) => a + (x.take || 0), 0) } };
+        show(); toast("ok", "Existing estimate kept", "Value the film to see it beside the Saracen Bridge figures.");
+      };
+      put(wrap, el("div", { class: "card", style: "margin-top:6px" },
+        el("h3", { style: "margin-top:0" }, `Read from ${r.file}: ${plural(r.rows.length, "territory", "territories")}`),
+        r.note ? el("p", { class: "note PRELIMINARY" }, r.note) : null,
+        (r.checks || []).map(c => el("p", { class: "note PRELIMINARY" }, c)),
+        el("div", { class: "row", style: "align-items:flex-end;gap:10px" }, el("label", { class: "f", style: "flex:1 1 220px" }, "Sales company", company),
+          el("label", { class: "f", style: "flex:0 1 170px" }, "Date", date), el("label", { class: "f", style: "flex:0 1 110px" }, `Currency${r.currency_stated ? "" : " (not stated)"}`, currency)),
+        el("div", { class: "card flush", style: "margin-top:12px" }, table(["Territory", "As written", "Ask", "Take", ""], body)),
+        (r.unplaced || []).length ? el("details", { class: "lb-more", style: "margin-top:10px" }, el("summary", {}, `${plural(r.unplaced.length, "row")} not placed in a territory`),
+          el("ul", { class: "plain small", style: "margin-top:8px" }, r.unplaced.map(u => el("li", {}, u)))) : null,
+        el("div", { class: "row", style: "margin-top:12px;gap:10px" }, el("button", { type: "button", class: "btn primary", onclick: keepIt }, icon("check"), "Keep this estimate"),
+          el("button", { type: "button", class: "btn quiet", onclick: show }, "Cancel"))));
+    };
+    show();
+    return wrap;
+  };
+  const special = () => ({ ...genrePair(), festival: festivalPick(),
+    sales_feedback: el("div", {}, feedbackPick(), el("div", { class: "small", style: "margin:14px 0 6px;color:var(--fg-2)" }, "Existing sales estimate (optional)"), estimateBox()),
+    release_model: releasePick() });
   const fieldKind = { rating: sel("rating", L.rating || []),
     script_status: sel("script_status", CH.script_status || []), sales_stage: sel("sales_stage", CH.sales_stage || []),
     production_status: sel("production_status", L.production_status || []), budget_currency: sel("budget_currency", L.currencies || []),
@@ -1738,7 +1867,7 @@ async function valuationPanel(box) {
       runId = SALES_RUN = res.run_id;
       if (![...pick.options].some(o => o.value === runId)) pick.append(el("option", { value: runId, selected: true }, res.title));
       pick.value = runId;
-      put(out, el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${runId}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(res));
+      put(out, el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${runId}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(res), estimateCompare(P.existing_estimate, res));
       toast("ok", "Valued with the Saracen Bridge engine", `${res.territories.filter(t => t.status === "Complete").length} territories valued. Saved in the Library.`);
     } catch (e) { put(out, errBox(e)); }
     finally { btn.disabled = false; }
@@ -1749,7 +1878,7 @@ async function valuationPanel(box) {
     const r = await api.get(`/api/runs/sales/${id}`);
     P = Object.assign(blank(), r.inputs || {});
     draw();
-    put(out, r.outputs && r.outputs.valuation ? [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${id}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(r.outputs.valuation)] : null);
+    put(out, r.outputs && r.outputs.valuation ? [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${id}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(r.outputs.valuation), estimateCompare(P.existing_estimate, r.outputs.valuation)] : null);
   };
   pick.addEventListener("change", () => load(pick.value));
   from.addEventListener("change", async () => {
@@ -1775,7 +1904,106 @@ async function valuationPanel(box) {
 }
 
 /* ---------------- tool panels ---------------- */
+/* ---------------- Casting Director (1.1.6) ----------------
+   Tim, 27 Oct: casting suggestions for a broken-down script. Roles from the breakdown, each read by the AI (gender,
+   playing age, a breakdown line) and shortlisted from the Saracen Bridge Actor Value Database only. */
+let CASTING_RUN = null;
+async function castingPanel(box) {
+  const wait = el("div", { class: "clapper" }); box.append(wait);
+  const { runs } = await api.get("/api/runs?limit=200");
+  wait.remove();
+  const scripts = runs.filter(r => ["coverage", "schedule", "brand"].includes(r.tool) && (r.summary || {}).scene_count);
+  if (!scripts.length) return box.append(el("div", { class: "drop", style: "border-style:solid" }, el("div", { class: "art" }, icon("casting")),
+    el("div", { class: "big" }, "Read a script first"), el("p", {}, "Drop it on Script Coverage or Scheduling & Budgeting. Its breakdown gives the roles to cast."),
+    el("div", { class: "row" }, el("a", { class: "btn", href: "#/tool/coverage" }, "Open Script Coverage"))));
+  /* Tim's genres from the Sales Agents register (quick); the sales engine's options load the whole workbook */
+  const GN = SALES_OPTS ? (SALES_OPTS.genres || []).map(g => g.genre) : ((await api.get("/api/agents").catch(() => ({ genres: [] }))).genres || []).map(g => g.name);
+  const key = r => `${r.tool}/${r.id}`;
+  if (!scripts.some(r => key(r) === CASTING_RUN)) CASTING_RUN = key(scripts[0]);
+  const pick = el("select", { "aria-label": "Script" }, scripts.map(r => el("option", { value: key(r), selected: key(r) === CASTING_RUN },
+    `${r.title} · ${(toolById(r.tool) || {}).name || r.tool} · ${plural(r.summary.scene_count, "scene")}`)));
+  const genre = el("select", { "aria-label": "Genre" }, ["", ...GN].map(g => el("option", { value: g }, g || "Any genre")));
+  const budget = el("input", { type: "number", min: 0, step: "any", placeholder: "e.g. 5000000", "aria-label": "Budget in US dollars", style: "width:170px" });
+  const out = el("div", { style: "margin-top:18px" });
+  let data = null;
+  const load = async () => {
+    CASTING_RUN = pick.value;
+    put(out, el("div", { class: "clapper" }));
+    try { data = await api.get(`/api/casting/${pick.value}`); } catch (e) { return put(out, errBox(e)); }
+    render();
+  };
+  const save = async body => { try { data = await api.put(`/api/casting/${pick.value}`, body); render(); } catch (e) { toast("bad", "Couldn't save", e.message); } };
+  pick.addEventListener("change", load);
+  genre.addEventListener("change", () => save({ genre: genre.value || null }));
+  budget.addEventListener("change", () => save({ budget_usd: budget.value === "" ? null : Number(budget.value) }));
+  const sizeSel = r => { const n = el("select", { "aria-label": `Size of part for ${r.name}` }, ["Lead", "Supporting", "Featured"].map(x => el("option", { selected: x === r.size }, x)));
+    n.addEventListener("change", () => save({ edits: { [r.name]: { size: n.value } } })); return n; };
+  const ageText = r => (r.age_low || r.age_high) && r.age_low !== null && r.age_low !== undefined ? (r.age_low === r.age_high ? `${r.age_low}` : `${r.age_low}–${r.age_high}`) : "age not known";
+  const addBtn = (a, r) => pkgFind("actors", a.actor) ? el("span", { class: "pill PASS" }, icon("check"), "In the package")
+    : el("button", { type: "button", class: "btn sm", onclick: () => { pkgAttach("actors", a.actor, "Wish list", { role: r.name }); toast("ok", `${a.actor} added as Wish list`, `For ${r.name}. Value the package in Sales Estimates when it's ready.`); render(); } }, icon("plus"), "Add to package");
+  const roleCard = r => {
+    const rd = r.read || {};
+    const said = rd.edited ? " (corrected)" : rd.source === "model" ? (rd.stated ? " (as the script says)" : " (the AI's reading)") : rd.source === "script" ? " (age printed in the script)" : "";
+    const g = el("select", { "aria-label": "Gender" }, [["Female", "Female"], ["Male", "Male"], ["Non-binary", "Non-binary"], ["Any", "Open to any gender"]].map(([v, l]) => el("option", { value: v, selected: v === r.gender }, l)));
+    const lo = el("input", { type: "number", min: 0, max: 100, value: r.age_low ?? "", "aria-label": "Youngest playing age", style: "width:80px" });
+    const hi = el("input", { type: "number", min: 0, max: 100, value: r.age_high ?? "", "aria-label": "Oldest playing age", style: "width:80px" });
+    const desc = el("input", { type: "text", value: rd.description || "", placeholder: "One line for the breakdown", "aria-label": "Description" });
+    const editor = el("div", { class: "row", style: "gap:10px;align-items:flex-end;margin-top:12px;display:none" },
+      el("label", { class: "f", style: "flex:0 1 200px" }, "Gender", g), el("label", { class: "f", style: "flex:0 1 auto" }, "Playing age", el("div", { class: "row", style: "gap:6px;flex-wrap:nowrap" }, lo, hi)),
+      el("label", { class: "f", style: "flex:1 1 260px" }, "Description", desc), el("label", { class: "f", style: "flex:0 1 150px" }, "Size of part", sizeSel(r)),
+      el("button", { type: "button", class: "btn sm primary", onclick: () => save({ edits: { [r.name]: { gender: g.value, age_low: lo.value, age_high: hi.value, description: desc.value } } }) }, "Save"),
+      rd.edited ? el("button", { type: "button", class: "btn sm quiet", onclick: () => save({ edits: { [r.name]: { reset: true } } }) }, "Undo my changes") : null);
+    const rows = r.shortlist.map(a => el("tr", {}, el("td", {}, el("b", {}, a.actor), el("div", { class: "small muted" }, a.sales_role || "")),
+      el("td", {}, a.tier || "—"), el("td", { class: "num", title: a.value_basis }, fmt(a.value, 1)), el("td", { class: "small" }, `${usd(a.fee_low)}–${usd(a.fee_high)}`),
+      el("td", { class: "small" }, `from ${usd(a.min_budget)}`, el("div", { class: "muted" }, `optimal ${usd(a.optimal_floor)}+`)),
+      el("td", { class: "small" }, a.genres || "—", a.genre_match ? el("div", {}, el("span", { class: "pill PASS" }, "genre match")) : null),
+      el("td", { class: "small muted" }, a.why.join("; "), el("div", {}, `Confidence ${a.confidence}, reviewed ${a.reviewed || "—"}`)), el("td", {}, addBtn(a, r))));
+    return el("div", { class: "card", style: "margin-top:16px" },
+      el("div", { class: "row", style: "justify-content:space-between;align-items:baseline;gap:10px" },
+        el("h2", { style: "margin:0" }, r.name, " ", el("span", { class: "pill " + (r.size === "Lead" ? "AI" : "") }, r.size)),
+        el("span", { class: "small muted" }, `${plural(r.scenes, "scene")} (${Math.round(r.share * 100)}%) · ${plural(r.dialogue, "speech", "speeches")} · ${plural(r.days, "shooting day")} · first in scene ${r.first_scene}`)),
+      el("p", { style: "margin:10px 0 0" }, el("b", {}, `${r.gender === "Any" ? "Open to any gender" : r.gender}, ${ageText(r)}`), rd.description ? `: ${rd.description}` : "",
+        el("span", { class: "muted small" }, said), " ", el("button", { type: "button", class: "btn sm quiet", onclick: () => { editor.style.display = editor.style.display === "none" ? "flex" : "none"; } }, "Correct")),
+      editor,
+      (r.flags || []).map(f => el("p", { class: "note PRELIMINARY", style: "margin-top:10px" }, f)),
+      r.shortlist.length ? el("div", { class: "card flush", style: "margin-top:14px" }, table(["Actor", "Tier", "#Value", "Fee range", "Budget", "Genres", "Why", ""], rows))
+        : el("p", { class: "note PRELIMINARY" }, r.over_budget ? `${plural(r.over_budget, "actor")} in the database fit${r.over_budget === 1 ? "s" : ""} the part but need a bigger budget.` : "No one in the database fits this reading. Check the gender and age, or widen the age."),
+      el("p", { class: "small muted", style: "margin:10px 0 0" }, `${plural(r.considered, "actor")} in the database fit ${[r.filters.gender, r.filters.bands.length < 5 ? `playing age ${r.filters.bands.join(" or ")}` : null].filter(Boolean).join(", ") || "any gender and age"}`,
+        r.over_budget ? `; ${fmt(r.over_budget)} of them need a bigger budget.` : ".", r.size === "Lead" ? " Ranked by composite cast value." : " Ranked by supporting value.", data.genre ? ` ${data.genre} matches first.` : ""));
+  };
+  const render = () => {
+    genre.value = data.genre || ""; budget.value = data.budget_usd ?? "";
+    const [tool, id] = pick.value.split("/");
+    const watch = jobWatch("casting", tool, id, () => load());
+    const read = async ev => {
+      const btn = ev.currentTarget; btn.disabled = true;
+      try { await api.post(`/api/casting/${pick.value}/read`, { mode: MODE }); toast("ai", "Reading the roles", `Gemma reads each principal role where the script brings it in. On ${runsOn()}.`); pollJobs(); watch.start(); }
+      catch (e) { toast("bad", "Couldn't start", el("span", {}, e.message, " ", el("a", { href: "#/settings" }, "Settings"))); }
+      btn.disabled = false;
+    };
+    put(out,
+      el("div", { class: "notice", style: "align-items:flex-start" }, el("div", { class: "ic" }, icon("sparkle")),
+        el("div", { class: "grow" }, el("div", {}, data.read ? `Roles read by ${data.read.engine}, ${data.read.mode} reasoning (${data.read.date || ""})` : "The AI hasn't read the roles yet: gender and age come only from what the script prints beside a name."),
+          el("div", { class: "small muted" }, "It reads each principal role where the script brings it in. Check each reading and correct any you disagree with: the shortlist follows."), watch),
+        el("button", { type: "button", class: "btn sm primary", onclick: read }, icon("sparkle"), data.read ? "Read again" : "Read the roles")),
+      el("div", { class: "kpis", style: "margin-top:16px" }, kpi("Principal roles", data.roles.length), kpi("Featured parts", data.featured.length),
+        kpi("Budget", data.budget_usd ? usd(data.budget_usd) : "Not set"), kpi("Actors in the database", fmt(data.actors))),
+      data.prefill_from ? el("p", { class: "muted small", style: "margin:8px 0 0" }, `Genre and budget from the Sales Estimates valuation “${data.prefill_from}”.`) : null,
+      data.budget_usd ? null : el("p", { class: "muted small", style: "margin:8px 0 0" }, "Add the budget to leave out actors whose minimum sensible budget is above it."),
+      data.roles.map(roleCard),
+      data.featured.length ? el("details", { class: "lb-more", style: "margin-top:16px" }, el("summary", {}, `Featured parts (${data.featured.length})`, el("span", { class: "muted small" }, " make one supporting or lead to shortlist it")),
+        el("div", { class: "card flush", style: "margin-top:12px" }, table(["Role", "#Scenes", "#Speeches", "#Days", "Size"], data.featured.map(f => el("tr", {},
+          el("td", {}, el("b", {}, f.name)), el("td", { class: "num" }, f.scenes), el("td", { class: "num" }, f.dialogue), el("td", { class: "num" }, f.days), el("td", {}, sizeSel(f))))))) : null,
+      el("p", { class: "muted small", style: "margin-top:18px" }, "Suggestions come only from the Saracen Bridge Actor Value Database, matched on gender and playing-age band, with the film's genre first. Fees, values and budget floors are the database's indicative figures; availability and interest are not known. Nobody is attached: a suggestion goes to the package as Wish list, which counts for nothing in the estimate until the deal moves. Size of part is read from the script (lead: one of the two largest parts in a quarter or more of the scenes; supporting: 8% or more, or 15 speeches)."));
+  };
+  box.append(el("div", { class: "row", style: "align-items:flex-end" },
+    el("label", { class: "f", style: "flex:1 1 320px" }, "Script", pick), el("label", { class: "f", style: "flex:0 1 220px" }, "Genre", genre),
+    el("label", { class: "f", style: "flex:0 1 auto" }, "Budget (USD)", budget)), out);
+  await load();
+}
+
 const PANELS = {
+  casting(box) { return castingPanel(box); },
   ai_only(box, t) {
     box.append(el("div", { class: "drop", style: "border-style:solid" }, el("div", { class: "art" }, icon("sparkle")), el("div", { class: "big" }, "Coming to the Studio"),
       el("p", {}, `${t.name} reads and judges material: ${t.needs_ai.join("; ").toLowerCase()}. It runs on the AI engine once it's built.`),

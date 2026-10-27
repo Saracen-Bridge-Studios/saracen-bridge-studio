@@ -184,7 +184,7 @@ def scene_eighths(breakdown: dict) -> list[int]:
     return [max(1, round(max(1, s.get("lines") or 0) / total * pages * 8)) for s in scenes]
 
 
-def stripboard(breakdown: dict, pages_per_day: float) -> list[dict]:
+def stripboard(breakdown: dict, pages_per_day: float, order: list[int] | None = None) -> list[dict]:
     """Day scenes, then night scenes, each in site and set order, packed into shooting days of pages_per_day pages.
     A day never mixes day and night work (turnaround). A scene that runs past the end of a day carries on the next day,
     as a 1st AD splits scenes to fill days, so the day count follows the pace. The company moves this implies are
@@ -193,9 +193,15 @@ def stripboard(breakdown: dict, pages_per_day: float) -> list[dict]:
     lens = scene_eighths(breakdown)
     cap = max(1, round(pages_per_day * 8))
     # day work first, then night work; within each, by site and set, so a day's second site is a true company move
-    order = sorted(range(len(scenes)), key=lambda i: (_night(scenes[i].get("time_of_day")),
-                                                      site(scenes[i]), (scenes[i].get("location") or "").upper(),
-                                                      scenes[i].get("int_ext") or "", i))
+    # order (1.1.6): scene numbers in a reasoned shooting order, packed at this pace instead
+    if order:
+        pos = {s.get("number", i + 1): i for i, s in enumerate(scenes)}
+        given = set(order)
+        order = [pos[n] for n in order if n in pos] + [i for i, s in enumerate(scenes) if s.get("number", i + 1) not in given]
+    else:
+        order = sorted(range(len(scenes)), key=lambda i: (_night(scenes[i].get("time_of_day")),
+                                                          site(scenes[i]), (scenes[i].get("location") or "").upper(),
+                                                          scenes[i].get("int_ext") or "", i))
     days, cur = [], None
     for i in order:
         s, e = scenes[i], lens[i]
@@ -288,6 +294,59 @@ class Card:
         return next((r for r in self.cast if re.search(r"day player", r["english_role"] or "", re.I) and (r["unit"] or "") == "day"
                      and r["currency"] == self.currency), None)
 
+    # 1.1.6 (Tim, 27 Oct: "fix the assumptions and blank areas"): a principal part with no fee entered takes the card's
+    # own planning band for its size of part, labelled as an allowance, instead of a blank. A-list and global-name
+    # bands are never used as an allowance; where the card has only those, the line stays Unknown.
+    PRINCIPAL = {"Lead": [r"^lead actor$", r"recognis\w+ .*lead", r"lead / internationally", r"lead actor"],
+                 "Supporting": [r"recognis\w+ .*support", r"supporting actor"],
+                 "Featured": [r"emerging"]}
+
+    def principal(self, size: str) -> dict | None:
+        for p in self.PRINCIPAL.get(size, []):
+            rx = re.compile(p, re.I)
+            for r in self.cast:
+                role = r["english_role"] or ""
+                if rx.search(role) and not re.search(r"a-list|global|bankable|local|director", role, re.I) \
+                        and (r["unit"] or "").lower() in ("project", "week", "project/week", "project/day") and _f(r["planning_base"]):
+                    return r
+        return None
+
+    def in_local(self, amount: float | None, currency: str) -> float | None:
+        """An amount in another currency in the card's own, at the reference rates (None if either is unknown)."""
+        if amount is None or currency == self.currency:
+            return amount
+        try:
+            return amount * refdata.fx_usd_per_unit(currency) / refdata.fx_usd_per_unit(self.currency)
+        except KeyError:
+            return None
+
+    def payroll_load(self, scenario: str, payroll: float = 0.0) -> tuple[float | None, str]:
+        """The employer's load on PAYE crew pay, from the card's own labour rules (United Kingdom, checked against
+        gov.uk 27 Oct 2026): employer National Insurance 15% (the £5,000 secondary threshold and the Employment
+        Allowance are not deducted, so this errs high); in base and conservative the card's 3% pension proxy, and the
+        apprenticeship levy only where the pay bill is over £3 million (0.5% less the £15,000 allowance); in
+        conservative, 12.07% rolled-up holiday, which applies only to irregular-hours and part-year workers."""
+        rules = {r["topic"]: r for r in refdata.rows("SELECT topic, rule_planning_reference, budget_treatment FROM rate_labour_rules "
+                                                     "WHERE jurisdiction = ?", self.j)}
+
+        def pct(topic, field="rule_planning_reference"):
+            m = re.search(r"(\d+(?:\.\d+)?)%", (rules.get(topic) or {}).get(field) or "")
+            return float(m.group(1)) if m else None
+        ni, pension, levy, holiday = pct("Employer National Insurance"), pct("Pensions", "budget_treatment"), pct("Apprenticeship levy"), pct("Holiday pay")
+        if ni is None:
+            return None, ""
+        parts = [(ni, "employer National Insurance")]
+        if scenario != "lean":
+            if pension:
+                parts.append((pension, "pension"))
+            if levy and payroll > 3_000_000:
+                eff = max(0.0, levy / 100 * payroll - 15_000) / payroll * 100
+                if eff:
+                    parts.append((round(eff, 3), "apprenticeship levy"))
+        if scenario == "conservative" and holiday:
+            parts.append((holiday, "rolled-up holiday"))
+        return round(sum(v for v, _ in parts), 3), " + ".join(f"{v:g}% {n}" for v, n in parts)
+
     def background(self) -> dict | None:
         for p in (r"standard day", r"extra – feature|extra - feature|background|supporting artist"):
             r = next((x for x in self.cast if re.search(p, x["english_role"] or "", re.I) and re.search(r"supporting artist|extra|background", f"{x['category']} {x['english_role']}", re.I)), None)
@@ -330,7 +389,8 @@ def _prep_days(rule: tuple, shoot_days: int) -> float:
 
 
 def build(breakdown: dict, *, jurisdiction: str = "United Kingdom", region: str | None = None, tier: int = 2,
-          pages_per_day: dict | None = None, inputs: dict | None = None, elements: dict | None = None) -> dict:
+          pages_per_day: dict | None = None, inputs: dict | None = None, elements: dict | None = None,
+          reasoned: dict | None = None) -> dict:
     """Schedule, day-out-of-days and a lean/base/conservative budget for one script. elements: the script's element
     tagging (elements.tag), when it has been done; it adds the lines stunts, effects, vehicles and the rest drive."""
     inputs = inputs or {}
@@ -339,7 +399,18 @@ def build(breakdown: dict, *, jurisdiction: str = "United Kingdom", region: str 
     tier = min(4, max(1, int(tier or 2)))
     card = Card(jurisdiction)
     fac = _factors(jurisdiction, region)
-    boards = {s: stripboard(breakdown, ppd[s]) for s in SCENARIOS}
+    if reasoned and reasoned.get("days"):
+        # the AI's reasoned order (schedreason, 1.1.6): its own days in the base case; lean and conservative take the
+        # same order at their pace
+        from .schedreason import _board
+        flat = [n for d in reasoned["days"] for n in d]
+        boards = {s: stripboard(breakdown, ppd[s], order=flat) for s in SCENARIOS}
+        boards["base"] = _board(breakdown, reasoned["days"])
+    elif reasoned and reasoned.get("order"):
+        # the Studio's optimised order (schedreason.optimise): every case takes it at its own pace
+        boards = {s: stripboard(breakdown, ppd[s], order=reasoned["order"]) for s in SCENARIOS}
+    else:
+        boards = {s: stripboard(breakdown, ppd[s]) for s in SCENARIOS}
     dood = day_out_of_days(breakdown, boards["base"])
     out = {"jurisdiction": jurisdiction, "region": fac["region"], "currency": card.currency, "tier": tier, "pages_per_day": ppd,
            "pages": breakdown.get("pages"), "scene_count": breakdown.get("scene_count"),
@@ -361,6 +432,17 @@ def build(breakdown: dict, *, jurisdiction: str = "United Kingdom", region: str 
         out["budget"][s] = _budget(breakdown, boards[s], dood if s == "base" else day_out_of_days(breakdown, boards[s]),
                                    card, fac, tier, s, inputs, tags)
     out["assumptions"] = _assumptions(ppd, tier, card, fac, inputs)
+    if reasoned and reasoned.get("days"):
+        out["schedule_source"] = "reasoned"
+        out["assumptions"][1] = (f"Shooting order: the AI's reasoned order ({reasoned.get('mode', 'deep')} reasoning, {reasoned.get('date', '')}). "
+                                 f"The base case uses its {len(reasoned['days'])} days as reasoned; lean and conservative take the same "
+                                 "order at their pace, never mixing day and night work in one day.")
+    elif reasoned and reasoned.get("order"):
+        out["schedule_source"] = "optimised"
+        out["assumptions"][1] = (f"Shooting order: the Studio's optimised order ({reasoned.get('date', '')}): local search for the fewest "
+                                 "shooting days, then the fewest company moves, then the fewest days actors are held between work days "
+                                 "(the talent scheduling problem, Cheng, Diamond & Lin 1993), packed at each case's pace, never mixing "
+                                 "day and night work in one day.")
     if tags:
         out["elements"] = {"tagged": len(tags), "scenes": breakdown.get("scene_count"), "made": (elements.get("made_with") or {}).get("model", ""),
                            "date": elements.get("date", "")}
@@ -387,6 +469,8 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
                            note="" if v is not None else "Enter the agreed or proposed fee."))
     # ---- cast: day-out-of-days x fee
     cast_in = inputs.get("cast") or {}
+    from .casting import roles as _roles            # size of part, as Casting Director reads it
+    sizes = {r["name"]: r["size"] for r in _roles(breakdown)} if breakdown.get("scenes") else {}
     dp = card.day_player()
     threshold = int(inputs.get("day_player_max_days") or 3)
     for c in dood:
@@ -401,6 +485,18 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
             lines.append(_line("1401", c["name"], rate * c["work_days"] if rate else None, status="benchmark" if rate else "unknown",
                                qty=c["work_days"], unit="day", rate=rate, basis=f"day player, rate card ({dp['english_role']})",
                                source=dp.get("source_file") or ""))
+        elif (pr := card.principal(sizes.get(c["name"], "Featured"))):
+            band = _f(pr[{"lean": "planning_low", "base": "planning_base", "conservative": "planning_high"}[scenario]]) or _f(pr["planning_base"])
+            weeks = math.ceil(c["work_days"] / WEEK)
+            per_week = (pr["unit"] or "").lower() == "week"
+            amt = card.in_local(band * (weeks if per_week else 1), pr["currency"])
+            lines.append(_line("1401", c["name"], amt, status="allowance" if amt is not None else "unknown", qty=weeks if per_week else c["work_days"],
+                               unit="weeks" if per_week else "days worked", rate=card.in_local(band, pr["currency"]) if per_week else None,
+                               basis=f"allowance: {pr['english_role']} ({pr['unit']}), Saracen Bridge {card.j} card, "
+                                     f"{ {'lean': 'low', 'base': 'base', 'conservative': 'high'}[scenario]} planning band"
+                                     + (f", from {pr['currency']}" if pr["currency"] != card.currency else ""),
+                               source=pr.get("source_file") or "",
+                               note=f"{sizes.get(c['name'], 'Featured').lower()} part by its share of the script; enter the fee to replace the allowance"))
         else:
             lines.append(_line("1401", c["name"], None, status="unknown", qty=c["work_days"], unit="days worked",
                                note="Enter the fee (flat, per day or per week)."))
@@ -526,11 +622,18 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
     # ---- charges
     payroll = sum(l["amount"] or 0 for l in lines if l["payroll"] and l["amount"])
     fr = _f(inputs.get("fringe_pct"))
-    lines.append(_line("7999", "Fringes on crew payroll", payroll * fr / 100 if fr is not None else None,
-                       status="input" if fr is not None else "unknown", qty=round(payroll, 2), unit="payroll", rate=fr,
-                       basis=f"{fr:g}% producer input" if fr is not None else "",
-                       note="" if fr is not None else "Enter the payroll load % (employer taxes, holiday, pension) for this jurisdiction."))
-    known_direct = sum(l["amount"] or 0 for l in lines if l["phase"] in ("Above the Line", "Production", "Post Production", "Other") or l["account"] == "7999")
+    load, load_basis = (None, "") if fr is not None else card.payroll_load(scenario, payroll)
+    if fr is not None:
+        lines.append(_line("7999", "Fringes on crew payroll", payroll * fr / 100, status="input", qty=round(payroll, 2), unit="payroll",
+                           rate=fr, basis=f"{fr:g}% producer input"))
+    elif load is not None:                     # 1.1.6: the card's own payroll rules, until a % is entered
+        lines.append(_line("7999", "Fringes on crew payroll", payroll * load / 100, status="allowance", qty=round(payroll, 2), unit="payroll",
+                           rate=load, basis=f"allowance: {load_basis} (Saracen Bridge {card.j} card's payroll rules)",
+                           note="Applies to PAYE crew; enter the payroll load % to replace it"))
+    else:
+        lines.append(_line("7999", "Fringes on crew payroll", None, status="unknown", qty=round(payroll, 2), unit="payroll",
+                           note="Enter the payroll load % (employer taxes, holiday, pension) for this jurisdiction."))
+    known_direct = sum(l["amount"] or 0 for l in lines if l["status"] != "allowance" and (l["phase"] in ("Above the Line", "Production", "Post Production", "Other") or l["account"] == "7999"))
     ins = card.pct(r"production (package|insurance)|insurance package")
     if ins:
         rate = _band(ins, scenario)
@@ -538,7 +641,7 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
                            unit="% of known direct cost", rate=rate, basis=f"rate card: {ins['item']}", source=ins["source_file"] or ""))
     else:
         lines.append(_line("7201", "Production insurance package", None, status="unknown", note=f"not on the Saracen Bridge {card.j} card: quote"))
-    base = sum(l["amount"] or 0 for l in lines if l["phase"] in ("Above the Line", "Production", "Post Production", "Other") or l["account"] == "7999")
+    base = sum(l["amount"] or 0 for l in lines if l["status"] != "allowance" and (l["phase"] in ("Above the Line", "Production", "Post Production", "Other") or l["account"] == "7999"))
     bond = card.pct(r"completion bond")
     if bond:
         rate = _band(bond, scenario)
@@ -552,15 +655,17 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
     for l in sorted(lines, key=lambda x: (x["account"], x["description"])):
         ph = phases.setdefault(l["phase"], {"known": 0.0, "unknown": 0})
         c = cats.setdefault(l["category"], {"category": l["category"], "name": l["category_name"], "phase": l["phase"], "known": 0.0, "unknown": 0})
-        if l["amount"] is None:
+        if l["amount"] is None or l["status"] == "allowance":       # an allowance is still a line to price (1.1.6)
             ph["unknown"] += 1
             c["unknown"] += 1
         else:
             ph["known"] += l["amount"]
             c["known"] += l["amount"]
-    unknown = [l for l in lines if l["amount"] is None]
+    unknown = [l for l in lines if l["amount"] is None or l["status"] == "allowance"]
     total = sum(p["known"] for p in phases.values())
+    allow = [l for l in lines if l["status"] == "allowance"]
     return {"shoot_days": days, "lines": lines, "phases": phases, "categories": list(cats.values()), "known_total": round(total, 2),
+            "allowance_total": round(sum(l["amount"] for l in allow), 2), "allowance_lines": len(allow),
             "unknown_lines": len(unknown), "status": "PRELIMINARY" if unknown else "COMPLETE (rate-card)",
             "headcount": heads, "edit_weeks": round(edit_weeks, 2)}
 
@@ -669,6 +774,16 @@ def _assumptions(ppd: dict, tier: int, card: Card, fac: dict, inputs: dict) -> l
          "Non-labour: the Saracen Bridge rate card low / base / high by case, × the region's factor for that cost type.",
          f"Contingency 10% of direct cost; completion bond and insurance at the card's rates. Source: {SOURCES['contingency']}.",
          f"Catering headcount: crew plan + cast called that day + background + {EXTRA_HEADS} others (director, producers, office).",
+         "Allowances (1.1.6): where a line can't be priced from a script, a planning allowance from the card fills the blank but "
+         "stays out of the priced total, and the line still counts as one to price (fees nobody can know from a script stay "
+         "producer inputs). A principal part with no fee takes the card's planning band for its size of part (lead, supporting or "
+         "featured, read from its share of the script's scenes), low / base / high by case, converted at the reference rates where the "
+         "band is in another currency; A-list bands are never used. Where the card has payroll rules (United Kingdom), the fringe "
+         "allowance is employer National Insurance 15% (secondary threshold and Employment Allowance not deducted, so it errs high); "
+         "in base and conservative plus the 3% pension proxy, and the apprenticeship levy only on a pay bill over £3 million (0.5% less "
+         "£15,000); in conservative plus 12.07% rolled-up holiday (irregular-hours and part-year workers only). Source: gov.uk, Rates "
+         "and thresholds for employers 2026 to 2027; Pay Apprenticeship Levy; Holiday pay and entitlement reforms from 1 January 2024. "
+         "Entering a figure replaces the allowance.",
          "Incentives are not netted off here: take the qualifying spend to Location & Incentives.",
          "Script-only analysis is never production-grade (Saracen Bridge instructions): confirm with a line producer, production accountant and payroll company."]
     return a
@@ -702,8 +817,9 @@ def workbook(title: str, res: dict, elements: dict | None = None) -> bytes:
     det = wb.active
     det.title = "Budget detail"
     sheet(det, ["Account", "Account name", "Category", "Category name", "Phase", "Description", "Qty (base)", "Unit", f"Rate (base, {cur})",
-                f"Lean ({cur})", f"Base ({cur})", f"Conservative ({cur})", "Status", "Basis", "Note", "Source"],
-          [9, 26, 9, 24, 14, 34, 11, 14, 14, 15, 15, 15, 12, 34, 40, 34])
+                f"Lean ({cur})", f"Base ({cur})", f"Conservative ({cur})", "Status", "Basis", "Note", "Source",
+                f"Allowance: lean ({cur})", f"Allowance: base ({cur})", f"Allowance: conservative ({cur})"],
+          [9, 26, 9, 24, 14, 34, 11, 14, 14, 15, 15, 15, 12, 34, 40, 34, 16, 16, 16])
     by = {s: {(l["account"], l["description"]): l for l in res["budget"][s]["lines"]} for s in SCENARIOS}
     keys = list(by["base"]) + [k for s in ("lean", "conservative") for k in by[s] if k not in by["base"]]
     seen = set()
@@ -712,19 +828,22 @@ def workbook(title: str, res: dict, elements: dict | None = None) -> bytes:
             continue
         seen.add(k)
         l = by["base"].get(k) or by["lean"].get(k) or by["conservative"].get(k)
-        amt = [by[s].get(k, {}).get("amount") for s in SCENARIOS]
+        amt = [by[s].get(k, {}).get("amount") if by[s].get(k, {}).get("status") != "allowance" else None for s in SCENARIOS]
+        alw = [by[s].get(k, {}).get("amount") if by[s].get(k, {}).get("status") == "allowance" else None for s in SCENARIOS]
         det.append([l["account"], l["account_name"], l["category"], l["category_name"], l["phase"], l["description"], l["qty"], l["unit"],
-                    l["rate"], *amt, {"benchmark": "Rate card", "input": "Producer input", "unknown": "Unknown"}.get(l["status"], l["status"]),
-                    l["basis"], l["note"], l["source"]])
+                    l["rate"], *amt, {"benchmark": "Rate card", "input": "Producer input", "unknown": "Unknown",
+                                      "allowance": "Allowance (to price)"}.get(l["status"], l["status"]),
+                    l["basis"], l["note"], l["source"], *alw])
     last = det.max_row
     for row in det.iter_rows(min_row=2, max_row=last):
         for c in row:
             c.font = plain
-        for c in row[8:12]:
+        for c in row[8:12] + row[16:19]:
             c.number_format = money
     det.append([])
     det.append(["", "", "", "", "", "Total of priced lines", "", "", ""] +
-               [f"=SUM({col}2:{col}{last})" for col in ("J", "K", "L")])
+               [f"=SUM({col}2:{col}{last})" for col in ("J", "K", "L")] + ["", "", "", "Allowances (not in the priced total)"] +
+               [f"=SUM({col}2:{col}{last})" for col in ("Q", "R", "S")])
     for c in det[det.max_row]:
         c.font = bold
         c.number_format = money

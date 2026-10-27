@@ -46,6 +46,27 @@
    ]
   },
   {
+   "id": "casting",
+   "num": "01b",
+   "group": "Development",
+   "name": "Casting Director",
+   "tagline": "Who could play each part in the script",
+   "needs": [
+    "A script in the Library (from Script Coverage, Scheduling & Budgeting or Brand Integration)",
+    "Optional: the film's genre and budget (taken from its Sales Estimates valuation when there is one)"
+   ],
+   "ready": [
+    "Every speaking role from the breakdown: scenes, share of the script, speeches and base-case shooting days, sized as lead, supporting or featured",
+    "Ages the script prints beside a name (\"MARA (30s)\") read without the AI",
+    "A shortlist per role from the Saracen Bridge Actor Value Database: gender and playing age, genre, budget fit, tier, fee range and value, with the reasons",
+    "Any suggestion added to the Sales Estimates package as Wish list"
+   ],
+   "needs_ai": [],
+   "ai_built": [
+    "Each principal role read where the script brings it in: gender, playing age and a one-line breakdown description"
+   ]
+  },
+  {
    "id": "schedule",
    "num": "03",
    "group": "Production",
@@ -125,7 +146,7 @@
   },
   {
    "id": "agents",
-    "menu": false,
+   "menu": false,
    "num": "04b",
    "group": "Sales & Marketing",
    "name": "Sales Agents",

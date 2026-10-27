@@ -73,12 +73,29 @@ def test_budget_lines_come_from_jons_card_and_unknowns_stay_unknown():
         AND english_budget_role = 'Line Producer / UPM'""")[0]["tier_2_week"]
     assert lp["rate"] == week and lp["amount"] == pytest.approx(week * (1.5 * days + days + 7.5) / 5, rel=1e-6)
     assert lp["account"] == "2001" and lp["status"] == "benchmark"
-    # negotiated roles, producer fees and the fringe % are Unknown, never zero
-    for d in ("Director of photography", "Production designer", "Script and rights", "Director", "Music: composer and licences", "Fringes on crew payroll"):
+    # negotiated roles and producer fees are Unknown, never zero
+    for d in ("Director of photography", "Production designer", "Script and rights", "Director", "Music: composer and licences"):
         assert lines[d]["amount"] is None and lines[d]["status"] == "unknown", d
-    assert base["status"] == "PRELIMINARY" and base["unknown_lines"] == sum(1 for l in base["lines"] if l["amount"] is None)
+    # 1.1.6: the fringe takes the UK card's payroll rules until a % is entered (NI 15% alone in lean; + the 3% pension proxy
+    # in base, no levy on a pay bill under £3m; + 12.07% rolled-up holiday in conservative), as an allowance
+    fr = {s: next(l for l in res["budget"][s]["lines"] if l["description"] == "Fringes on crew payroll") for s in budget.SCENARIOS}
+    assert [fr[s]["rate"] for s in budget.SCENARIOS] == [15, 18, pytest.approx(30.07)]
+    assert fr["base"]["status"] == "allowance" and fr["base"]["basis"].startswith("allowance: 15% employer National Insurance + 3% pension")
+    # the levy only on a pay bill over £3 million, less the £15,000 allowance
+    card = budget.Card("United Kingdom")
+    assert card.payroll_load("base", 2_000_000)[0] == 18 and card.payroll_load("base", 6_000_000)[0] == pytest.approx(18 + (30_000 - 15_000) / 6_000_000 * 100, abs=1e-3)
+    # allowances fill the blank but stay out of the priced total and still count as lines to price (Jon: fees stay producer inputs)
+    allow = [l for l in base["lines"] if l["status"] == "allowance"]
+    assert base["allowance_total"] == pytest.approx(sum(l["amount"] for l in allow)) and base["allowance_lines"] == len(allow) >= 2
+    assert base["unknown_lines"] == sum(1 for l in base["lines"] if l["amount"] is None or l["status"] == "allowance")
+    # a principal part with no fee takes the card's planning band for its size of part, in the card's currency
+    lead = refdata.rows("SELECT planning_base, currency FROM rate_cast WHERE jurisdiction = 'United Kingdom' AND english_role = 'Lead Actor'")[0]
+    gbp = refdata.fx_usd_per_unit("GBP")
+    allowances = [l for l in base["lines"] if l["account"] == "1401" and l["basis"].startswith("allowance: Lead Actor")]
+    assert allowances and allowances[0]["amount"] == pytest.approx(lead["planning_base"] / gbp, rel=1e-6) and lead["currency"] == "USD"
+    assert base["status"] == "PRELIMINARY"
     # contingency is 10% of direct cost, bond at the card's rate
-    direct = sum(l["amount"] or 0 for l in base["lines"] if l["phase"] in ("Above the Line", "Production", "Post Production", "Other"))
+    direct = sum(l["amount"] or 0 for l in base["lines"] if l["status"] != "allowance" and l["phase"] in ("Above the Line", "Production", "Post Production", "Other"))
     assert lines["Contingency (10%)"]["amount"] == pytest.approx(direct * 0.10, rel=1e-6)
     assert lines["Completion bond fee"]["rate"] == 0.025
     # cases: more days and higher bands from lean to conservative
@@ -99,7 +116,7 @@ def test_producer_figures_price_the_unknown_lines():
     assert lines["Director of photography"]["amount"] == 50000 and lines["Script and rights"]["amount"] == 25000
     payroll = sum(l["amount"] for l in res["lines"] if l["payroll"] and l["amount"])
     assert lines["Fringes on crew payroll"]["amount"] == pytest.approx(payroll * 0.20, rel=1e-6)
-    assert res["unknown_lines"] == plain["unknown_lines"] - 4
+    assert res["unknown_lines"] == plain["unknown_lines"] - 4          # ANNA and the fringe were allowances: still to price until entered
 
 
 def test_every_jurisdiction_builds_in_its_own_currency():

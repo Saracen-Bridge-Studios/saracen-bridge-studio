@@ -63,7 +63,8 @@ check("health", h.get("ok") is True, h.get("version"))
 check("ui served", b"Saracen Bridge Studio" in call("/", raw=True) and len(call("/ui/studio.js", raw=True)) > 10_000)
 cat = call("/api/catalog")
 ids = [t["id"] for t in cat["tools"]]
-check("catalog has 13 tools incl. Sales Agents, A.I.D.E.N. and F.R.A.T.", len(ids) == 13 and {"agents", "aiden", "frat"} <= set(ids), ",".join(ids))
+check("catalog has 14 tools incl. Casting Director, Sales Agents, A.I.D.E.N. and F.R.A.T.", len(ids) == 14 and {"casting", "agents", "aiden", "frat"} <= set(ids)
+      and ids.index("casting") == ids.index("lookbook") + 1, ",".join(ids))
 check("reference database", len(call("/api/tools/incentives/programmes")) == 69)
 
 ex = call("/api/tools/finance/example")
@@ -173,6 +174,19 @@ check("1.1.5 release routes numbered in order, \"Straight to streaming\"; Sales 
       and next(t for t in cat["tools"] if t["id"] == "agents").get("menu") is False
       and all(s in sjs for s in (b"releasePick", b"Casting director (optional)", b'["Sales Agents", b => PANELS.agents(b)')) and b"Jon's engine" not in sjs,
       so["choices"]["release_model"]["Feature"])
+# 1.1.6: Casting Director, the optimised shooting order, allowances, the existing-estimate reader
+cast = call(f"/api/casting/brand/{brandrun['run_id']}")
+check("1.1.6 Casting Director: roles from the breakdown, shortlists from the actor database",
+      cast["roles"] and cast["roles"][0]["name"] == "MARA" and cast["roles"][0]["shortlist"] and cast["actors"] == 1004,
+      f"{len(cast['roles'])} principal roles; MARA: {len(cast['roles'][0]['shortlist'])} suggestions")
+opt = call("/api/tools/schedule/optimise", {"run_id": sched["run_id"], "pages_per_day": 4})
+bud2 = call("/api/tools/schedule/budget", {"run_id": sched["run_id"], "jurisdiction": "United Kingdom", "inputs": {"vfx_shots": 0}, "use_order": "optimised"})
+check("1.1.6 shooting order optimised (no AI) and used by the budget; allowances kept out of the priced total",
+      opt["measures"]["days"] <= opt["first_pass"]["days"] and bud2["schedule_source"] == "optimised"
+      and bud2["budget"]["base"]["allowance_lines"] >= 1 and bud2["budget"]["base"]["unknown_lines"] >= bud2["budget"]["base"]["allowance_lines"],
+      f"{opt['measures']}; allowances {bud2['budget']['base']['allowance_total']:,.0f}")
+est = call("/api/tools/sales/estimate/read", form=[("file", ("estimate.pdf", (FIX / "sales_estimate_sample.pdf").read_bytes()))])
+check("1.1.6 an existing sales estimate is read from a PDF", len(est["rows"]) == 6 and est["thousands"], [x["territory"] for x in est["rows"]])
 HUB = (sys.argv[2] if len(sys.argv) > 2 else "").rstrip("/")
 if HUB == "--host":                                   # host a production here, then check what the team would reach
     made = call("/api/room/host", {"name": "Smoke Test", "production": "SMOKE TEST"})
