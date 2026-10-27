@@ -61,7 +61,8 @@ for _ in range(60):                                  # wait up to 60 s for the a
 h = call("/api/health")
 check("health", h.get("ok") is True, h.get("version"))
 check("ui served", b"Saracen Bridge Studio" in call("/", raw=True) and len(call("/ui/studio.js", raw=True)) > 10_000)
-ids = [t["id"] for t in call("/api/catalog")["tools"]]
+cat = call("/api/catalog")
+ids = [t["id"] for t in cat["tools"]]
 check("catalog has 13 tools incl. Sales Agents, A.I.D.E.N. and F.R.A.T.", len(ids) == 13 and {"agents", "aiden", "frat"} <= set(ids), ",".join(ids))
 check("reference database", len(call("/api/tools/incentives/programmes")) == 69)
 
@@ -165,6 +166,13 @@ ag = call("/api/agents")
 check("1.1.4 Sales Agents: Jon's register of 26 companies, provisional, with Saban for distribution",
       len(ag["agents"]) == 26 and ag["formulaVersion"] == "1.0" and
       next(a for a in ag["agents"] if a["agentId"] == "sa025")["scoreScope"] == "DISTRIBUTION", ag["dataVersion"])
+so = call("/api/tools/sales/engine/options")
+sjs = call("/ui/studio.js", raw=True)
+check("1.1.5 release routes numbered in order, \"Straight to streaming\"; Sales Agents inside Sales Estimates, off the menu",
+      so["choices"]["release_model"]["Feature"] == ["Theatrical", "VOD", "TVOD", "Straight to streaming", "Straight to TV"]
+      and next(t for t in cat["tools"] if t["id"] == "agents").get("menu") is False
+      and all(s in sjs for s in (b"releasePick", b"Casting director (optional)", b'["Sales Agents", b => PANELS.agents(b)')) and b"Jon's engine" not in sjs,
+      so["choices"]["release_model"]["Feature"])
 HUB = (sys.argv[2] if len(sys.argv) > 2 else "").rstrip("/")
 if HUB == "--host":                                   # host a production here, then check what the team would reach
     made = call("/api/room/host", {"name": "Smoke Test", "production": "SMOKE TEST"})

@@ -241,23 +241,23 @@ def finish(out: dict, notes: list[dict], info: dict, engine, seconds: float) -> 
     checks = []
     if abs(final - average) > 12:
         checks.append(f"The final score ({final}) is more than 12 points from the average of the 13 scores ({average}). "
-                      "Jon's rule linking them is not written down (register G-01).")
+                      "The Saracen Bridge rule linking them is not written down (register G-01).")
     attached = (info.get("cast") or "") + " " + (info.get("director") or "")
     for c in out["story"]["characters"]:
         if c["status"] == "Attached" and not any(_norm(n) and _norm(n) in _norm(attached) for n in c["names"] or [""]):
-            checks.append(f"{c['character']}: marked as attached, but no attachment was supplied. Jon's rule: never imply attachment.")
+            checks.append(f"{c['character']}: marked as attached, but no attachment was supplied. Saracen Bridge rule: never imply attachment.")
             c["status"] = "Suggested"
     unknown = [n for c in out["story"]["characters"] for n in c["names"] if c["status"] != "Attached" and not _known_actor(n)]
     if unknown:
-        checks.append("Cast suggestions not in Jon's actor database (check they are real and the spelling): " + ", ".join(dict.fromkeys(unknown)) + ".")
+        checks.append("Cast suggestions not in the Saracen Bridge actor database (check they are real and the spelling): " + ", ".join(dict.fromkeys(unknown)) + ".")
     dirs = [d["name"] for d in out["story"]["director_suggestions"] if not _known_director(d["name"])]
     if dirs:
-        checks.append("Director suggestions not in Jon's director database (check they are real): " + ", ".join(dirs) + ".")
+        checks.append("Director suggestions not in the Saracen Bridge director database (check they are real): " + ", ".join(dirs) + ".")
     flat = json.dumps(out, ensure_ascii=False)
     if FORBIDDEN.search(flat):
-        checks.append("The text mentions AI, ChatGPT or a language model. Jon's rules forbid any reference to how the report was made.")
+        checks.append("The text mentions AI, ChatGPT or a language model. Saracen Bridge rules forbid any reference to how the report was made.")
     if URL.search(flat):
-        checks.append("The text contains a web address, which Jon's rules forbid. Edit before sending.")
+        checks.append("The text contains a web address, which Saracen Bridge rules forbid. Edit before sending.")
     n = len(notes)
     for key in ("strongest_pages", "weakest_pages"):
         out["visual"][key] = [p for p in out["visual"][key] if 1 <= p["page"] <= n]

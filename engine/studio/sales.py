@@ -41,8 +41,9 @@ CHOICES = {
     "script_status": ["Development", "Final"],
     "sales_stage": ["Package estimate", "Pre-sale", "In production", "Rough cut", "Completed film"],   # Jon's deal stages
     "format": ["Feature", "Episodic"],
-    "release_model": {"Feature": ["Theatrical-led", "VOD", "TVOD", "Direct to streaming", "Direct to TV"],
-                      "Episodic": ["Direct to streaming", "Direct to TV"]},
+    # Tim, 27 Oct (1.1.5): "Straight to", and each route numbered in the order it comes (release_text)
+    "release_model": {"Feature": ["Theatrical", "VOD", "TVOD", "Straight to streaming", "Straight to TV"],
+                      "Episodic": ["Straight to streaming", "Straight to TV"]},
     "festivals": ["Cannes", "Venice", "Berlinale", "Toronto (TIFF)", "Sundance", "SXSW", "Tribeca", "Telluride",
                   "New York (NYFF)", "BFI London", "San Sebastián", "Locarno", "Karlovy Vary", "Rotterdam (IFFR)",
                   "Busan", "Tokyo", "Annecy (animation)", "Sitges (genre)", "Fantastic Fest (genre)", "Fantasia (genre)"],
@@ -57,6 +58,25 @@ def feedback_text(v) -> str:
     a = agents.agent(v.get("agent") or "") if v.get("agent") else None
     note = str(v.get("note") or "").strip()
     return ": ".join(x for x in ((a or {}).get("displayName", ""), note) if x)
+
+
+RELEASE_RENAMED = {"Theatrical-led": "Theatrical", "Direct to streaming": "Straight to streaming", "Direct to TV": "Straight to TV"}
+
+
+def release_text(v) -> str:
+    """Release model as the workbook takes it: the routes in their order, "1 Theatrical; 2 VOD". A single choice saved
+    before 1.1.5 reads under its new name."""
+    if isinstance(v, str):
+        return RELEASE_RENAMED.get(v, v)
+    routes = [RELEASE_RENAMED.get(str(x), str(x)) for x in (v or []) if str(x or "").strip()]
+    return "; ".join(f"{i} {r}" for i, r in enumerate(routes, 1))
+
+
+def cast_text(v, casting_director) -> str:
+    """Principal cast summary, with the casting director after it when one is named (1.1.5). A casting director alone
+    doesn't fill the row, so the summary still counts as missing until the cast is described."""
+    v, cd = str(v or "").strip(), str(casting_director or "").strip()
+    return f"{v}; Casting director: {cd}" if v and cd else v
 
 
 def festival_text(v) -> str:
@@ -186,6 +206,10 @@ def writes(project: dict) -> dict:
             v = festival_text(v)
         if key == "sales_feedback":
             v = feedback_text(v)
+        if key == "release_model":
+            v = release_text(v)
+        if key == "cast_summary":
+            v = cast_text(v, intake.get("casting_director"))
         if v not in (None, ""):
             put("PROJECT_INTAKE", f"B{row}", _num(v) if key in NUMERIC else _date(v) if key == "delivery_date" and _date(v) else str(v))
     if intake.get("format") == "Episodic" and intake.get("episodes"):
@@ -202,7 +226,7 @@ def writes(project: dict) -> dict:
                 "H": rec.get("tier"), "I": rec.get("score"), "J": rec.get("territory"), "K": rec.get("territory_score"),
                 "L": _num(a.get("genre_fit")), "M": rec.get("lead_value") if lead else rec.get("supporting_value"),
                 "N": rec.get("momentum"), "O": rec.get("confidence"), "P": rec.get("reviewed"), "Q": rec.get("risk"),
-                "R": "Saracen_Bridge_Actor_Value_Database_v2_2" if rec else "Not in Jon's database: provisional"}
+                "R": "Saracen_Bridge_Actor_Value_Database_v2_2" if rec else "Not in the Saracen Bridge database: provisional"}
         for c, v in vals.items():
             if v not in (None, ""):
                 put("ACTOR_IMPORT", f"{c}{9 + i}", v)
@@ -211,7 +235,7 @@ def writes(project: dict) -> dict:
         vals = {"C": d.get("name"), "D": d.get("attachment") or "Wish list", "F": rec.get("tier"), "G": rec.get("score"),
                 "H": rec.get("territory"), "I": rec.get("territory_score"), "J": rec.get("genre_fit"), "K": _num(d.get("budget_fit")),
                 "L": rec.get("delivery"), "M": rec.get("momentum"), "N": rec.get("confidence"), "O": rec.get("reviewed"), "P": rec.get("risk"),
-                "Q": "Saracen_Bridge_Director_Value_Database_V4_3" if rec else "Not in Jon's database: provisional"}
+                "Q": "Saracen_Bridge_Director_Value_Database_V4_3" if rec else "Not in the Saracen Bridge database: provisional"}
         for c, v in vals.items():
             if v not in (None, ""):
                 put("DIRECTOR_IMPORT", f"{c}{10 + i}", v)

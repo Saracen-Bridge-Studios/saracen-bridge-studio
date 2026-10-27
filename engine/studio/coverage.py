@@ -186,18 +186,18 @@ def finish(out: dict, breakdown: dict, engine, parts: int, seconds: float) -> di
     readiness = max(1, min(100, int(v.get("commercial_readiness") or 1)))
     if abs(readiness - composite * 10) > 15:
         checks.append(f"Commercial Readiness {readiness} differs from composite × 10 ({composite * 10:.0f}). "
-                      "Jon's rule linking them is open (register G-01).")
+                      "The Saracen Bridge rule linking them is open (register G-01).")
     names = [n for c in out.get("creative", {}).get("casting", []) for n in c.get("names", [])]
     unknown = [n for n in dict.fromkeys(names) if not _known_actor(n)]
     if unknown:
-        checks.append("Casting names not in Jon's actor database (check the spelling, or that they are real): "
+        checks.append("Casting names not in the Saracen Bridge actor database (check the spelling, or that they are real): "
                       + ", ".join(unknown) + ".")
     flat = json.dumps(out, ensure_ascii=False)
     if FORBIDDEN.search(flat):
-        checks.append("The text mentions AI, ChatGPT or a language model. Jon's rules forbid any reference to how the "
+        checks.append("The text mentions AI, ChatGPT or a language model. Saracen Bridge rules forbid any reference to how the "
                       "report was made: check the mention is about the story itself.")
     if URL.search(flat):
-        checks.append("The text contains a web address, which Jon's rules forbid. Edit before sending.")
+        checks.append("The text contains a web address, which Saracen Bridge rules forbid. Edit before sending.")
     return {"title": breakdown["title"], "date": date.today().isoformat(), "sections": out,
             "scores": scores, "weights": WEIGHTS, "composite": composite, "commercial_readiness": readiness,
             "verdict": v["verdict"], "checks": checks,

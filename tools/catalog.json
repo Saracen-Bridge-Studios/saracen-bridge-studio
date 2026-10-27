@@ -19,11 +19,11 @@
    "ready": [
     "Script intake and breakdown (any number of scripts)",
     "Scanned PDFs read by OCR, on this computer",
-    "Weighted scoring matrix (Jon's 20/20/20/10/10/10/10)"
+    "Weighted scoring matrix (Saracen Bridge 20/20/20/10/10/10/10)"
    ],
    "needs_ai": [],
    "ai_built": [
-    "Written coverage, all 11 sections of Jon's report, as a branded Word document (Quick or Deep reasoning)",
+    "Written coverage, all 11 sections of the Saracen Bridge report, as a branded Word document (Quick or Deep reasoning)",
     "Queue for any number of scripts, resumes after a restart"
    ]
   },
@@ -42,7 +42,7 @@
    ],
    "needs_ai": [],
    "ai_built": [
-    "Jon's Look Book Sales Tool Analysis: all 16 sections, scores and verdict, as a branded Word document (Gemma looks at every page)"
+    "The Saracen Bridge Look Book Sales Tool Analysis: all 16 sections, scores and verdict, as a branded Word document (Gemma looks at every page)"
    ]
   },
   {
@@ -59,12 +59,12 @@
    "ready": [
     "Script breakdown: scenes, INT/EXT, day/night, locations, cast by scene",
     "Schedule: shooting days in lean, base and conservative cases, a stripboard by location, and day-out-of-days for every speaking role",
-    "Budget on Jon's chart of accounts from his 2026 rate cards (13 jurisdictions, regional factors), with an Excel workbook",
+    "Budget on the Saracen Bridge chart of accounts from its 2026 rate cards (13 jurisdictions, regional factors), with an Excel workbook",
     "Crew rate lookup (13 jurisdictions)"
    ],
    "needs_ai": [],
    "ai_built": [
-    "Element tagging scene by scene (stunts, effects, vehicles, weapons, animals, background, special make-up, child performers, special equipment), priced into the budget from Jon's rate cards or marked to quote"
+    "Element tagging scene by scene (stunts, effects, vehicles, weapons, animals, background, special make-up, child performers, special equipment), priced into the budget from the Saracen Bridge rate cards or marked to quote"
    ]
   },
   {
@@ -99,7 +99,7 @@
    ],
    "needs_ai": [],
    "ai_built": [
-    "Script read for Section A: setting by script length, leads, subject, dialogue by spoken words; B case; Jon's answer pack (Excel), never marked ready"
+    "Script read for Section A: setting by script length, leads, subject, dialogue by spoken words; B case; the Saracen Bridge answer pack (Excel), never marked ready"
    ]
   },
   {
@@ -116,7 +116,7 @@
     "Actor database (1,004): type a name, see fees and sales value",
     "Director database (500) with fee bands",
     "Attachment certainty ladder",
-    "Territory valuation: Jon's Sales Valuation Engine v4.1 run exactly as his workbook calculates (Ask, Expected Close and Take for 33 territories, net producer receipts, lender test), with the filled workbook to download"
+    "Territory valuation: the Saracen Bridge Sales Valuation Engine v4.1 run exactly as his workbook calculates (Ask, Expected Close and Take for 33 territories, net producer receipts, lender test), with the filled workbook to download"
    ],
    "needs_ai": [
     "Evidence research: finding comparables, deals and buyer interest by territory to feed the engine"
@@ -125,6 +125,7 @@
   },
   {
    "id": "agents",
+    "menu": false,
    "num": "04b",
    "group": "Sales & Marketing",
    "name": "Sales Agents",
@@ -134,7 +135,7 @@
     "Each company's genre fit, with a short rationale and its evidence"
    ],
    "ready": [
-    "Jon's register of 26 sales companies with their base scores (provisional)",
+    "The Saracen Bridge register of 26 sales companies with their base scores (provisional)",
     "Genre-fit scoring to his specification: Core, Secondary, Limited, Outside speciality, with the discount and explanation shown",
     "Ranking by mandate (international sales or distribution), unscored companies listed apart with the reason",
     "Approved genre mappings reused on later projects; every edit kept with who, when and why; export to a spreadsheet"
@@ -162,7 +163,7 @@
     "Brand placement in the cut, with F.R.A.T. (Visual Feedback): spotting brands on screen and suggesting which brand goes where"
    ],
    "ai_built": [
-    "Scene-by-scene opportunity register: scene and page, item, placement, targets from Jon's database, scores (Excel)",
+    "Scene-by-scene opportunity register: scene and page, item, placement, targets from the Saracen Bridge database, scores (Excel)",
     "Ranked target brands and draft outreach to the top five (never sent)"
    ]
   },
@@ -202,7 +203,7 @@
     "Decision rules: 55 / 80 / 90 thresholds and sub-score minimums"
    ],
    "needs_ai": [
-    "Data-room audit against the 243-check closing matrix (matrix file awaited from Jon)"
+    "Data-room audit against the 243-check closing matrix (matrix file awaited from Saracen Bridge)"
    ],
    "ai_built": []
   },
@@ -216,7 +217,7 @@
     "Completed project input workbook"
    ],
    "ready": [
-    "Jon's fixed master, validation and population scripts"
+    "The Saracen Bridge fixed master, validation and population scripts"
    ],
    "needs_ai": [],
    "ai_built": []

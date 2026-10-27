@@ -264,8 +264,8 @@ def _targets(opps: list[dict], by_id: dict, preferred: list[str]) -> list[dict]:
 def route(b: dict) -> str:
     """The public way in, from Jon's database: never a named person (his contact sheet is not loaded, register G-17)."""
     parts = [p for p in (b.get("generic_email"), b.get("public_contact_page")) if p and p != "None"]
-    return ("Public route: " + " · ".join(parts) + f" (Jon's database, checked {str(b.get('last_verified') or '')[:10]}). "
-            "No named contact yet.") if parts else "No public route in Jon's database: research the partnerships team."
+    return ("Public route: " + " · ".join(parts) + f" (Saracen Bridge database, checked {str(b.get('last_verified') or '')[:10]}). "
+            "No named contact yet.") if parts else "No public route in the Saracen Bridge database: research the partnerships team."
 
 
 def _strategy_task() -> str:
@@ -291,7 +291,7 @@ def _strategy_input(top: list[dict], opps: list[dict], by_id: dict, film: dict, 
     for t in top:
         b = by_id[t["brand_id"]]
         ops = "; ".join(f"{i} scene {by[i]['scene']}: {by[i]['item']} ({by[i]['placement']})" for i in t["opportunity_ids"][:6])
-        lines.append(f"{t['brand_id']} {t['brand_name']} ({t['category']}), Jon's priority {b['priority']}, previous film/TV work: "
+        lines.append(f"{t['brand_id']} {t['brand_name']} ({t['category']}), Saracen Bridge priority {b['priority']}, previous film/TV work: "
                      f"{b['previous_film_tv_integration']}. Primary on: {ops or 'none'}. Alternative on: {', '.join(t['alternative_on'][:6]) or 'none'}. "
                      f"Evidence: {b.get('evidence_statement') or 'none recorded'}")
     return "\n".join(lines)
@@ -314,7 +314,7 @@ def _outreach_input(t: dict, opps: list[dict], by_id: dict, film: dict, breakdow
     by = {o["id"]: o for o in opps}
     lines = [_film_facts(film, breakdown, opts), "",
              f"BRAND: {b['brand_name']} ({b['parent_company']}), {b['category']}: {b['subcategory']}.",
-             f"Why this brand (Jon's notes): {b.get('strategic_rationale') or 'none'}",
+             f"Why this brand (Saracen Bridge notes): {b.get('strategic_rationale') or 'none'}",
              f"Angle: {t.get('outreach_angle') or 'fit with the scenes below'}", "", "OPPORTUNITIES:"]
     for i in t["opportunity_ids"][:5] or t["alternative_on"][:3]:
         o = by[i]
@@ -327,7 +327,7 @@ def checks(res: dict) -> list[str]:
     out = []
     flat = json.dumps({k: res[k] for k in ("opportunities", "targets", "outreach")}, ensure_ascii=False)
     if FORBIDDEN.search(flat):
-        out.append("The text mentions ChatGPT, OpenAI or AI: Jon's rules forbid any reference to how it was made. Edit before sending.")
+        out.append("The text mentions ChatGPT, OpenAI or AI: Saracen Bridge rules forbid any reference to how it was made. Edit before sending.")
     for d in res["outreach"]:
         found = [e for e in EMAIL.findall(" ".join(str(d.get(k, "")) for k in ("email", "follow_up", "linkedin")))]
         if found:
@@ -377,7 +377,7 @@ def workbook(res: dict) -> bytes:
           [9, 7, 6, 30, 40, 24, 20, 16, 16, 30, 36, 18, 18, 18, 28, 11, 11, 11, 32, 22])
     sheet(wb.create_sheet("Target Brands"),
           ["Rank", "Brand", "Parent company", "Category", "Group", "Primary on", "Alternative on", "Score", "Outreach angle",
-           "Next action", "Contact route", "Film/TV evidence (Jon's database)"],
+           "Next action", "Contact route", "Film/TV evidence (Saracen Bridge database)"],
           [[t["rank"], t["brand_name"], t["parent_company"], t["category"], t["group"], ", ".join(t["opportunity_ids"]),
             ", ".join(t["alternative_on"]), t["score"], t["outreach_angle"], t["next_action"], t["route"], t["evidence"]]
            for t in res["targets"]],
@@ -392,8 +392,8 @@ def workbook(res: dict) -> bytes:
     notes["A1"].font = Font(name="Arial", bold=True, size=12)
     mw = res["made_with"]
     for line in [f"Read {res['scenes_read']} scenes on {res['date']} ({mw['model']}, {mw['mode']} reasoning).",
-                 "Brands come only from Jon's brand database; cash values are to be priced; outreach is draft-only and has not been sent.",
-                 "No named contacts: Jon's contact sheet is not loaded. Use each brand's public route until a contact is verified.",
+                 "Brands come only from the Saracen Bridge brand database; cash values are to be priced; outreach is draft-only and has not been sent.",
+                 "No named contacts: the Saracen Bridge contact sheet is not loaded. Use each brand's public route until a contact is verified.",
                  f"Categories avoided: {', '.join(res['options']['avoid']) or 'none'}. Intended rating: {res['options']['rating']}."] + \
                 [f"Check: {c}" for c in res["checks"]]:
         notes.append([line])

@@ -445,7 +445,7 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
             rate, basis = card.week(r, tier, scenario)
             status = "benchmark" if rate else "unknown"
         else:
-            rate, basis, status = None, f"not on Jon's {card.j} card", "unknown"
+            rate, basis, status = None, f"not on the Saracen Bridge {card.j} card", "unknown"
         rate = rate * fac["labour"] if rate and status == "benchmark" else rate
         lines.append(_line(code, f"{key}{f' × {n}' if n > 1 else ''}", rate * weeks * n if rate else None, status=status,
                            qty=round(weeks * n, 2), unit="weeks", rate=round(rate, 2) if rate else None, basis=basis,
@@ -457,7 +457,7 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
     for key, names, count, code, wk, src in POST_CREW:
         weeks = edit_weeks if wk == "edit" else wk
         r = card.role(names)
-        rate, basis = card.week(r, tier, scenario) if r else (None, f"not on Jon's {card.j} card")
+        rate, basis = card.week(r, tier, scenario) if r else (None, f"not on the Saracen Bridge {card.j} card")
         lines.append(_line(code, key, rate * fac["labour"] * weeks * count if rate else None, status="benchmark" if rate else "unknown",
                            qty=round(weeks, 2), unit="weeks", rate=round(rate * fac["labour"], 2) if rate else None, basis=basis,
                            source=(r or {}).get("source_file", "") if rate else "", payroll=True,
@@ -488,7 +488,7 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
         else:
             qty = q * (days if key.startswith("Crew vans") else 1)
         if not r:
-            lines.append(_line(code, key, None, status="unknown", qty=round(qty, 2), note=f"not on Jon's {card.j} card: quote"))
+            lines.append(_line(code, key, None, status="unknown", qty=round(qty, 2), note=f"not on the Saracen Bridge {card.j} card: quote"))
             continue
         if units[0] == "week" and (r["unit"] or "").lower() in ("day", "shoot day"):
             qty *= WEEK
@@ -537,7 +537,7 @@ def _budget(breakdown: dict, board: list[dict], dood: list[dict], card: Card, fa
         lines.append(_line("7201", "Production insurance package", known_direct * rate, status="benchmark", qty=round(known_direct, 2),
                            unit="% of known direct cost", rate=rate, basis=f"rate card: {ins['item']}", source=ins["source_file"] or ""))
     else:
-        lines.append(_line("7201", "Production insurance package", None, status="unknown", note=f"not on Jon's {card.j} card: quote"))
+        lines.append(_line("7201", "Production insurance package", None, status="unknown", note=f"not on the Saracen Bridge {card.j} card: quote"))
     base = sum(l["amount"] or 0 for l in lines if l["phase"] in ("Above the Line", "Production", "Post Production", "Other") or l["account"] == "7999")
     bond = card.pct(r"completion bond")
     if bond:
@@ -623,8 +623,8 @@ def _element_lines(board: list[dict], tags: dict, card: Card, fac: dict, tier: i
                 rate, basis, src = _band(it, scenario) * f, f"rate card: {it['item']}", it.get("source_file") or ""
         l = _line(code, desc, rate * qty if rate is not None else None, status="benchmark" if rate is not None else "unknown",
                   qty=qty, unit=unit, rate=round(rate, 2) if rate is not None else None, basis=basis, source=src,
-                  note=why + ("" if rate is not None else f"; negotiated on Jon's {card.j} card: enter the fee" if r
-                              else f"; not on Jon's {card.j} card: quote"), payroll=bool(roles) and rate is not None and not patterns)
+                  note=why + ("" if rate is not None else f"; negotiated on the Saracen Bridge {card.j} card: enter the fee" if r
+                              else f"; not on the Saracen Bridge {card.j} card: quote"), payroll=bool(roles) and rate is not None and not patterns)
         l["driver"] = "elements"
         out.append(l)
 
@@ -661,16 +661,16 @@ def _assumptions(ppd: dict, tier: int, card: Card, fac: dict, inputs: dict) -> l
          "move), never mixing day and night work in one day, splitting a scene across days where it runs over. Company "
          f"moves are counted and flagged; each costs about {MOVE_HOURS} hours ({SOURCES['moves']}).",
          "Scene length is its share of the script's lines times the page count, in eighths.",
-         f"Crew rates: Jon's {card.j} 2026 rate card, " + (f"experience tier {tier}" if any(_f(r["tier_1_week"]) for r in card.crew)
+         f"Crew rates: the Saracen Bridge {card.j} 2026 rate card, " + (f"experience tier {tier}" if any(_f(r["tier_1_week"]) for r in card.crew)
                                                          else "market low / base / high day rates × 5 by case") +
          f", × the {fac['region'] or 'default'} labour factor {fac['labour']:g}. Negotiated roles stay Unknown until a fee is entered.",
          f"Crew plan, prep and wrap: {SOURCES['crew']}. Counts and the roles marked as planning assumptions are editable.",
          f"Post: editor and assistant for the shoot plus {EDIT_WEEKS_AFTER_WRAP} weeks. Source: {SOURCES['edit']}. Grade 10 days: {SOURCES['grade']}.",
-         "Non-labour: Jon's rate card low / base / high by case, × the region's factor for that cost type.",
+         "Non-labour: the Saracen Bridge rate card low / base / high by case, × the region's factor for that cost type.",
          f"Contingency 10% of direct cost; completion bond and insurance at the card's rates. Source: {SOURCES['contingency']}.",
          f"Catering headcount: crew plan + cast called that day + background + {EXTRA_HEADS} others (director, producers, office).",
          "Incentives are not netted off here: take the qualifying spend to Location & Incentives.",
-         "Script-only analysis is never production-grade (Jon's instructions): confirm with a line producer, production accountant and payroll company."]
+         "Script-only analysis is never production-grade (Saracen Bridge instructions): confirm with a line producer, production accountant and payroll company."]
     return a
 
 
@@ -761,7 +761,7 @@ def workbook(title: str, res: dict, elements: dict | None = None) -> bytes:
         cell.font = bold
         cell.number_format = money
     top.append([])
-    top.append(["Unknown lines are not zero: the budget is PRELIMINARY until each is priced (Jon's chart of accounts, SB-COA-1.0)."])
+    top.append(["Unknown lines are not zero: the budget is PRELIMINARY until each is priced (the Saracen Bridge chart of accounts, SB-COA-1.0)."])
     top.append(["Incentives are not netted off: take the qualifying spend to Location & Incentives."])
 
     # stripboard and day-out-of-days (base case)
@@ -783,7 +783,7 @@ def workbook(title: str, res: dict, elements: dict | None = None) -> bytes:
         asm.append([f"{k}: {v}"])
     if res.get("labour_rules"):
         asm.append([])
-        asm.append([f"Payroll rules on Jon's {res['jurisdiction']} card (for the fringe %):"])
+        asm.append([f"Payroll rules on the Saracen Bridge {res['jurisdiction']} card (for the fringe %):"])
         for r in res["labour_rules"]:
             asm.append([f"{r['topic']}: {r['rule'] or ''} {r['treatment'] or ''}".strip()])
     sheets = [sb, dd, asm]

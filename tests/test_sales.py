@@ -180,7 +180,8 @@ def test_tims_intake_changes_22_oct(tmp_path, monkeypatch):
     assert "tone" not in keys and "coproduction" not in keys and "subgenre" in keys
     ch = o["choices"]
     assert ch["script_status"] == ["Development", "Final"] and "Completed film" in ch["sales_stage"]
-    assert ch["release_model"]["Episodic"] == ["Direct to streaming", "Direct to TV"] and "TVOD" in ch["release_model"]["Feature"]
+    assert ch["release_model"]["Episodic"] == ["Straight to streaming", "Straight to TV"]
+    assert ch["release_model"]["Feature"] == ["Theatrical", "VOD", "TVOD", "Straight to streaming", "Straight to TV"]
     assert {"Cannes", "Venice", "Berlinale", "Sundance", "Toronto (TIFF)"} <= set(ch["festivals"])
     base = c.post("/api/tools/sales/value", json={"project": SAMPLE}).json()
     intake = {k: v for k, v in SAMPLE["intake"].items() if k not in ("tone", "coproduction")}
@@ -190,7 +191,7 @@ def test_tims_intake_changes_22_oct(tmp_path, monkeypatch):
     assert same(r["summary"]["ask"], base["summary"]["ask"])
     wb = openpyxl.load_workbook(__import__("io").BytesIO(c.get(f"/api/runs/sales/{r['run_id']}/engine.xlsx").content))
     ws = wb["PROJECT_INTAKE"]
-    assert ws["B28"].value == "Cannes; Toronto (TIFF); Market screening at AFM" and ws["B27"].value == "Direct to streaming"
+    assert ws["B28"].value == "Cannes; Toronto (TIFF); Market screening at AFM" and ws["B27"].value == "Straight to streaming"   # saved before 1.1.5: new name
     assert ws["C9"].value == "Optional" and ws["C16"].value == "Optional" and ws["B33"].value.startswith("Episodic, 8 episodes")
     assert r["summary"]["intake_completeness"] >= base["summary"]["intake_completeness"]
 
@@ -208,3 +209,24 @@ def test_logline_and_synopsis_come_from_the_scripts_coverage(tmp_path, monkeypat
         assert pre["logline"] == "A lighthouse keeper hears a voice in the storm.\n\nPart one.\n\nPart two." and pre["logline_from"] == "coverage"
     bare = store.save_run("schedule", "Radio Night", {"file": "r.pdf", "sha256": "zzz"}, {"breakdown": {}})
     assert "logline" not in c.get(f"/api/tools/sales/engine/prefill?tool=schedule&run_id={bare['id']}").json()
+
+
+def test_release_routes_in_order_and_casting_director(tmp_path, monkeypatch):
+    """Tim, 27 Oct (1.1.5): each release route numbered 1 first; the casting director follows the cast summary. Neither
+    changes the valuation (the workbook uses both for narrative and completeness only)."""
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path))
+    from studio import sales
+    from studio.server import app
+    assert sales.release_text(["Theatrical", "VOD", "Straight to streaming"]) == "1 Theatrical; 2 VOD; 3 Straight to streaming"
+    assert sales.release_text(["Theatrical-led", "Direct to TV"]) == "1 Theatrical; 2 Straight to TV"
+    assert sales.release_text([]) == "" and sales.release_text("Direct to streaming") == "Straight to streaming"
+    assert sales.cast_text("Two leads, one attached", "Nina Gold") == "Two leads, one attached; Casting director: Nina Gold"
+    assert sales.cast_text("", "Nina Gold") == ""          # a casting director alone doesn't describe the cast
+    c = TestClient(app)
+    base = c.post("/api/tools/sales/value", json={"project": SAMPLE}).json()
+    intake = dict(SAMPLE["intake"], release_model=["TVOD", "Theatrical"], casting_director="Nina Gold",
+                  cast_summary=SAMPLE["intake"].get("cast_summary") or "Two leads")
+    r = c.post("/api/tools/sales/value", json={"project": dict(SAMPLE, intake=intake)}).json()
+    assert same(r["summary"]["ask"], base["summary"]["ask"])
+    ws = openpyxl.load_workbook(__import__("io").BytesIO(c.get(f"/api/runs/sales/{r['run_id']}/engine.xlsx").content))["PROJECT_INTAKE"]
+    assert ws["B27"].value == "1 TVOD; 2 Theatrical" and ws["B21"].value.endswith("; Casting director: Nina Gold")

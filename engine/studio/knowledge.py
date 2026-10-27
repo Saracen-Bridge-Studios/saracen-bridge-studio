@@ -56,7 +56,7 @@ SKILL_LABEL = {"t08_film_finance_greenlight": "Greenlight", "t09_film_finance_da
 def _title(path: Path, tool: str, folder: str = "") -> str:
     stem = path.stem
     if stem.upper() == "SKILL":
-        return f"{SKILL_LABEL.get(folder) or TOOL_NAME.get(tool, 'Saracen Bridge')}: Jon's GPT instructions"
+        return f"{SKILL_LABEL.get(folder) or TOOL_NAME.get(tool, 'Saracen Bridge')}: Saracen Bridge GPT instructions"
     stem = re.sub(r"[-_ ]?(?:jan|feb|mar|apr|may|jun|jul|july|aug|sep|oct|nov|dec)[a-z]*[-_ ]?20\d\d$", "", stem, flags=re.I)
     return re.sub(r"\s+", " ", stem.replace("_", " ").replace("-", " ")).strip()
 

@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, coverage, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
 
-VERSION = "1.1.4"
+VERSION = "1.1.5"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -427,7 +427,7 @@ def budget_build(body: dict = Body(...)):
         raise HTTPException(400, "This item has no script breakdown to schedule.")
     known = {j["jurisdiction"] for j in budget.jurisdictions()}
     if body.get("jurisdiction") not in known:
-        raise HTTPException(400, f"Pick a jurisdiction from the list ({len(known)} have Jon's rate cards).")
+        raise HTTPException(400, f"Pick a jurisdiction from the list ({len(known)} have the Saracen Bridge rate cards).")
     res = budget.build(b, jurisdiction=body["jurisdiction"], region=body.get("region"), tier=body.get("tier") or 2,
                        pages_per_day=body.get("pages_per_day"), inputs=body.get("inputs") or {},
                        elements=(rec.get("outputs") or {}).get("elements") if body.get("use_elements", True) else None)
@@ -707,7 +707,7 @@ def coverage_score(scores: dict = Body(...)):
         return {"composite": None, "missing": missing}
     rows = [{"category": k, "score": float(scores[k]), "weight": w, "weighted": float(scores[k]) * w} for k, w in COVERAGE_WEIGHTS.items()]
     return {"rows": rows, "composite": round(sum(r["weighted"] for r in rows), 2), "missing": [],
-            "note": "Commercial Readiness (1–100) and the Recommend/Consider/Pass cut-offs are not defined in Jon's spec (register G-02)."}
+            "note": "Commercial Readiness (1–100) and the Recommend/Consider/Pass cut-offs are not defined in the Saracen Bridge spec (register G-02)."}
 
 
 # ---------- incentives ----------
@@ -925,7 +925,7 @@ def sales_value(body: dict = Body(...)):
     try:
         res = sales.evaluate(project)
     except FileNotFoundError as e:
-        raise HTTPException(500, "Jon's Sales Valuation Engine workbook is missing from this installation. Reinstall the Studio.") from e
+        raise HTTPException(500, "The Saracen Bridge Sales Valuation Engine workbook is missing from this installation. Reinstall the Studio.") from e
     summary = {"ask": res["summary"]["ask"], "expected": res["summary"]["expected"], "take": res["summary"]["take"],
                "net_producer_receipts": res["summary"]["net_producer_receipts"],
                "valued": sum(1 for t in res["territories"] if t["status"] == "Complete")}

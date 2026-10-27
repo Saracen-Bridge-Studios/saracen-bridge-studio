@@ -612,7 +612,7 @@ function buildNav(route) {
   const nav = document.getElementById("nav");
   const link = (href, label, ic, n) => el("a", { href, "aria-current": route === href ? "page" : null }, el("span", { class: "ic" }, icon(ic)), el("span", {}, label), n ? el("span", { class: "n" }, n) : null);
   put(nav, link("#/", "Home", "home"),
-    CAT.groups.map(g => [el("div", { class: "grp" }, g), CAT.tools.filter(t => t.group === g).map(t => link(`#/tool/${t.id}`, t.name, ICONS[t.id] ? t.id : "file"))]),
+    CAT.groups.map(g => [el("div", { class: "grp" }, g), CAT.tools.filter(t => t.group === g && t.menu !== false).map(t => link(`#/tool/${t.id}`, t.name, ICONS[t.id] ? t.id : "file"))]),
     el("div", { class: "grp" }, "Studio"), link("#/room", "Room", "users", typeof roomBadge === "function" ? roomBadge() : null),
     link("#/library", "Library", "library"), link("#/settings", "Settings", "settings"));
 }
@@ -714,7 +714,7 @@ async function home() {
   const chips = el("div", { class: "chips", role: "group", "aria-label": "Filter tools" });
   const drawSuite = () => {
     [...chips.children].forEach(c => c.setAttribute("aria-pressed", String(c.dataset.g === SUITE_FILTER)));
-    put(suite, stagger(CAT.tools.filter(t => SUITE_FILTER === "All" || t.group === SUITE_FILTER).map(tile)));
+    put(suite, stagger(CAT.tools.filter(t => t.menu !== false && (SUITE_FILTER === "All" || t.group === SUITE_FILTER)).map(tile)));
   };
   ["All", ...CAT.groups].forEach(g => chips.append(el("button", { type: "button", class: "chip", "data-g": g, onclick: () => { SUITE_FILTER = g; drawSuite(); } }, g)));
   put(app(),
@@ -785,7 +785,7 @@ async function tool(id) {
   put(app(),
     el("h1", {}, t.name), el("p", { class: "lede" }, t.tagline),
     ((t.ai_built || []).length && !aiWrites()) ? el("div", { class: "notice" }, el("div", { class: "ic" }, icon("sparkle")),
-      el("div", { class: "grow" }, el("div", {}, "Connect the AI engine to switch on: ", t.ai_built.map(x => /^(Jon|BFI|AI|A\.I|F\.R|[A-Z]{2})/.test(x) ? x : x[0].toLowerCase() + x.slice(1)).join("; ")), el("div", { class: "sub" }, "Everything else on this page works now.")),
+      el("div", { class: "grow" }, el("div", {}, "Connect the AI engine to switch on: ", t.ai_built.map(x => /^(Saracen|BFI|AI|A\.I|F\.R|[A-Z]{2})/.test(x) ? x : x[0].toLowerCase() + x.slice(1)).join("; ")), el("div", { class: "sub" }, "Everything else on this page works now.")),
       el("a", { class: "btn sm", href: "#/settings" }, "Set up")) : null,
     el("div", { class: "cols" + (t.external ? " solo" : "") }, panel,
       t.external ? null : el("div", { class: "card side-card" },
@@ -998,7 +998,7 @@ async function brandSpot(r) {
       el("button", { type: "button", class: "btn primary", onclick: go }, icon("sparkle"), res ? "Spot again" : "Spot opportunities")));
   if (!res) {
     put(box, el("h2", { style: "margin:0" }, icon("sparkle"), "Scene-by-scene opportunities"),
-      el("p", { class: "muted small", style: "margin:8px 0 0" }, "Gemma reads every scene and lists the brand moments it genuinely supports, as Jon's brief asks: scene and page, the exact item, placement type, why it fits, what would change, risks and scores, with a primary target and two alternatives from Jon's brand database, then ranks the brands and drafts outreach to the top five. Nothing is sent."),
+      el("p", { class: "muted small", style: "margin:8px 0 0" }, "Gemma reads every scene and lists the brand moments it genuinely supports, as the Saracen Bridge brief asks: scene and page, the exact item, placement type, why it fits, what would change, risks and scores, with a primary target and two alternatives from the Saracen Bridge brand database, then ranks the brands and drafts outreach to the top five. Nothing is sent."),
       form, watch);
     return box;
   }
@@ -1009,7 +1009,7 @@ async function brandSpot(r) {
       el("a", { class: "btn sm", href: `/api/runs/brand/${r.id}/opportunities.xlsx` }, icon("download"), ".xlsx")),
     el("div", { class: "kpis", style: "margin-top:14px" }, kpi("Opportunities", fmt(res.opportunities.length), true), kpi("Scenes with one", `${res.scenes_with_opportunities} of ${res.scenes_read}`),
       kpi("Already in the script", fmt(res.opportunities.length - need)), kpi("Need a script change", fmt(need)), kpi("Brands matched", fmt(res.targets.length))),
-    el("p", { class: "muted small", style: "margin:6px 0 0" }, `Read ${res.date} · ${mw.mode || "quick"} reasoning · ${(mw.seconds || 0) < 120 ? fmt(mw.seconds || 0) + " s" : Math.round(mw.seconds / 60) + " min"}. Brands only from Jon's database; cash values to price; drafts not sent.${res.options.avoid.length ? " Avoided: " + res.options.avoid.join(", ") + "." : ""}`),
+    el("p", { class: "muted small", style: "margin:6px 0 0" }, `Read ${res.date} · ${mw.mode || "quick"} reasoning · ${(mw.seconds || 0) < 120 ? fmt(mw.seconds || 0) + " s" : Math.round(mw.seconds / 60) + " min"}. Brands only from the Saracen Bridge database; cash values to price; drafts not sent.${res.options.avoid.length ? " Avoided: " + res.options.avoid.join(", ") + "." : ""}`),
     res.checks.map(c => el("p", { class: "note PRELIMINARY" }, c)),
     el("h3", { style: "margin:22px 0 8px" }, "Opportunity register"),
     table(["ID", "Scene", "Moment and item", "Placement", "Targets", "#F", "#V", "#Priority"], res.opportunities.map(o => el("tr", {},
@@ -1078,7 +1078,7 @@ function finder(box, { label, placeholder, search, name, meta, open, hint }) {
     put(list, items.length ? items.map((it, i) => el("li", { id: `${id}-${i}`, role: "option", "aria-selected": "false",
       onpointerdown: e => { e.preventDefault(); pick(i); }, onpointermove: () => act !== i && mark(i) },
       el("span", { class: "nm" }, markMatch(name(it), q)), el("span", { class: "mt" }, meta(it))))
-      : el("li", { class: "none", role: "option", "aria-disabled": "true" }, `No one matching “${q}” in Jon's database`));
+      : el("li", { class: "none", role: "option", "aria-disabled": "true" }, `No one matching “${q}” in the Saracen Bridge database`));
     list.hidden = false; input.setAttribute("aria-expanded", "true"); mark(items.length ? 0 : -1);
   };
   const run = async () => {
@@ -1148,7 +1148,7 @@ function attachment(who, kind, extra = {}) {
   sel.addEventListener("change", attach);                  /* choosing a status attaches (Tim: "it should attach it") */
   draw();
   return [el("h3", {}, "Attachment"), el("div", { class: "attach" }, sel, el("div", { class: "grow" }, steps, said)), act,
-    el("p", { class: "muted small", style: "margin:8px 0 0" }, "Jon's certainty ladder: a name is counted only as far as the deal has gone. Choosing a status attaches the name to the package for this estimate.")];
+    el("p", { class: "muted small", style: "margin:8px 0 0" }, "The Saracen Bridge certainty ladder: a name is counted only as far as the deal has gone. Choosing a status attaches the name to the package for this estimate.")];
 }
 /* the package so far, above the actor and director finders */
 function pkgBar() {
@@ -1163,7 +1163,7 @@ function pkgBar() {
           el("button", { type: "button", class: "btn sm primary", disabled: !n, onclick: () => { SALES_PKG_APPLY = true; SALES_OPEN = true; route(); } }, icon("sales"), "Value this package"))),
       n ? el("div", { class: "sl-chips" }, pk.actors.map(x => chip("actors", x)), pk.directors.map(x => chip("directors", x)))
         : el("p", { class: "muted small", style: "margin:8px 0 0" }, "Look up an actor or director below and choose their attachment status: they're added here. Add as many as the package has, then value it."),
-      n ? el("p", { class: "muted small", style: "margin:10px 0 0" }, `${plural(pk.actors.length, "actor")}, ${plural(pk.directors.length, "director")}. Signed and pay-or-play count in full; a wish-list name counts for nothing until the deal moves. Jon's engine works out the cast and director factors when you value the package.`) : null);
+      n ? el("p", { class: "muted small", style: "margin:10px 0 0" }, `${plural(pk.actors.length, "actor")}, ${plural(pk.directors.length, "director")}. Signed and pay-or-play count in full; a wish-list name counts for nothing until the deal moves. The Saracen Bridge engine works out the cast and director factors when you value the package.`) : null);
   };
   const watch = () => { if (!document.body.contains(box)) { PKG_WATCH.delete(watch); return; } draw(); };
   PKG_WATCH.add(watch); draw();
@@ -1190,7 +1190,7 @@ function actorCard(a) {
     a.package_risk_notes ? [el("h3", {}, "Packaging notes"), el("p", { class: "profile-note" }, a.package_risk_notes)] : null,
     el("div", { class: "profile-foot" }, el("span", {}, "Confidence ", el("b", {}, a.confidence || "—")), el("span", {}, "Reviewed ", el("b", {}, dateOnly(a.last_reviewed))),
       links.length ? el("span", {}, "Sources ", links) : null,
-      el("span", { class: "muted" }, "Indicative, from Jon's Actor Value Database. Confirm any fee with the agent.")));
+      el("span", { class: "muted" }, "Indicative, from the Saracen Bridge Actor Value Database. Confirm any fee with the agent.")));
 }
 function directorCard(d) {
   return el("div", { class: "profile" },
@@ -1213,7 +1213,7 @@ function directorCard(d) {
     d.source_limitation_note ? el("p", { class: "muted small", style: "margin-top:14px" }, d.source_limitation_note) : null,
     el("div", { class: "profile-foot" }, el("span", {}, "Data confidence ", el("b", {}, d.overall_data_confidence || "—")), d.fee_confidence ? el("span", {}, "Fee confidence ", el("b", {}, d.fee_confidence)) : null,
       el("span", {}, "Reviewed ", el("b", {}, dateOnly(d.last_reviewed))), d.next_review_due ? el("span", {}, "Next review ", el("b", {}, dateOnly(d.next_review_due))) : null,
-      el("span", { class: "muted" }, "Indicative, from Jon's Director Value Database. Confirm any fee with the agent.")));
+      el("span", { class: "muted" }, "Indicative, from the Saracen Bridge Director Value Database. Confirm any fee with the agent.")));
 }
 
 /* Term-sheet warnings, grouped by what's wrong, with the fields named (Jon's validator reports one line per field). */
@@ -1239,7 +1239,7 @@ function incentivesResult(res) {
         (r.reasons || []).length ? el("div", { class: "small", style: "margin-top:6px;color:var(--fg-2)" }, r.reasons.join(" ")) : null),
       el("td", {}, el("span", { class: "pill " + r.gate }, r.gate)), el("td", { class: "num" }, fmt(r.eligible_base)),
       el("td", { class: "num" }, fmt(r.gross_benefit)), el("td", { class: "num" }, fmt(r.tax_effect)), el("td", { class: "num" }, el("b", {}, fmt(r.net_after_tax))))))),
-    el("p", { class: "muted small" }, "Rules from Jon's audited incentive model (26 Aug 2026). Unknown inputs stay unknown and keep a result PRELIMINARY. Confirm with the authority and local advisers before relying on any figure.")];
+    el("p", { class: "muted small" }, "Rules from the Saracen Bridge audited incentive model (26 Aug 2026). Unknown inputs stay unknown and keep a result PRELIMINARY. Confirm with the authority and local advisers before relying on any figure.")];
 }
 /* 1.0.8: read a Library script for the Cultural Test's Section A (and B), Jon's answer pack */
 async function bfiReader(box, apply) {
@@ -1289,7 +1289,7 @@ async function bfiReader(box, apply) {
   };
   pick.addEventListener("change", show);
   put(card, el("h2", { style: "margin:0" }, icon("sparkle"), "Read a script for Section A"),
-    el("p", { class: "muted small", style: "margin:6px 0 12px" }, "Jon's instructions: never award unsupported points; every answer stays with the company to verify, approve and submit."),
+    el("p", { class: "muted small", style: "margin:6px 0 12px" }, "Saracen Bridge instructions: never award unsupported points; every answer stays with the company to verify, approve and submit."),
     el("label", { class: "f" }, "Script", pick), body);
   show();
 }
@@ -1318,7 +1318,7 @@ function financeResult(r) {
 }
 function greenlightResult(r) {
   return [el("div", { class: "kpi edge", style: "max-width:420px" }, el("div", { class: "l" }, "Decision"), el("div", { class: "v" }, r.decision)), (r.reasons || []).map(x => el("p", { class: "note" }, x)),
-    el("p", { class: "muted small" }, "Rules from Jon's Film Finance Analyst. The 243-check closing matrix that produces these scores is awaited from Jon.")];
+    el("p", { class: "muted small" }, "Rules from the Saracen Bridge Film Finance Analyst. The 243-check closing matrix that produces these scores is awaited from Saracen Bridge.")];
 }
 function agreementResult(r, withFiles) {
   if (!r.ok) return [el("p", { class: "note FAIL" }, r.error), (r.problems || []).length ? el("ul", { class: "plain need", style: "margin-top:10px" }, r.problems.map(x => el("li", {}, icon("alert"), el("span", {}, x)))) : null];
@@ -1343,7 +1343,7 @@ const RESULT_VIEWS = {
   incentives: r => incentivesResult(r.outputs.results || []), bfi: r => bfiResult(r.outputs),
   finance: r => r.outputs.termsheet ? termsheetView(r.outputs.termsheet) : financeResult(r.outputs),
   greenlight: r => greenlightResult(r.outputs), agreement: r => agreementResult({ ok: true, ...r.outputs }, false),
-  sales: r => [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${r.id}/engine.xlsx` }, icon("download"), "Download Jon's engine, filled (.xlsx)"),
+  sales: r => [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${r.id}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)"),
     el("button", { type: "button", class: "btn primary", onclick: () => { SALES_RUN = r.id; SALES_OPEN = true; location.hash = "#/tool/sales"; } }, "Open in Sales Estimates")), salesResult(r.outputs.valuation)],
 };
 
@@ -1425,7 +1425,7 @@ async function budgetPanel(box) {
         kpi("Base case, priced lines", money(cur, base.known_total), true), kpi("Still to price", plural(base.unknown_lines, "line")),
         kpi("Company moves", res.schedule.base.moves)),
       el("p", { class: "muted small", style: "margin:6px 0 0" }, `Lean / base / conservative at ${["lean", "base", "conservative"].map(s => res.pages_per_day[s]).join(" / ")} pages a day. ${res.jurisdiction}, ${res.region}, crew tier ${res.tier}. Built ${savedAt(res.built)}.`),
-      base.unknown_lines ? el("p", { class: "note PRELIMINARY" }, `PRELIMINARY: ${plural(base.unknown_lines, "line")} can't be priced from a script or Jon's rate card (fees, negotiated roles, items the card doesn't list). They are not counted as zero. Price them under Lines to price.`) : el("p", { class: "note PASS" }, "Every line is priced. Still a script-only estimate: confirm with a line producer and production accountant."),
+      base.unknown_lines ? el("p", { class: "note PRELIMINARY" }, `PRELIMINARY: ${plural(base.unknown_lines, "line")} can't be priced from a script or the Saracen Bridge rate card (fees, negotiated roles, items the card doesn't list). They are not counted as zero. Price them under Lines to price.`) : el("p", { class: "note PASS" }, "Every line is priced. Still a script-only estimate: confirm with a line producer and production accountant."),
       (res.warnings || []).map(w => el("p", { class: "note " + (/no scenes/i.test(w) ? "FAIL" : "PRELIMINARY") }, w)),
       el("div", { class: "row", style: "margin:16px 0 4px" }, el("a", { class: "btn", href: `/api/runs/schedule/${pick.value}/budget.xlsx` }, icon("download"), "Download the workbook (.xlsx)")),
       el("div", { class: "card flush", style: "margin-top:16px" }, el("h2", { style: "padding:20px 20px 0" }, `Top sheet (${cur})`),
@@ -1447,7 +1447,7 @@ async function budgetPanel(box) {
       ["Day out of days", d => d.append(el("div", { class: "card flush" }, table(["Character", "#Work days", "#First", "#Last", "#Holds"],
         res.dood.map(c => el("tr", {}, el("td", {}, el("b", {}, c.name)), el("td", { class: "num" }, c.work_days), el("td", { class: "num" }, c.first), el("td", { class: "num" }, c.last), el("td", { class: "num" }, c.hold_days))))))],
       ["Assumptions", d => d.append(el("ul", { class: "plain", style: "line-height:1.7" }, res.assumptions.map(a => el("li", {}, a))),
-        (res.labour_rules || []).length ? [el("h2", { style: "margin-top:20px" }, `Payroll rules on Jon's ${res.jurisdiction} card`), el("p", { class: "muted small" }, "For the payroll load % (fringes)."),
+        (res.labour_rules || []).length ? [el("h2", { style: "margin-top:20px" }, `Payroll rules on the Saracen Bridge ${res.jurisdiction} card`), el("p", { class: "muted small" }, "For the payroll load % (fringes)."),
           el("ul", { class: "plain small", style: "line-height:1.6" }, res.labour_rules.map(r => el("li", {}, el("b", {}, r.topic), ": ", r.rule || "", r.treatment ? ` (${r.treatment})` : "")))] : null)],
     ]);
   };
@@ -1455,7 +1455,7 @@ async function budgetPanel(box) {
     el("div", { class: "row", style: "margin-top:12px;align-items:flex-end" }, f("Pages a day: lean", pace.lean), f("base", pace.base), f("conservative", pace.conservative),
       f("Payroll load %", fringe), f("Background a day", bg), f("VFX shots", vfx),
       el("button", { type: "button", class: "btn primary", onclick: ev => go(ev.currentTarget) }, icon("schedule"), "Build schedule and budget")),
-    el("p", { class: "muted small", style: "margin:10px 0 0" }, "Rates from Jon's 2026 rate cards and his chart of accounts. Anything a script can't tell you stays Unknown, never zero."),
+    el("p", { class: "muted small", style: "margin:10px 0 0" }, "Rates from the Saracen Bridge 2026 rate cards and its chart of accounts. Anything a script can't tell you stays Unknown, never zero."),
     elBox, out);
   await restore();
 }
@@ -1479,7 +1479,7 @@ function elementsBox(r, refresh) {
           el("div", { style: "margin-top:10px" }, hits.map(([k, v]) => el("div", { class: "small", style: "margin-top:6px" }, el("b", {}, v.label), ": ",
             v.items ? v.items.slice(0, 12).map(i => `${i.item} (sc ${i.scenes.slice(0, 6).join(", ")})`).join("; ") + (v.items.length > 12 ? ` and ${v.items.length - 12} more` : "")
               : `scenes ${v.scenes.slice(0, 20).join(", ")}${v.total !== undefined ? `, ${fmt(v.total)} in all` : ""}`))))]
-        : [el("div", {}, "Elements not tagged yet"), el("div", { class: "sub" }, "Gemma reads every scene for stunts, effects, vehicles, weapons, animals, background, special make-up, child performers and special equipment. Build the budget afterwards and it prices them from Jon's rate card, or marks them to quote.")],
+        : [el("div", {}, "Elements not tagged yet"), el("div", { class: "sub" }, "Gemma reads every scene for stunts, effects, vehicles, weapons, animals, background, special make-up, child performers and special equipment. Build the budget afterwards and it prices them from the Saracen Bridge rate card, or marks them to quote.")],
       watch),
     modeSwitch(), el("button", { type: "button", class: "btn sm primary", onclick: tag }, icon("sparkle"), e ? "Tag again" : "Tag elements"));
 }
@@ -1525,7 +1525,7 @@ function salesResult(res) {
   const valued = res.territories.filter(t => t.status === "Complete").length;
   return [el("div", { class: "kpis" }, kpi("Gross Ask", usdFull(s.ask)), kpi("Expected Close", usdFull(s.expected), true), kpi("Gross Take", usdFull(s.take)), kpi("Net producer receipts", usdFull(s.net_producer_receipts))),
     el("p", { class: "muted small", style: "margin:6px 0 0" }, `${valued} of ${res.territories.length} territories valued · valuation date ${s.valuation_date} · USD · ${s.report || "Producer-facing"}. Intake ${pct(s.intake_completeness)} complete; cast factor ${fmt(s.cast_factor, 2)}, director factor ${fmt(s.director_factor, 2)}, package factor ${fmt(s.package_factor, 2)}.`),
-    !valued ? el("p", { class: "note PRELIMINARY" }, "No territory has a value yet. Jon's engine values a territory only from deal evidence, public buyer-economics proxies, or a documented worldwide anchor. Add evidence below.") : null,
+    !valued ? el("p", { class: "note PRELIMINARY" }, "No territory has a value yet. The Saracen Bridge engine values a territory only from deal evidence, public buyer-economics proxies, or a documented worldwide anchor. Add evidence below.") : null,
     [["order", "Ask ≥ Expected ≥ Take"], ["fx", "Every deal converted to USD"], ["selection", "Every selected deal valid"]].map(([k, l]) => res.controls[k] === "FAIL" ? el("p", { class: "note FAIL" }, `Control failed: ${l}.`) : null),
     (res.flags || []).map(x => el("p", { class: "note PRELIMINARY" }, x)),
     el("div", { class: "card flush", style: "margin-top:16px" }, el("h2", { style: "padding:20px 20px 0" }, "Territories (USD)"),
@@ -1556,7 +1556,7 @@ async function valuationPanel(box) {
   const form = el("div", {}), out = el("div", { style: "margin-top:22px" });
   const sel = (key, opts) => ({ key, type: "select", options: opts });
   /* Tim's genre list (20 Oct, 1.1.2): Genre, then the Subgenres of that genre. A value saved before keeps its place
-     in the list, so an older valuation shows what it had. Jon's engine uses the genre in its narrative only. */
+     in the list, so an older valuation shows what it had. The Saracen Bridge engine uses the genre in its narrative only. */
   const GENRES = SALES_OPTS.genres || [], GENRE_NAMES = GENRES.map(g => g.genre);
   const subsOf = g => (GENRES.find(x => x.genre === g) || {}).subgenres || [];
   const withCurrent = (opts, v) => v && !opts.includes(v) ? [...opts, v] : opts;
@@ -1583,14 +1583,13 @@ async function valuationPanel(box) {
     return { genre, subgenre: sub, secondary_genre: second };
   };
   /* Tim's intake changes (22 Oct, 1.1.3): Feature or Episodic first; the release models follow from it; festivals are
-     ticked from a list; script status and sales stage are chosen. Jon's engine uses these for narrative only. */
+     ticked from a list; script status and sales stage are chosen. The Saracen Bridge engine uses these for narrative only. */
   const CH = SALES_OPTS.choices || {};
   const fmt = () => P.intake.format || "Feature";
   const releaseOpts = () => (CH.release_model || {})[fmt()] || L.release_model || [];
   const formatToggle = () => el("div", { class: "tabs", role: "group", "aria-label": "Format", style: "margin:0" }, (CH.format || ["Feature", "Episodic"]).map(f =>
     el("button", { type: "button", "aria-pressed": String(fmt() === f), onclick: () => {
       P.intake.format = f;
-      if (P.intake.release_model && !releaseOpts().includes(P.intake.release_model)) P.intake.release_model = null;
       draw();
     } }, f)));
   const festivalPick = () => {
@@ -1610,20 +1609,43 @@ async function valuationPanel(box) {
     return el("div", { class: "ms-wrap" }, el("details", { class: "ms" }, el("summary", { "aria-label": "Festival strategy" }, label),
       el("div", { class: "ms-panel" }, el("div", { class: "ms-grid" }, ticks))), note);
   };
+  /* Release model (Tim, 27 Oct, 1.1.5): each route numbered in the order it comes, 1 first; a route left without a number
+     isn't used. Choosing a number puts the route there and moves the others along. An older single choice keeps its
+     place as number 1, under its new name. */
+  const releasePick = () => {
+    const REN = { "Theatrical-led": "Theatrical", "Direct to streaming": "Straight to streaming", "Direct to TV": "Straight to TV" };
+    const opts = releaseOpts();
+    let v = P.intake.release_model;
+    v = (typeof v === "string" ? (v ? [v] : []) : Array.isArray(v) ? v : []).map(x => REN[x] || x).filter(x => opts.includes(x));
+    P.intake.release_model = v;
+    const wrap = el("div", { class: "rank", role: "group", "aria-label": "Release order" });
+    const drawR = () => put(wrap, opts.map(o => {
+      const s = el("select", { "aria-label": `Order for ${o}` }, ["", ...opts.map((_, i) => String(i + 1))].map(n =>
+        el("option", { value: n, selected: n === String(v.indexOf(o) + 1) || (n === "" && !v.includes(o)) }, n || "—")));
+      s.addEventListener("change", () => {
+        const rest = v.filter(x => x !== o);
+        if (s.value) rest.splice(Math.min(Number(s.value) - 1, rest.length), 0, o);
+        v = P.intake.release_model = rest; drawR();
+      });
+      return el("label", { class: "rank-opt" + (v.includes(o) ? " on" : "") }, s, o);
+    }), el("span", { class: "muted small" }, "1 = first window. Leave a route at — if it isn't used."));
+    drawR();
+    return wrap;
+  };
   /* Known sales feedback (22 Oct): which company it came from, from Jon's register, then the feedback itself */
   const feedbackPick = () => {
     let v = P.intake.sales_feedback;
     if (typeof v === "string") v = { agent: "", note: v };
     v = P.intake.sales_feedback = Object.assign({ agent: "", note: "" }, v || {});
-    const who = el("select", { "aria-label": "Sales company", style: "flex:0 1 300px" }, el("option", { value: "" }, "Sales company"),
+    const who = el("select", { "aria-label": "Sales company", style: "flex:0 1 300px" }, el("option", { value: "" }, "None"),
       (SALES_AGENTS || []).map(a => el("option", { value: a.agentId, selected: a.agentId === v.agent }, a.displayName)));
     who.addEventListener("change", () => { v.agent = who.value; });
     const note = el("input", { type: "text", value: v.note || "", placeholder: "What they said, and when", style: "flex:1 1 300px" });
     note.addEventListener("change", () => { v.note = note.value; });
     return el("div", { class: "row", style: "gap:10px" }, who, note);
   };
-  const special = () => ({ ...genrePair(), festival: festivalPick(), sales_feedback: feedbackPick() });
-  const fieldKind = { rating: sel("rating", L.rating || []), release_model: { key: "release_model", type: "select", options: releaseOpts() },
+  const special = () => ({ ...genrePair(), festival: festivalPick(), sales_feedback: feedbackPick(), release_model: releasePick() });
+  const fieldKind = { rating: sel("rating", L.rating || []),
     script_status: sel("script_status", CH.script_status || []), sales_stage: sel("sales_stage", CH.sales_stage || []),
     production_status: sel("production_status", L.production_status || []), budget_currency: sel("budget_currency", L.currencies || []),
     director_attachment: sel("director_attachment", SALES_OPTS.attachment), cast_attachment: sel("cast_attachment", SALES_OPTS.attachment), delivery_date: { type: "date" } };
@@ -1656,20 +1678,22 @@ async function valuationPanel(box) {
     P.rights = Object.fromEntries(T.map(t => [t, P.rights[t] || {}]));
     const rightsRows = T.map(t => Object.assign(P.rights[t], { territory: t }));
     const sp = special(), episodic = fmt() === "Episodic";
-    fieldKind.release_model.options = releaseOpts();
     const labelOf = f => f.key === "runtime" && episodic ? "Episode runtime (minutes)" : f.key === "logline" && P.intake.logline_from ? "Logline / synopsis (from the script's coverage)" : f.label;
     put(form,
       section("Project", "the more you give, the better the package factors", [
         el("div", { class: "row", style: "align-items:flex-end;margin-bottom:6px" }, el("label", { class: "f" }, "Format", formatToggle()),
           episodic ? el("label", { class: "f", style: "flex:0 1 160px" }, "Episodes", input(P.intake, "episodes", { numeric: true }, 140)) : null),
         el("div", { class: "row", style: "align-items:flex-end" },
-        SALES_OPTS.intake.flatMap(f => [el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience", "festival", "sales_feedback"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
+        SALES_OPTS.intake.flatMap(f => [el("label", { class: "f", style: ["logline", "hook", "cast_summary", "rights_summary", "audience", "festival", "sales_feedback", "release_model"].includes(f.key) ? "flex:1 1 100%" : "flex:1 1 200px" },
           labelOf(f) + (f.required ? "" : " (optional)"), sp[f.key] || (f.key === "logline" ? textArea(P.intake, "logline") : input(P.intake, f.key, Object.assign({ numeric: f.numeric }, fieldKind[f.key] || {})))),
           f.key === "genre" ? el("label", { class: "f", style: "flex:1 1 200px" }, "Secondary genre (optional)", sp.secondary_genre) : null]))], true),
-      section("Package", "cast and director from Jon's databases, with attachment status", [actorsDL.dl, dirDL.dl,
+      section("Package", "cast and director from the Saracen Bridge databases, with attachment status", [actorsDL.dl, dirDL.dl,
         pkgMissing() ? el("div", { class: "notice", style: "margin-bottom:14px" }, el("div", { class: "ic" }, icon("users")),
           el("div", { class: "grow" }, el("div", {}, `${plural(pkgMissing(), "name")} attached on the Actors and Directors tabs ${pkgMissing() === 1 ? "isn't" : "aren't"} in this valuation yet`)),
-          el("button", { type: "button", class: "btn sm primary", onclick: () => { takePackage(); draw(); toast("ok", "Package added", "Value with Jon's engine to see the estimate."); } }, "Add them")) : null,
+          el("button", { type: "button", class: "btn sm primary", onclick: () => { takePackage(); draw(); toast("ok", "Package added", "Value with the Saracen Bridge engine to see the estimate."); } }, "Add them")) : null,
+        /* Tim, 27 Oct (1.1.5): the casting director comes before the actors */
+        el("div", { class: "row", style: "align-items:flex-end;margin-bottom:6px" }, el("label", { class: "f", style: "flex:0 1 380px" }, "Casting director (optional)",
+          input(P.intake, "casting_director"))),
         el("h2", {}, "Cast"), editTable([{ key: "name", label: "Actor", width: 190, list: "sb-actor-names", onInput: actorsDL.onInput }, { key: "role", label: "Role", width: 130 },
           { key: "billing", label: "Billing", type: "number", width: 70 }, { key: "attachment", label: "Attachment", type: "select", options: SALES_OPTS.attachment },
           { key: "genre_fit", label: "Genre fit 0–5", type: "number", width: 80 }], P.actors, { addLabel: "Add an actor", newRow: d => ({ billing: d.length + 1, attachment: "Wish list" }) }),
@@ -1679,7 +1703,7 @@ async function valuationPanel(box) {
       section("Evidence", "what the engine values from: deals, public proxies, or a worldwide anchor", [
         el("div", { class: "row", style: "align-items:flex-end" }, el("label", { class: "f" }, "Analyst worldwide anchor (USD)", input(P.anchor, "usd", { numeric: true }, 160)),
           el("label", { class: "f", style: "flex:1 1 320px" }, "Basis for the anchor", input(P.anchor, "note"))),
-        el("p", { class: "muted small" }, "Expected Close before package and market adjustments, from documented public comparables. Jon's engine allocates it by his territory weights at grade D, and only where no deal or proxy evidence exists."),
+        el("p", { class: "muted small" }, "Expected Close before package and market adjustments, from documented public comparables. The Saracen Bridge engine allocates it by its territory weights at grade D, and only where no deal or proxy evidence exists."),
         el("h2", { style: "margin-top:18px" }, "Comparable films"), editTable([{ key: "id", label: "ID", width: 60 }, { key: "title", label: "Title", width: 200 }, { key: "year", label: "Year", type: "number", width: 80 },
           { key: "genre", label: "Genre", type: "select", options: GENRE_NAMES.length ? GENRE_NAMES : L.genre_profile || [] }, { key: "source", label: "Source", width: 160 }], P.films, { addLabel: "Add a film", newRow: d => ({ id: nextId(d, "F") }) }),
         el("h2", { style: "margin-top:18px" }, "Deals (verified transactions)"), editTable([{ key: "id", label: "ID", width: 60 }, { key: "film_id", label: "Film", type: "select", options: films },
@@ -1696,7 +1720,7 @@ async function valuationPanel(box) {
           { key: "rights_factor", label: "Rights match", type: "number", width: 70 }, { key: "relevance", label: "Relevance", type: "number", width: 70 }, { key: "source_weight", label: "Source weight", type: "number", width: 70 },
           { key: "include", label: "Use", type: "select", options: ["Y", "N"] }, { key: "source", label: "Source", width: 140 }], P.proxies,
           { addLabel: "Add a proxy", newRow: d => ({ id: nextId(d, "P"), include: "Y", rights_factor: 1 }) }),
-        el("p", { class: "muted small" }, "Each deal and proxy goes into its territory's selection (up to 10 each) with adjustment factors of 1, as Jon's workbook ships. Change factors in the workbook download for now.")]),
+        el("p", { class: "muted small" }, "Each deal and proxy goes into its territory's selection (up to 10 each) with adjustment factors of 1, as the Saracen Bridge workbook ships. Change factors in the workbook download for now.")]),
       section("Rights", "availability, sales and offers by territory", editTable([{ key: "territory", label: "Territory", width: 200 }, { key: "available", label: "Available", type: "select", options: ["Y", "N"] },
         { key: "status", label: "Sale status", type: "select", options: L.sale_status || [] }, { key: "offer_currency", label: "Currency", type: "select", options: L.currencies || [] },
         { key: "offer_amount", label: "Sale / offer", type: "number", width: 110 }, { key: "buyer", label: "Buyer", width: 140 }], rightsRows, { empty: "" })),
@@ -1707,15 +1731,15 @@ async function valuationPanel(box) {
   };
   const value = async btn => {
     btn.disabled = true;
-    put(out, el("div", { class: "muted small", style: "margin-bottom:8px" }, "Running Jon's Sales Valuation Engine… the first run after starting the Studio takes up to a minute."), el("div", { class: "clapper" }));
+    put(out, el("div", { class: "muted small", style: "margin-bottom:8px" }, "Running the Saracen Bridge Sales Valuation Engine… the first run after starting the Studio takes up to a minute."), el("div", { class: "clapper" }));
     try {
       const rights = Object.fromEntries(Object.entries(P.rights).map(([t, r]) => { const x = Object.assign({}, r); delete x.territory; return [t, x]; }).filter(([, r]) => Object.values(r).some(v => v !== null && v !== "" && v !== undefined)));
       const res = await api.post("/api/tools/sales/value", { run_id: runId, project: Object.assign({}, P, { rights }) });
       runId = SALES_RUN = res.run_id;
       if (![...pick.options].some(o => o.value === runId)) pick.append(el("option", { value: runId, selected: true }, res.title));
       pick.value = runId;
-      put(out, el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${runId}/engine.xlsx` }, icon("download"), "Download Jon's engine, filled (.xlsx)")), salesResult(res));
-      toast("ok", "Valued with Jon's engine", `${res.territories.filter(t => t.status === "Complete").length} territories valued. Saved in the Library.`);
+      put(out, el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${runId}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(res));
+      toast("ok", "Valued with the Saracen Bridge engine", `${res.territories.filter(t => t.status === "Complete").length} territories valued. Saved in the Library.`);
     } catch (e) { put(out, errBox(e)); }
     finally { btn.disabled = false; }
   };
@@ -1725,7 +1749,7 @@ async function valuationPanel(box) {
     const r = await api.get(`/api/runs/sales/${id}`);
     P = Object.assign(blank(), r.inputs || {});
     draw();
-    put(out, r.outputs && r.outputs.valuation ? [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${id}/engine.xlsx` }, icon("download"), "Download Jon's engine, filled (.xlsx)")), salesResult(r.outputs.valuation)] : null);
+    put(out, r.outputs && r.outputs.valuation ? [el("div", { class: "row", style: "margin-bottom:14px" }, el("a", { class: "btn", href: `/api/runs/sales/${id}/engine.xlsx` }, icon("download"), "Download the Saracen Bridge engine, filled (.xlsx)")), salesResult(r.outputs.valuation)] : null);
   };
   pick.addEventListener("change", () => load(pick.value));
   from.addEventListener("change", async () => {
@@ -1738,14 +1762,14 @@ async function valuationPanel(box) {
     toast("info", "Filled from the Library", (got.length ? `Took the ${got.join(", ")}.` : "") +
       (pre.logline ? "" : " No coverage for this script yet: write its coverage in Script Coverage and the logline and synopsis come with it."));
   });
-  box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "Jon's Sales Valuation Engine v4.1, run exactly as his workbook calculates. It values each territory from verified deals, public buyer-economics proxies, or a documented worldwide anchor, and never from the budget alone."),
+  box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "The Saracen Bridge Sales Valuation Engine v4.1, run exactly as his workbook calculates. It values each territory from verified deals, public buyer-economics proxies, or a documented worldwide anchor, and never from the budget alone."),
     el("div", { class: "row", style: "align-items:flex-end" }, el("label", { class: "f", style: "flex:1 1 260px" }, "Valuation", pick), el("label", { class: "f", style: "flex:1 1 260px" }, "Prefill", from)),
-    form, el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: ev => value(ev.currentTarget) }, icon("sparkle"), "Value with Jon's engine")), out);
+    form, el("div", { class: "row", style: "margin-top:18px" }, el("button", { type: "button", class: "btn primary", onclick: ev => value(ev.currentTarget) }, icon("sparkle"), "Value with the Saracen Bridge engine")), out);
   if (runId) await load(runId); else draw();
   if (SALES_PKG_APPLY) {                                   /* arrived from "Value this package" */
     SALES_PKG_APPLY = false; takePackage(); draw();
     const pk = salesPkg();
-    toast("ok", "Package added to the valuation", `${plural(pk.actors.length, "actor")} and ${plural(pk.directors.length, "director")} are in the Package section. Add the evidence, then Value with Jon's engine.`);
+    toast("ok", "Package added to the valuation", `${plural(pk.actors.length, "actor")} and ${plural(pk.directors.length, "director")} are in the Package section. Add the evidence, then Value with the Saracen Bridge engine.`);
     form.querySelector("details:nth-of-type(2)")?.setAttribute("open", "");
   }
 }
@@ -1814,7 +1838,7 @@ const PANELS = {
           el("div", { class: "row", style: "margin-top:16px;align-items:center" }, modeSwitch(),
             el("button", { type: "button", class: "btn primary", onclick: async ev => {
               const b = ev.currentTarget; b.disabled = true;
-              try { const a = await api.post("/api/tools/lookbook/analyse", { run_ids: [r.run_id], mode: MODE }); toast("ai", "Look book queued", `Gemma looks at every page, then writes Jon's 16-section analysis. On ${runsOn()}.`); q.draw(); pollJobs(); }
+              try { const a = await api.post("/api/tools/lookbook/analyse", { run_ids: [r.run_id], mode: MODE }); toast("ai", "Look book queued", `Gemma looks at every page, then writes the Saracen Bridge 16-section analysis. On ${runsOn()}.`); q.draw(); pollJobs(); }
               catch (e) { toast("bad", "Couldn't start the analysis", e.message); b.disabled = false; }
             } }, icon("sparkle"), "Analyse this look book"))));
       } catch (e) { put(out); toast("bad", "Couldn't read the deck", e.message); }
@@ -1857,7 +1881,7 @@ const PANELS = {
               el("td", { class: "role" }, el("b", {}, x.role), el("div", { class: "small muted" }, [x.department, x.production_type].filter(Boolean).join(" · ")), x.local_role ? el("div", { class: "small muted" }, x.local_role) : null),
               x.negotiated ? el("td", { colspan: 5, class: "small muted" }, "Negotiated: ", x.notes || "no card rate") : ["d1", "d2", "d3", "d4", "week"].map(k => el("td", { class: "num" }, fmt(x[k]))),
               el("td", { title: x.rate_status || null }, check(x.validation_status)))))),
-            el("p", { class: "muted small" }, "From Jon's 2026 rate cards. Quote means a market or negotiated figure: confirm with the union card or a quote before budgeting. Hover a row for its basis and notes."));
+            el("p", { class: "muted small" }, "From the Saracen Bridge 2026 rate cards. Quote means a market or negotiated figure: confirm with the union card or a quote before budgeting. Hover a row for its basis and notes."));
         } catch (e) { put(out, errBox(e)); }
       };
       let timer;
@@ -1881,7 +1905,9 @@ const PANELS = {
         search: q => `/api/lookup/directors?q=${encodeURIComponent(q)}&limit=12`, name: d => d.director_name,
         meta: d => [String(d.commercial_tier || "").split(/\s+[–-]\s+/)[0] && `Tier ${String(d.commercial_tier).split(/\s+[–-]\s+/)[0]}`, d.career_stage, d.primary_genre].filter(Boolean).join(" · "),
         open: async (d, out) => put(out, directorCard(await api.get(`/api/lookup/director?id=${encodeURIComponent(d.director_id)}`))) })],
-      ["Territory valuation", b => valuationPanel(b), true]], SALES_OPEN ? 2 : 0);
+      ["Territory valuation", b => valuationPanel(b), true],
+      /* Tim, 27 Oct (1.1.5): Sales Agents lives here, off the main menu */
+      ["Sales Agents", b => PANELS.agents(b), true]], SALES_OPEN === "agents" ? 3 : SALES_OPEN ? 2 : 0);
     SALES_OPEN = false;
   },
   /* Sales Agents (22 Oct): Jon's Sales Agent scoring specification v1.0. Each company's base score, reduced where it
@@ -1895,7 +1921,7 @@ const PANELS = {
       ? el("b", { style: "font-size:18px" }, `${r.result.adjustedScore}`, el("span", { class: "muted small" }, "/100")) : el("span", { class: "muted small" },
         { NEEDS_REVIEW: "Genre fit unverified", SCOPE_MISMATCH: "Score unavailable for this mandate", INVALID_INPUT: "Unrated" }[(r.result || {}).status] || "—");
     const links = a => (a.sourceUrls || []).map(u => el("a", { href: u, target: "_blank", rel: "noopener", class: "small", style: "margin-left:8px" }, "profile"));
-    box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "Jon's register of sales companies, scored for a film by his specification: the base score, reduced where the company fits the film's genre less well. Base scores and fits are provisional internal assessments, not measured sales success, estimate accuracy or payment reliability, and they never change the valuation's figures."));
+    box.append(el("p", { class: "muted", style: "margin:0 0 14px" }, "The Saracen Bridge register of sales companies, scored for a film by his specification: the base score, reduced where the company fits the film's genre less well. Base scores and fits are provisional internal assessments, not measured sales success, estimate accuracy or payment reliability, and they never change the valuation's figures."));
     tabs(box, [["Compare for a film", async b => {
       const { runs } = await api.get("/api/runs?tool=sales&limit=200");
       let project = AGENTS_PROJECT && runs.some(r => r.id === AGENTS_PROJECT) ? AGENTS_PROJECT : (runs[0] || {}).id || "", scope = "INTERNATIONAL_SALES";
@@ -2004,7 +2030,7 @@ const PANELS = {
       const h = await api.get("/api/agents/history");
       put(b, h.length ? el("div", { class: "card flush" }, table(["When", "Company", "Field", "Was", "Now", "By", "Reason", "Data version"], h.map(e => el("tr", {},
         el("td", { class: "small" }, e.at), el("td", {}, e.agent_id), el("td", {}, e.field), el("td", {}, String(e.old ?? "Unrated")), el("td", {}, String(e.new ?? "Unrated")),
-        el("td", {}, e.editor), el("td", { class: "small" }, e.reason), el("td", { class: "small muted" }, e.data_version))))) : el("p", { class: "muted" }, "No edits yet: the register is Jon's as seeded on 21 October 2026."));
+        el("td", {}, e.editor), el("td", { class: "small" }, e.reason), el("td", { class: "small muted" }, e.data_version))))) : el("p", { class: "muted" }, "No edits yet: the register is as Saracen Bridge seeded it on 21 October 2026."));
     }]]);
   },
   async incentives(box) {
@@ -2092,7 +2118,7 @@ const PANELS = {
       } catch (e) { put(tsBox, errBox(e)); }
       tsFile.value = "";
     });
-    const load = async () => { const ex = await api.get("/api/tools/finance/example"); gross.value = ex.gross_budget; cur.value = ex.currency; title.value = ex.title; put(body); ex.sources.forEach(addRow); toast("info", "SHADE example loaded", "Jon's sample plan. Change any figure and Calculate."); };
+    const load = async () => { const ex = await api.get("/api/tools/finance/example"); gross.value = ex.gross_budget; cur.value = ex.currency; title.value = ex.title; put(body); ex.sources.forEach(addRow); toast("info", "SHADE example loaded", "The Saracen Bridge sample plan. Change any figure and Calculate."); };
     addRow();
     box.append(el("div", { class: "row" }, el("label", { class: "f", style: "flex:1" }, "Project", title), el("label", { class: "f" }, "Gross budget", gross), el("label", { class: "f" }, "Currency", cur),
       el("button", { type: "button", class: "btn", onclick: load }, "Load SHADE example"),
@@ -2263,14 +2289,14 @@ function lookbookRun(r) {
   const lb = r.outputs.lookbook, n = (r.outputs.deck || { pages: [] }).pages.length;
   if (!lb) return el("div", {},
     el("div", { class: "notice", style: "margin-top:24px" }, el("div", { class: "ic" }, icon("sparkle")),
-      el("div", { class: "grow" }, el("div", {}, "Not analysed yet"), el("div", { class: "sub" }, AI.vision ? "Gemma looks at every page, then writes Jon's 16-section analysis." : (AI.vision_reason || "Needs an AI engine that reads images."))),
+      el("div", { class: "grow" }, el("div", {}, "Not analysed yet"), el("div", { class: "sub" }, AI.vision ? "Gemma looks at every page, then writes the Saracen Bridge 16-section analysis." : (AI.vision_reason || "Needs an AI engine that reads images."))),
       modeSwitch(), el("button", { type: "button", class: "btn primary", onclick: async ev => {
         const b = ev.currentTarget; b.disabled = true;
         try { const q = await api.post("/api/tools/lookbook/analyse", { run_ids: [r.id], mode: MODE }); toast("ai", "Look book queued", el("span", {}, `On ${runsOn()}. `, el("a", { href: "#/tool/lookbook" }, "Watch the queue"))); pollJobs(); }
         catch (e) { toast("bad", "Couldn't start the analysis", e.message); b.disabled = false; }
       } }, icon("sparkle"), "Analyse")),
     el("div", { class: "section-title" }, "The deck", el("small", {}, plural(n, "page"))), pageStrip(r.id, n));
-  return el("div", {}, lookbookView(lb), el("div", { class: "section-title" }, "Page by page", el("small", {}, `${plural(n, "page")} · click a page for Jon's notes`)), pageStrip(r.id, n, lb.page_notes));
+  return el("div", {}, lookbookView(lb), el("div", { class: "section-title" }, "Page by page", el("small", {}, `${plural(n, "page")} · click a page for its notes`)), pageStrip(r.id, n, lb.page_notes));
 }
 function lookbookView(lb) {
   const s = lb.sections, sn = s.snapshot, st = s.story, vi = s.visual, mk = s.market, rb = s.rebuild;
@@ -2309,7 +2335,7 @@ function lookbookView(lb) {
     H("Priority Improvements"), B("Must fix"), UL(rb.must_fix), B("Should improve"), UL(rb.should_improve), rb.optional_enhancement.length ? [B("Optional enhancement"), UL(rb.optional_enhancement)] : null,
     H("Scored Assessment"), el("div", { class: "bars" }, Object.entries(lb.scores).map(([k, v]) => el("div", { class: "bar" }, el("span", { class: "k" }, k), el("span", { class: "t" }, el("i", { style: `width:${v}%` })), el("span", { class: "v" }, v)))),
     H("Final Verdict"), el("div", { class: "kpi edge", style: "margin-top:10px" }, el("div", { class: "l" }, "Final verdict (proposed)"), el("div", { class: "v", style: "font-size:26px" }, lb.verdict_text)), P(s.scores.verdict_reason),
-    el("div", { class: "colophon" }, `Written ${lb.date} by ${lb.made_with.model} (${lb.made_with.engine}), ${lb.made_with.mode || "quick"} reasoning, ${plural(lb.made_with.pages_read, "page")} looked at in ${Math.round(lb.made_with.seconds)} s. The verdict and scores are proposals: Jon's rule for mapping scores to verdicts is open (G-01).`));
+    el("div", { class: "colophon" }, `Written ${lb.date} by ${lb.made_with.model} (${lb.made_with.engine}), ${lb.made_with.mode || "quick"} reasoning, ${plural(lb.made_with.pages_read, "page")} looked at in ${Math.round(lb.made_with.seconds)} s. The verdict and scores are proposals: the Saracen Bridge rule for mapping scores to verdicts is open (G-01).`));
 }
 function coverageView(cov) {
   const s = cov.sections, st = s.story, cr = s.creative, mk = s.market, dv = s.develop, vd = s.verdict;
@@ -2347,7 +2373,7 @@ function coverageView(cov) {
       el("td", { class: "num" }, Math.round(w * 100) + "%"), el("td", { class: "num" }, (cov.scores[k] * w).toFixed(2)), el("td", { class: "small" }, (vd.score_reasons || {})[k] || ""))))),
     H("Final recommendation"), el("div", { class: "kpi edge", style: "max-width:360px;margin:6px 0 14px" }, el("div", { class: "l" }, "Verdict"), el("div", { class: "v" }, vd.verdict)), P(vd.reason_for_verdict),
     KV([["Development priority", vd.development_priority], ["Best next step", vd.best_next_step]]),
-    el("div", { class: "colophon" }, `Written ${cov.date} by ${cov.made_with.model} (${cov.made_with.engine}, ${cov.made_with.mode || "quick"} reasoning), ${plural(cov.made_with.parts_read, "part")} read, ${Math.round(cov.made_with.seconds)} s. The verdict and readiness score are the model's proposals: Jon's rules for both are open questions (G-01, G-02).`));
+    el("div", { class: "colophon" }, `Written ${cov.date} by ${cov.made_with.model} (${cov.made_with.engine}, ${cov.made_with.mode || "quick"} reasoning), ${plural(cov.made_with.parts_read, "part")} read, ${Math.round(cov.made_with.seconds)} s. The verdict and readiness score are the model's proposals: the Saracen Bridge rules for both are open questions (G-01, G-02).`));
 }
 
 /* ---------------- runs ---------------- */
@@ -2378,7 +2404,7 @@ async function runView(toolId, id) {
         el("div", { class: "sub" }, "The coverage below was written from the earlier reading. Write it again to base it on the full script.")),
       modeSwitch(), writeBtn("Write again")) : null, coverageView(r.outputs.coverage));
   else put(covBox, el("div", { class: "notice", style: "margin-top:24px" }, el("div", { class: "ic" }, icon("sparkle")),
-    el("div", { class: "grow" }, el("div", {}, "No coverage yet"), el("div", { class: "sub" }, "Gemma reads the whole script and writes Jon's 11-section report.")),
+    el("div", { class: "grow" }, el("div", {}, "No coverage yet"), el("div", { class: "sub" }, "Gemma reads the whole script and writes the Saracen Bridge 11-section report.")),
     modeSwitch(), el("button", { type: "button", class: "btn primary", onclick: async ev => {
       const btn = ev.currentTarget; btn.disabled = true;
       try { const q = await api.post("/api/tools/coverage/write", { tool: toolId, run_ids: [id], mode: MODE }); toast("ai", "Coverage queued", el("span", {}, `On ${runsOn()}. `, el("a", { href: "#/tool/coverage" }, "Watch the queue"))); pollJobs(); }
@@ -2387,7 +2413,7 @@ async function runView(toolId, id) {
   const bud = r.outputs.budget, budBox = r.tool === "schedule" ? el("div", { class: "notice", style: "margin-top:24px" }, el("div", { class: "ic" }, icon("schedule")),
     el("div", { class: "grow" }, bud ? [el("div", {}, `Budget: ${money(bud.currency, bud.budget.base.known_total)} priced in the base case, ${plural(bud.schedule.base.shoot_days, "shooting day")}`),
       el("div", { class: "sub" }, bud.budget.base.unknown_lines ? `PRELIMINARY: ${plural(bud.budget.base.unknown_lines, "line")} still to price. ${bud.jurisdiction}, built ${savedAt(bud.built)}.` : `Every line priced. ${bud.jurisdiction}, built ${savedAt(bud.built)}.`)]
-      : [el("div", {}, "No schedule or budget yet"), el("div", { class: "sub" }, "Shooting days, a stripboard, day-out-of-days and a budget from Jon's rate cards.")]),
+      : [el("div", {}, "No schedule or budget yet"), el("div", { class: "sub" }, "Shooting days, a stripboard, day-out-of-days and a budget from the Saracen Bridge rate cards.")]),
     bud ? el("a", { class: "btn sm", href: `/api/runs/schedule/${id}/budget.xlsx` }, icon("download"), ".xlsx") : null,
     el("button", { type: "button", class: "btn sm primary", onclick: () => { BUDGET_RUN = id; BUDGET_OPEN = true; location.hash = "#/tool/schedule"; } }, icon("schedule"), bud ? "Open" : "Build")) : null;
   put(app(), ...head, r.tool === "brand" ? brandTargets(r) : null, r.tool === "brand" ? await brandSpot(r) : null, budBox, covBox, el("div", { class: "section-title" }, "Breakdown", el("small", {}, `${b.format || ""}`)),

@@ -975,6 +975,11 @@ td.evidence { min-width: 320px; white-space: normal; }
 
 /* ---------------- multi-tick dropdown (festival strategy, 1.1.3) ---------------- */
 .ms-wrap { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-start; }
+/* release order (1.1.5): each route with its number */
+.rank { display: flex; gap: 8px 14px; flex-wrap: wrap; align-items: center; }
+.rank-opt { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border: 1px solid var(--line-2); border-radius: var(--r-sm); color: var(--fg-3); }
+.rank-opt.on { color: var(--fg); border-color: var(--gold-line); }
+.rank-opt select { width: 62px; }
 .ms-wrap > input { flex: 1 1 260px; }
 .ms { position: relative; flex: 1 1 320px; min-width: 0; }
 .ms > summary { list-style: none; height: 40px; display: flex; align-items: center; padding: 0 34px 0 12px; border-radius: 10px; border: 1px solid var(--line-2);

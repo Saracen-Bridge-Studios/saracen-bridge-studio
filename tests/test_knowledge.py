@@ -35,7 +35,7 @@ def test_build_and_search(tmp_path, monkeypatch):
     counts = knowledge.build(db, tmp_path / "sources")
     assert counts["docs"] == 3                                     # captures and templates are left out
     titles = {r[0] for r in sqlite3.connect(db).execute("SELECT title FROM docs")}
-    assert titles == {"07 Comparable Film Methodology", "Location & Incentives: Jon's GPT instructions", "01 Current BFI Film Cultural Test Guidance"}
+    assert titles == {"07 Comparable Film Methodology", "Location & Incentives: Saracen Bridge GPT instructions", "01 Current BFI Film Cultural Test Guidance"}
     monkeypatch.setattr(knowledge, "_db_path", lambda: db)
     hits = knowledge.search("What is the golden points rule?", "bfi")
     assert hits[0]["title"].startswith("01 Current BFI") and "Golden Points" in hits[0]["heading"]
