@@ -14,7 +14,7 @@ struct RootView: View {
             } else {
                 NavigationStack {
                     StudiosView()
-                        .navigationDestination(item: $model.open) { host in
+                        .navigationDestination(item: $model.current) { host in
                             RoomScreen(host: host, joinToken: model.joinToken)
                                 .onDisappear { model.joinToken = nil }
                         }
@@ -41,7 +41,7 @@ struct StudiosView: View {
                 List {
                     Section {
                         ForEach(model.hosts) { host in
-                            Button { model.open = host } label: { HostRow(host: host) }
+                            Button { model.current = host } label: { HostRow(host: host) }
                                 .listRowBackground(Theme.card)
                                 .swipeActions {
                                     Button("Leave", role: .destructive) { model.remove(host) }
@@ -183,11 +183,13 @@ struct QRScanner: UIViewControllerRepresentable {
         let vc = DataScannerViewController(recognizedDataTypes: [.barcode(symbologies: [.qr])], qualityLevel: .balanced,
                                            isHighlightingEnabled: true)
         vc.delegate = context.coordinator
-        try? vc.startScanning()
         return vc
     }
 
-    func updateUIViewController(_ vc: DataScannerViewController, context: Context) {}
+    // scanning starts once the scanner is on screen
+    func updateUIViewController(_ vc: DataScannerViewController, context: Context) {
+        if !vc.isScanning && !context.coordinator.done { try? vc.startScanning() }
+    }
     func makeCoordinator() -> Coordinator { Coordinator(found: found) }
 
     final class Coordinator: NSObject, DataScannerViewControllerDelegate {

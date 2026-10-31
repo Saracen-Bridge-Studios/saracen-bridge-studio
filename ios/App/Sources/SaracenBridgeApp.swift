@@ -13,7 +13,7 @@ struct SaracenBridgeApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(model)
-                .onOpenURL { model.open($0) }
+                .onOpenURL { model.openLink($0) }
                 .tint(Theme.gold)
                 .preferredColorScheme(.dark)
         }
@@ -33,7 +33,7 @@ enum Theme {
 @MainActor
 final class AppModel: ObservableObject {
     @Published private(set) var hosts: [RoomHost] = []
-    @Published var open: RoomHost?
+    @Published var current: RoomHost?          // the Studio whose Room is open
     @Published var joinToken: String?
     @Published var locked = false
     @Published var notice: String?
@@ -54,7 +54,7 @@ final class AppModel: ObservableObject {
     }
 
     /// A `saracenbridge://join?invite=…` link from the invite page in Safari, or an http invite link.
-    func open(_ url: URL) {
+    func openLink(_ url: URL) {
         guard let invite = Invite.parse(url.absoluteString) else {
             notice = "That link isn't an invite to a Room."
             return
@@ -67,7 +67,7 @@ final class AppModel: ObservableObject {
             let host = try store.add(invite)
             hosts = store.hosts
             joinToken = invite.token
-            open = host
+            current = host
         } catch {
             notice = error.localizedDescription
         }
@@ -99,7 +99,7 @@ final class AppModel: ObservableObject {
         case .background:
             if lockWithFaceID { locked = true }
         case .active:
-            if let host = open { Task { _ = try? await relay(for: host) } }
+            if let host = current { Task { _ = try? await relay(for: host) } }
         default:
             break
         }

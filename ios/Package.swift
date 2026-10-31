@@ -18,7 +18,8 @@ let package = Package(
         .package(url: "https://github.com/swhitty/FlyingFox.git", exact: "0.27.1"),
     ],
     targets: [
-        .target(name: "RoomCore", dependencies: [.product(name: "FlyingFox", package: "FlyingFox")], path: "RoomCore"),
+        .target(name: "RoomCore", dependencies: [.product(name: "FlyingFox", package: "FlyingFox"),
+                                                 .product(name: "FlyingSocks", package: "FlyingFox")], path: "RoomCore"),
         .executableTarget(name: "roomrelay", dependencies: ["RoomCore"], path: "roomrelay"),
         .testTarget(name: "RoomCoreTests", dependencies: ["RoomCore", .product(name: "FlyingFox", package: "FlyingFox")], path: "RoomCoreTests"),
     ]
