@@ -42,7 +42,17 @@ const DB = {
 /* ---------------- the client ---------------- */
 const R = { dev: null, st: {}, snap: {}, keys: new Map(), items: new Map(), trustEver: { devices: {} }, trustNow: { devices: {} }, words: [], token: null, prod: null, tab: "today", chat: null };
 const kk = (s, e) => `${s}|${e}`;
-async function saveState() { await DB.set("kv", "state", R.st); }
+/* Inside the Saracen Bridge iPhone app (1.1.7): the page runs at the app's loopback address and keeps this phone's
+   device key and its Room state in the iPhone's Keychain through the app's bridge, because web storage on iOS isn't
+   guaranteed to last. IndexedDB stays the cache. */
+const NATIVE = window.SaracenApp && window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.saracen;
+async function native(op, extra) { if (!NATIVE) return null; try { return await NATIVE.postMessage(Object.assign({ op }, extra || {})); } catch (e) { return null; } }
+let NATIVE_STATE = null;
+function stateForKeychain() { const x = Object.assign({}, R.st); delete x.seq; return JSON.stringify(x); }
+async function saveState() {
+  await DB.set("kv", "state", R.st);
+  if (NATIVE) { const j = stateForKeychain(); if (j !== NATIVE_STATE) { NATIVE_STATE = j; await native("put", { name: "state", value: j }); } }
+}
 
 async function api(method, path, body, raw) {
   const headers = {};
@@ -183,7 +193,15 @@ async function boot() {
   R.words = (await (await fetch("/app/words.txt")).text()).split(/\s+/).filter(Boolean);
   await DB.open();
   R.st = (await DB.get("kv", "state")) || {};
-  const secret = await DB.get("kv", "device");
+  let secret = await DB.get("kv", "device");
+  if (NATIVE) {                                   /* the Keychain is the record; IndexedDB may have been cleared */
+    const kept = await native("get", { name: "device" });
+    if (kept && !secret) { secret = kept; await DB.set("kv", "device", secret); }
+    else if (secret && kept !== secret) await native("put", { name: "device", value: secret });
+    const st = await native("get", { name: "state" });
+    if (st && !R.st.status) { try { R.st = JSON.parse(st); delete R.st.seq; await DB.set("kv", "state", R.st); } catch (e) { /* keep the empty state */ } }
+    NATIVE_STATE = stateForKeychain();
+  }
   if (secret) R.dev = C.device(secret);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("/app/sw.js").catch(() => null);
   const join = /[#?&]join=([A-Za-z0-9_-]+)/.exec(location.hash + location.search);
@@ -204,12 +222,14 @@ function joinScreen(token) {
   const name = el("input", { type: "text", autocomplete: "name", placeholder: "Your name", "aria-label": "Your name" });
   put($app(), el("div", { class: "intro" }, el("img", { src: "/app/icons/icon-192.png", alt: "", class: "logo" }), el("h1", {}, "Join the Room"),
     el("p", {}, "Your production's private, encrypted hub: your day, the board, chat and meetings."),
-    isIOS() && !standalone() ? el("div", { class: "note" }, el("b", {}, "On iPhone, add it to your home screen first. "), "Notifications only work from the home screen: tap Share, then Add to Home Screen, then open the Room from there and tap the link again.") : null,
+    isIOS() && !NATIVE ? el("a", { class: "btn big", href: "saracenbridge://join?invite=" + encodeURIComponent(location.href), style: "display:block;text-align:center;margin-bottom:12px" },
+      "Open in the Saracen Bridge app") : null,
+    isIOS() && !standalone() && !NATIVE ? el("div", { class: "note" }, el("b", {}, "Or, without the app, add it to your home screen first. "), "Notifications only work from the home screen: tap Share, then Add to Home Screen, then open the Room from there and tap the link again.") : null,
     el("label", { class: "f" }, "Your name", name),
     el("button", { type: "button", class: "btn primary big", onclick: async ev => {
       ev.currentTarget.disabled = true;
       try {
-        R.dev = C.device(); await DB.set("kv", "device", R.dev.secret());
+        R.dev = C.device(); await DB.set("kv", "device", R.dev.secret()); await native("put", { name: "device", value: R.dev.secret() });
         const nonce = C.randomBytes(32);
         const r = await api("POST", "/api/join", { token, device: R.dev.public(), commit: C.commitment(R.dev.public(), nonce) }, { auth: false });
         R.st = { user: r.user, status: "pending", nonce: C.b64e(nonce), joinFounder: r.founder, profile: { name: name.value.trim() } };
@@ -226,7 +246,7 @@ async function wordsScreen() {
     let s;
     try { s = await api("GET", "/api/join/state"); } catch (e) { put(box, el("h1", {}, "Joining"), el("p", {}, e.message)); return setTimeout(tick, 5000); }
     if (s.status === "approved") return finishJoin(s);
-    if (s.status !== "pending") { put(box, el("h1", {}, "Not approved"), el("p", {}, "The invite was declined. Ask for a new one."), el("button", { type: "button", class: "btn", onclick: async () => { await DB.clear(); location.href = "/app/"; } }, "Start again")); return; }
+    if (s.status !== "pending") { put(box, el("h1", {}, "Not approved"), el("p", {}, "The invite was declined. Ask for a new one."), el("button", { type: "button", class: "btn", onclick: async () => { await DB.clear(); await native("delete", { name: "device" }); await native("delete", { name: "state" }); location.href = "/app/"; } }, "Start again")); return; }
     if (!s.approver) put(box, el("h1", {}, "Waiting for an executive"), el("p", {}, "Call the executive who approves new phones and ask them to press Check next to your name. Your safety words appear here then."));
     else {
       if (!s.revealed) await api("POST", "/api/join/reveal", { nonce: R.st.nonce });
@@ -256,8 +276,8 @@ function setupScreen() {
   const meter = el("div", { class: "meter", role: "img", "aria-label": "Microphone level" }, Array.from({ length: 16 }, () => el("span")));
   put($app(), el("div", { class: "intro" }, el("h1", {}, "You're in"),
     el("div", { class: "note" }, el("b", {}, "Oversight. "), "Executives on this production can read every space, file and private message in the Room. Every read is recorded in the audit log."),
-    el("button", { type: "button", class: "btn big", onclick: async ev => { const ok = await enablePush(); ev.currentTarget.textContent = ok ? "Notifications on" : "Notifications not available"; ev.currentTarget.disabled = true; } }, "Turn on notifications"),
-    isIOS() && !standalone() ? el("p", { class: "muted" }, "On iPhone, notifications work once the Room is on your home screen.") : null,
+    NATIVE ? null : el("button", { type: "button", class: "btn big", onclick: async ev => { const ok = await enablePush(); ev.currentTarget.textContent = ok ? "Notifications on" : "Notifications not available"; ev.currentTarget.disabled = true; } }, "Turn on notifications"),
+    isIOS() && !standalone() && !NATIVE ? el("p", { class: "muted" }, "On iPhone, notifications work once the Room is on your home screen.") : null,
     el("button", { type: "button", class: "btn big", onclick: async ev => { const ok = await micCheck(meter); ev.currentTarget.textContent = ok ? "Microphone found" : "Microphone blocked"; } }, "Check my microphone"), meter,
     el("button", { type: "button", class: "btn primary big", onclick: () => { home(); live(); } }, "Open the Room")));
 }

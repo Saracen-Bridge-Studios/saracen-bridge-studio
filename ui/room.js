@@ -561,8 +561,12 @@ async function roomInvite(a) {
   if (!ok) return;
   try {
     const r = await api.post("/api/room/invite", { production: v.production, name: name.value.trim(), role: role.value.trim(), tier: tier.value, department: dept.value, second_ad: ad.checked });
+    /* 1.1.7: the invite as a QR code, for the Saracen Bridge iPhone app's scanner (or the phone's camera) */
+    let qr = null;
+    try { const q = qrcode(0, "M"); q.addData(r.link); q.make(); qr = el("div", { class: "invite-qr", "aria-label": "QR code of the invite link" }); qr.innerHTML = q.createSvgTag({ cellSize: 5, margin: 3, scalable: true }); } catch (e) { qr = null; }
     await modal({ icon: "check", title: "Send them this link", body: [el("div", { class: "invite-link" }, el("code", {}, r.link), copyBtn(r.link)),
-      `On a phone it opens the Room app; on a computer, they paste it into the Studio's Room page. It works once and expires in ${r.expires_in_days} days.`,
+      qr ? el("div", { class: "invite-qr-wrap" }, qr, el("p", { class: "muted small" }, "Or, with them here: they scan this in the Saracen Bridge app (Join with an invite, Scan the QR code).")) : null,
+      `On a phone it opens the Room (in the Saracen Bridge app, or the browser); on a computer, they paste it into the Studio's Room page. It works once and expires in ${r.expires_in_days} days.`,
       "Send it however you like (text, email). It isn't a secret on its own: nobody gets in until the safety words match."], actions: [["Done", true, true]] });
     roomAccess();
   } catch (e) { toast("bad", "Couldn't create the invite", e.message); }

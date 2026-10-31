@@ -1,11 +1,15 @@
-# Saracen Bridge Studio for both systems. Every push to main (or a manual run) builds the Mac app on one of GitHub's
-# Apple Silicon Macs (tests, app, smoke test hosting a production, disk image) and runs the tests on real Windows.
+# Saracen Bridge Studio for both systems, and the iPhone app. Every push to main (or a manual run) builds the Mac app on
+# one of GitHub's Apple Silicon Macs (tests, app, smoke test hosting a production, disk image), runs the tests on real
+# Windows, and builds the iPhone app and runs it in the iPhone simulator against a Studio hosting a test production
+# (screenshots of every step kept as the iphone-screenshots artifact).
 # The Windows installer itself is still built with packaging/build_windows_on_linux.sh.
 #
 # Mac signing turns on by itself once these repository secrets exist (Settings › Secrets and variables › Actions):
 #   MAC_CERT_P12 (base64 of the Developer ID Application certificate, .p12), MAC_CERT_PASSWORD,
 #   MAC_SIGN_IDENTITY ("Developer ID Application: <name> (<team id>)"),
 #   NOTARY_KEY_P8 (App Store Connect API key, the .p8 text), NOTARY_KEY_ID, NOTARY_ISSUER.
+# iPhone builds go to TestFlight by themselves once IOS_TEAM_ID exists too (the same App Store Connect API key,
+# with the App Manager role, signs and uploads them).
 name: Build
 
 on:
@@ -86,3 +90,81 @@ jobs:
           python-version: "3.13"
       - run: python -m pip install -q -r requirements-dev.txt
       - run: python -m pytest -q -p no:cacheprovider
+
+  iphone:
+    name: iPhone app
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      HAS_ASC: ${{ secrets.NOTARY_KEY_P8 != '' && secrets.IOS_TEAM_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: A throwaway keychain (the test Studio seals its keys in the Keychain)
+        run: |
+          security create-keychain -p ci build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ci build.keychain
+          security set-keychain-settings build.keychain
+          security list-keychains -d user -s build.keychain $(security list-keychains -d user | tr -d '"')
+      - name: RoomCore tests (invites, Studios, the relay with Apple's WebSockets)
+        working-directory: ios
+        run: swift test
+      - name: The Xcode project
+        working-directory: ios/App
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: A Studio hosting a test production, seeded, with an invite for the phone
+        run: |
+          python -m pip install -q -r requirements.txt
+          STUDIO_HOME="$RUNNER_TEMP/studio" CI_KEYCHAIN=1 python studio_launcher.py --headless --port 8796 > "$RUNNER_TEMP/studio.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf http://127.0.0.1:8796/api/health >/dev/null && break; sleep 1; done
+          echo "ROOM_TEST_INVITE=$(python ios/ci/studio_for_tests.py http://127.0.0.1:8796 invite)" >> "$GITHUB_ENV"
+      - name: Build and run in the iPhone simulator (screenshots of every step)
+        working-directory: ios/App
+        run: |
+          python ../ci/studio_for_tests.py http://127.0.0.1:8796 approve "UI Test Phone" 900 > "$RUNNER_TEMP/approve.log" 2>&1 &
+          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone') and 'Pro' in x['name']))")
+          TEST_RUNNER_ROOM_TEST_INVITE="$ROOM_TEST_INVITE" xcodebuild test -project SaracenBridge.xcodeproj -scheme SaracenBridge \
+            -destination "id=$DEVICE" -resultBundlePath "$RUNNER_TEMP/ui.xcresult" CODE_SIGNING_ALLOWED=NO | tail -40
+      - name: Export the screenshots
+        if: always()
+        run: |
+          mkdir -p iphone-screenshots
+          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/ui.xcresult" --output-path iphone-screenshots || true
+          cp "$RUNNER_TEMP/studio.log" "$RUNNER_TEMP/approve.log" iphone-screenshots/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: iphone-screenshots
+          path: iphone-screenshots
+          retention-days: 30
+      - name: TestFlight (once the Apple Developer account's keys are in the repository's secrets)
+        if: env.HAS_ASC == 'true' && github.event_name != 'pull_request'
+        working-directory: ios/App
+        env:
+          ASC_KEY: ${{ secrets.NOTARY_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          DEVELOPMENT_TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          printf '%s\n' "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
+          AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/asc.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER"
+          xcodegen generate
+          xcodebuild archive -project SaracenBridge.xcodeproj -scheme SaracenBridge -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/SaracenBridge.xcarchive" CURRENT_PROJECT_VERSION=${{ github.run_number }} DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" $AUTH | tail -20
+          cat > "$RUNNER_TEMP/export.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$DEVELOPMENT_TEAM</string>
+            <key>signingStyle</key><string>automatic</string>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/SaracenBridge.xcarchive" -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/export" $AUTH | tail -20

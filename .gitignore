@@ -8,3 +8,7 @@ packaging/redist/*.exe
 packaging/livekit/*.exe
 packaging/livekit/livekit-server
 packaging/macos/build/
+# the iPhone app: SwiftPM's build folder and the Xcode project XcodeGen makes from ios/App/project.yml
+ios/.build/
+ios/.swiftpm/
+ios/App/*.xcodeproj/

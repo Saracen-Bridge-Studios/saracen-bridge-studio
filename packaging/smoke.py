@@ -174,6 +174,8 @@ check("1.1.5 release routes numbered in order, \"Straight to streaming\"; Sales 
       and next(t for t in cat["tools"] if t["id"] == "agents").get("menu") is False
       and all(s in sjs for s in (b"releasePick", b"Casting director (optional)", b'["Sales Agents", b => PANELS.agents(b)')) and b"Jon's engine" not in sjs,
       so["choices"]["release_model"]["Feature"])
+qrjs, roomjs = call("/ui/vendor/qrcode-generator.js", raw=True), call("/ui/room.js", raw=True)
+check("1.1.7 each invite shows a QR code for the iPhone app to scan", b"var qrcode = function" in qrjs and b"invite-qr" in roomjs, len(qrjs))
 # 1.1.6: Casting Director, the optimised shooting order, allowances, the existing-estimate reader
 cast = call(f"/api/casting/brand/{brandrun['run_id']}")
 check("1.1.6 Casting Director: roles from the breakdown, shortlists from the actor database",
@@ -213,6 +215,10 @@ if HUB:                                               # a Room hub to check (the
         app_html = r.read()
     check("1.0.8 the Room hub answers and serves the phone app", hh.get("ok") is True and b"manifest.webmanifest" in app_html,
           f"{HUB}: {hh.get('version')}")
+    with urllib.request.urlopen(HUB + "/app/app.js", timeout=30) as r:
+        app_js = r.read()
+    check("1.1.7 the phone app works inside the iPhone app (Keychain bridge) and offers it from Safari",
+          b"messageHandlers.saracen" in app_js and b"saracenbridge://join?invite=" in app_js)
 else:
     print("SKIP 1.0.8 Room hub health (give the hub's address as a second argument to check it)")
 print("SMOKE OK")
