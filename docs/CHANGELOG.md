@@ -20,7 +20,7 @@ The team companion (Tim, 30 Oct: "Team companion", built on GitHub's Macs). The 
 - Open: notifications on the iPhone (Apple's push service needs the developer account, and the Room's hub to send through it); export compliance for the app's encryption, answered when the first build is uploaded (S-111).
 
 ## 1.1.7 (30 Oct 2026), the Room ready for the iPhone app
-Setup `SETUPHASH`, in Tim's Downloads and posted in chat. TESTLINE
+Setup `fa358961`, in Tim's Downloads and posted in chat. Tests: 252 on Windows; 259 passed, 1 skipped on Linux; the installed copy, upgraded over 1.1.6, passes the 46-check smoke (with hosting). Not settled here: an encrypted huddle with a Windows host run under Wine. The Studio's own huddle doesn't connect under Wine in this build machine either, so it's the test setup rather than the relay; the same phone-through-relay test against a Linux host passes. Checked on a real Windows host at the first phone run (S-112).
 - Added: each invite shows its QR code beside the link (Members & access), for the iPhone app's scanner or a phone's camera. qrcode-generator 1.4.4 (Kazuhiko Arase, MIT), bundled. (S-111)
 - Changed: the phone's Room page, served by the host: inside the iPhone app it keeps its device key and state in the Keychain through the app, and doesn't offer the home screen or web notifications; in Safari on an iPhone it offers "Open in the Saracen Bridge app" first. Its offline copy refreshes. (S-110)
 
