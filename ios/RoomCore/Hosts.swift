@@ -21,9 +21,12 @@ public struct RoomHost: Codable, Hashable, Identifiable, Sendable {
 
     public var relayBase: URL { URL(string: "http://127.0.0.1:\(port)")! }
 
-    /// Where the Room page opens through the relay: the app's start page, or the join screen for an invite.
-    public func pageURL(join token: String? = nil) -> URL {
-        URL(string: token.map { "http://127.0.0.1:\(port)/app/#join=\($0)" } ?? "http://127.0.0.1:\(port)/app/")!
+    /// Where the Room page opens through the relay: the app's start page, the join screen for an invite, or a part of
+    /// the page named by `fragment` (such as `delete-account`, from the app's Settings).
+    public func pageURL(join token: String? = nil, fragment: String? = nil) -> URL {
+        if let token { return URL(string: "http://127.0.0.1:\(port)/app/#join=\(token)")! }
+        if let fragment, !fragment.isEmpty { return URL(string: "http://127.0.0.1:\(port)/app/#\(fragment)")! }
+        return URL(string: "http://127.0.0.1:\(port)/app/")!
     }
 }
 

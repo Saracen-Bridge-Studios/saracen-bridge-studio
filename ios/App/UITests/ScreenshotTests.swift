@@ -43,7 +43,12 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(name.waitForExistence(timeout: 20), "the join screen didn't load through the relay")
         shot("03 Join the Room")
         name.tap()
-        name.typeText("UI Test Phone")
+        name.typeText(ProcessInfo.processInfo.environment["ROOM_TEST_NAME"] ?? "UI Test Phone")
+        // the Room's terms (1.2.0): joining waits until they're accepted; tapping the label ticks the box
+        let agree = web.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "I agree to the Room")).firstMatch
+        XCTAssertTrue(agree.waitForExistence(timeout: 10), "no terms on the join screen")
+        agree.tap()
+        shot("03b Terms ticked")
         web.buttons["Join"].tap()
 
         XCTAssertTrue(web.staticTexts["Your safety words"].waitForExistence(timeout: 60), "no safety words: the phone wasn't checked")
@@ -57,6 +62,35 @@ final class ScreenshotTests: XCTestCase {
             web.buttons[tab].tap()
             sleep(2)
             shot("\(n) \(tab)")
+        }
+
+        // safety (1.2.0), for App Review: Report, hide and block on a message; the person's own settings
+        web.buttons["Chat"].tap()
+        sleep(1)
+        let office = web.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Production office")).firstMatch
+        if office.waitForExistence(timeout: 5) {
+            office.tap()
+            sleep(2)
+            shot("09b Production office")
+            let more = web.buttons["Report, hide or block"].firstMatch
+            if more.waitForExistence(timeout: 5) {
+                more.tap()
+                sleep(1)
+                shot("09c Report, hide or block")
+                if web.buttons["Report…"].exists {
+                    web.buttons["Report…"].tap()
+                    sleep(1)
+                    shot("09d Report reasons")
+                }
+                if web.buttons["Close"].exists { web.buttons["Close"].tap() }
+            }
+        }
+        let you = web.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "You, settings and safety")).firstMatch
+        if you.waitForExistence(timeout: 5) {
+            you.tap()
+            sleep(1)
+            shot("09e You: blocked people, filter, terms, delete my account")
+            if web.buttons["Close"].exists { web.buttons["Close"].tap() }
         }
 
         app.navigationBars.buttons.element(boundBy: 0).tap()

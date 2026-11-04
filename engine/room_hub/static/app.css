@@ -79,8 +79,31 @@ article.note h3 { margin: 4px 0 2px; font-size: 15px; font-weight: 650; } articl
 .tabs { position: sticky; bottom: 0; display: flex; padding: 6px 8px calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(12, 8, 19, .94); }
 .tabs button { flex: 1; min-height: 52px; border: 0; background: transparent; color: var(--fg-3); font-size: 12px; font-weight: 600; cursor: pointer; border-radius: 10px; }
 .tabs button[aria-pressed=true] { color: #1d1608; background: radial-gradient(130% 160% at 18% -10%, rgba(255, 251, 232, .9) 0%, rgba(255, 251, 232, 0) 46%), linear-gradient(112deg, #fff1c8 0%, #fad978 24%, #ecb94a 50%, #d3972b 74%, #ad7a1c 100%); }
-.sheet { position: fixed; inset: auto 0 0 0; z-index: 20; max-width: 480px; margin: 0 auto; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: var(--ink-3); box-shadow: 0 -20px 60px rgba(0, 0, 0, .6); display: grid; gap: 8px; }
+.sheet { position: fixed; inset: auto 0 0 0; z-index: 20; max-width: 480px; max-height: 86dvh; overflow-y: auto; overscroll-behavior: contain; margin: 0 auto; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: var(--ink-3); box-shadow: 0 -20px 60px rgba(0, 0, 0, .6); display: grid; gap: 8px; }
 #toasts { position: fixed; left: 0; right: 0; bottom: 84px; z-index: 30; display: grid; gap: 8px; justify-items: center; pointer-events: none; }
 .toast { max-width: 440px; margin: 0 16px; padding: 10px 14px; border-radius: 12px; background: var(--ink-4); box-shadow: 0 10px 30px rgba(0, 0, 0, .5); font-size: 13px; }
+/* 1.2.0: safety (report, block, hide, filter, terms, delete my account) */
+button.av { border: 0; cursor: pointer; position: relative; }
+button.av .dot { position: absolute; top: 1px; right: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--ink-0); }
+.more { min-width: 44px; min-height: 44px; margin: -12px -8px -12px 0; border: 0; background: transparent; color: var(--fg-3); font-size: 18px; letter-spacing: .05em; cursor: pointer; border-radius: 10px; }
+.more.sm { margin-left: auto; }
+.msg > div { flex: 1; } .mh { align-items: center; } .chat-head .more { margin: 0; }
+.row-btn.danger, .btn.danger { color: var(--warn); border-color: rgba(227, 148, 106, .45); }
+.btn.big.danger { background: rgba(227, 148, 106, .12); }
+.collapsed { color: var(--fg-3); font-style: italic; font-size: 13px; }
+.link { border: 0; background: none; padding: 0 2px; min-height: 0; color: var(--gold-400); font: inherit; font-style: normal; text-decoration: underline; cursor: pointer; }
+.terms p { margin: 0 0 10px; font-size: 13.5px; color: var(--fg-2); } .terms b { color: var(--fg); }
+.check { display: flex; gap: 12px; align-items: flex-start; font-size: 13.5px; color: var(--fg-2); }
+.check input, input.toggle { width: 24px; height: 24px; flex: none; margin: 0; accent-color: #e3ad3a; }
+/* iPad and other larger screens: a wider Room, larger type */
+@media (min-width: 700px) {
+  html, body { font-size: 15.5px; }
+  #app { max-width: 760px; }
+  .sheet { max-width: 640px; border-radius: 20px; bottom: 24px; }
+  .body { padding: 8px 28px 32px; gap: 14px; }
+  .top { padding-left: 28px; padding-right: 28px; }
+  .msgs { max-height: calc(100dvh - 250px); }
+  .hero .time { font-size: 64px; }
+}
 @media (prefers-reduced-motion: reduce) { .btn:active { transform: none; } }
 [hidden] { display: none !important; }

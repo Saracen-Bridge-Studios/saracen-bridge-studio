@@ -1,6 +1,8 @@
 "use strict";
 /* The Room on a phone (1.0.8): crew and cast see their own day, the board, chat and meetings. Served by the hub as an
-   installable web app. Every key stays on this phone; the hub only ever sees ciphertext (room-crypto.js). */
+   installable web app. Every key stays on this phone; the hub only ever sees ciphertext (room-crypto.js).
+   1.2.0: the Room's terms, Report and Block on everything people post, an offensive-words filter, a Reports list for
+   producers and executives, and Delete my account (Apple's App Review guidelines 1.2 and 5.1.1(v)). */
 const C = window.RoomCrypto;
 const $app = () => document.getElementById("app");
 function el(tag, attrs, ...kids) {
@@ -24,6 +26,12 @@ const dayLbl = ts => { const d = new Date(ts * 1000), n = new Date(); if (d.toDa
 const ini = n => (n || "?").split(/\s+/).map(x => x[0]).slice(0, 2).join("").toUpperCase();
 const bytesTxt = n => n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} KB` : n < 1073741824 ? `${(n / 1048576).toFixed(1)} MB` : `${(n / 1073741824).toFixed(2)} GB`;
 const TIERS = { executive: "Executive", producer: "Producer", key: "Key personnel", crew: "Crew", cast: "Cast", guest: "Guest" };
+const TERMS_VERSION = "2026-11-04";                     /* the hub's room_hub/safety.py TERMS_VERSION */
+const REASONS = [["abusive", "Abusive or offensive"], ["harassment", "Harassment or bullying"], ["hate", "Hate or discrimination"],
+  ["sexual", "Sexual content"], ["violence", "Violence or threats"], ["self-harm", "Self-harm"], ["spam", "Spam"], ["other", "Something else"]];
+const SUPPORT = (window.SaracenApp && window.SaracenApp.support) || "";   /* the developer's contact, given by the iPhone app */
+/* the offensive-words filter (on unless turned off under You): common profanity, abuse and threats */
+const OFFENSIVE = /\b(f+u+c+k+\w*|sh[i1]t+(e|s|ty|head|bag)?|c+u+n+t+s?|bitch\w*|bastards?|wank\w*|twats?|dickheads?|motherf\w*|a(ss|rse)holes?|sluts?|whores?|retard\w*|kill (yo)?u|i('ll| will) hurt you)\b/i;
 
 /* ---------------- storage: IndexedDB (ciphertext items and key wraps; the device keys; production names for notifications) ---------------- */
 const DB = {
@@ -213,6 +221,7 @@ async function boot() {
   home();
   sync().then(home).catch(e => toast("Couldn't refresh", e.message));
   live();
+  if (/delete-account/.test(location.hash)) { history.replaceState(null, "", "/app/"); deleteAccountSheet(); }   /* from the app's Settings */
 }
 
 function isIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent); }
@@ -220,23 +229,29 @@ function standalone() { return matchMedia("(display-mode: standalone)").matches 
 
 function joinScreen(token) {
   const name = el("input", { type: "text", autocomplete: "name", placeholder: "Your name", "aria-label": "Your name" });
+  const agree = el("input", { type: "checkbox", "aria-label": "I agree to the Room's terms" });
+  const join = el("div", { style: "display:grid;gap:16px" }, el("button", { type: "button", class: "btn primary big", onclick: joinClick() }, "Join"),
+    el("p", { class: "muted" }, "Everything is encrypted on this phone before it leaves."));
   put($app(), el("div", { class: "intro" }, el("img", { src: "/app/icons/icon-192.png", alt: "", class: "logo" }), el("h1", {}, "Join the Room"),
     el("p", {}, "Your production's private, encrypted hub: your day, the board, chat and meetings."),
     isIOS() && !NATIVE ? el("a", { class: "btn big", href: "saracenbridge://join?invite=" + encodeURIComponent(location.href), style: "display:block;text-align:center;margin-bottom:12px" },
       "Open in the Saracen Bridge app") : null,
     isIOS() && !standalone() && !NATIVE ? el("div", { class: "note" }, el("b", {}, "Or, without the app, add it to your home screen first. "), "Notifications only work from the home screen: tap Share, then Add to Home Screen, then open the Room from there and tap the link again.") : null,
     el("label", { class: "f" }, "Your name", name),
-    el("button", { type: "button", class: "btn primary big", onclick: async ev => {
-      ev.currentTarget.disabled = true;
+    el("label", { class: "check" }, agree, el("span", {}, "I agree to the Room's terms: no objectionable content and no abuse, and anything reported is reviewed. ",
+      el("a", { href: "#", onclick: e => { e.preventDefault(); sheet("The Room's terms", termsBody()); } }, "Read the terms"))),
+    join));
+  function joinClick() { return async ev => {
+      if (!agree.checked) return toast("Agree to the terms first", "Tick the box to join.");
+      const b = ev.currentTarget; b.disabled = true;
       try {
         R.dev = C.device(); await DB.set("kv", "device", R.dev.secret()); await native("put", { name: "device", value: R.dev.secret() });
         const nonce = C.randomBytes(32);
-        const r = await api("POST", "/api/join", { token, device: R.dev.public(), commit: C.commitment(R.dev.public(), nonce) }, { auth: false });
+        const r = await api("POST", "/api/join", { token, device: R.dev.public(), commit: C.commitment(R.dev.public(), nonce), terms: TERMS_VERSION }, { auth: false });
         R.st = { user: r.user, status: "pending", nonce: C.b64e(nonce), joinFounder: r.founder, profile: { name: name.value.trim() } };
         await saveState(); history.replaceState(null, "", "/app/"); wordsScreen();
-      } catch (e) { toast("Couldn't join", e.message); ev.currentTarget.disabled = false; }
-    } }, "Join"),
-    el("p", { class: "muted" }, "Everything is encrypted on this phone before it leaves.")));
+      } catch (e) { toast("Couldn't join", e.message); b.disabled = false; }
+    }; }
 }
 
 async function wordsScreen() {
@@ -309,18 +324,21 @@ function home() {
   const prods = (R.snap.productions || []).filter(p => !p.archived);
   if (!prods.length) return put($app(), el("div", { class: "intro" }, el("h1", {}, "The Room"), el("p", {}, "You aren't on a production yet.")));
   if (!R.prod || !prods.some(p => p.id === R.prod)) R.prod = R.st.prod && prods.some(p => p.id === R.st.prod) ? R.st.prod : prods[0].id;
+  if (R.snap.safety && !R.snap.safety.terms_accepted) return termsGate();
   const p = R.prod, n = names(p), ppl = people(p), tier = myTier(p), cast = tier === "cast";
   const me = ppl[R.st.user] || { name: (R.st.profile || {}).name || "You" };
+  const reportsOpen = ((R.snap.safety || {}).reports_open || {})[p] || 0;
   const tabs = [["today", cast ? "My day" : "Today"], ["board", "Board"], ["chat", "Chat"], ["meet", "Meet"]];
   const body = el("main", { class: "body" });
   put($app(),
     el("header", { class: "top" },
       el("button", { type: "button", class: "prod", "aria-label": "Switch production", onclick: () => prodSheet(prods) }, (n.production[p] || {}).name || "Production", " ▾"),
       cast ? el("span", { class: "tag" }, "CAST") : el("span", { class: "enc" }, "ENCRYPTED"),
-      el("span", { class: "grow" }), el("span", { class: "av" }, ini(me.name))),
+      el("span", { class: "grow" }), el("button", { type: "button", class: "av", "aria-label": reportsOpen ? `You, settings and safety: ${reportsOpen} reports open` : "You, settings and safety",
+        onclick: () => youSheet(p, ppl) }, ini(me.name), reportsOpen ? el("span", { class: "dot" }) : null)),
     body,
     el("nav", { class: "tabs", "aria-label": "App" }, tabs.map(([id, label]) => el("button", { type: "button", "aria-pressed": String(R.tab === id), onclick: () => { R.tab = id; R.chat = null; home(); } }, label))));
-  ({ today: todayTab, board: boardTab, chat: chatTab, meet: meetTab })[R.tab](body, p, ppl, n, tier);
+  ({ today: todayTab, board: boardTab, chat: chatTab, meet: meetTab, reports: reportsTab })[R.tab](body, p, ppl, n, tier);
 }
 function prodSheet(prods) {
   const sheet = el("div", { class: "sheet", role: "dialog", "aria-label": "Productions" }, el("h2", {}, "Your productions"),
@@ -382,11 +400,13 @@ function boardTab(body, p, ppl, n) {
   const upd = {};
   for (const it of [...R.items.values()].sort((a, b) => a.seq - b.seq)) if (it.h.kind === "note_update" && it.payload) upd[it.h.ref] = Object.assign(upd[it.h.ref] || {}, it.payload);
   const sname = Object.fromEntries((R.snap.spaces || []).map(s => [s.id, spaceName(s, ppl, n)]));
-  const notes = [...R.items.values()].filter(it => it.h.kind === "note" && it.h.prod === p && it.payload).map(it => Object.assign({ id: it.h.id, ts: it.h.ts, seq: it.seq, author: (ppl[it.author] || {}).name || "Someone", spaces: it.h.spaces.map(([s]) => sname[s]).filter(Boolean) }, it.payload, upd[it.h.id] || {}))
+  const notes = [...R.items.values()].filter(it => it.h.kind === "note" && it.h.prod === p && it.payload && shown(it)).map(it => Object.assign({ id: it.h.id, it, ts: it.h.ts, seq: it.seq, author: (ppl[it.author] || {}).name || "Someone", spaces: it.h.spaces.map(([s]) => sname[s]).filter(Boolean) }, it.payload, upd[it.h.id] || {}))
     .sort((a, b) => (!!b.pinned - !!a.pinned) || b.seq - a.seq);
   put(body, el("div", { class: "eyebrow" }, "PRODUCTION BOARD"), el("h1", {}, "What you need to know"),
-    notes.length ? notes.map(x => el("article", { class: "note" + (x.pinned ? " pinned" : "") }, el("div", { class: "meta" }, el("span", {}, x.spaces.join(" · ").toUpperCase()), el("span", {}, dayLbl(x.ts))),
-      el("h3", {}, x.title), x.body ? el("p", {}, x.body) : null, el("div", { class: "meta" }, el("span", { class: "status" }, x.status || "Open"), el("span", {}, x.author))))
+    notes.length ? notes.map(x => el("article", { class: "note" + (x.pinned ? " pinned" : "") }, el("div", { class: "meta" }, el("span", {}, x.spaces.join(" · ").toUpperCase()), el("span", {}, dayLbl(x.ts),
+        el("button", { type: "button", class: "more", "aria-label": "Report, hide or block", onclick: () => itemMenu(x.it, p, ppl, "Note") }, "⋯"))),
+      guarded(`${x.title} ${x.body || ""}`, () => [el("h3", {}, x.title), x.body ? el("p", {}, x.body) : null]),
+      el("div", { class: "meta" }, el("span", { class: "status" }, x.status || "Open"), el("span", {}, x.author))))
       : el("p", { class: "muted" }, "Nothing on the board yet."));
 }
 
@@ -399,7 +419,8 @@ function chatTab(body, p, ppl, n) {
       Object.values(ppl).filter(x => x.can_reach).map(x => el("button", { type: "button", class: "row-btn", onclick: async () => { try { R.chat = await startDM(p, x.user); home(); } catch (e) { toast("Couldn't start it", e.message); } } }, x.name, el("small", {}, TIERS[x.tier] || ""))));
   }
   const sp = space(R.chat), sname = spaceName(sp, ppl, n);
-  const msgs = [...R.items.values()].filter(it => it.h.spaces.some(([s]) => s === sp.id) && ["msg", "file", "callsheet_row"].includes(it.h.kind)).sort((a, b) => a.seq - b.seq).slice(-200);
+  const msgs = [...R.items.values()].filter(it => it.h.spaces.some(([s]) => s === sp.id) && ["msg", "file", "callsheet_row"].includes(it.h.kind) && shown(it)).sort((a, b) => a.seq - b.seq).slice(-200);
+  const other = sp.kind === "dm" ? sp.members.find(u => u !== R.st.user) : null;
   const input = el("input", { type: "text", placeholder: `Message ${sp.kind === "channel" ? "#" + sname : sname}`, "aria-label": "Message" });
   const send = async () => { const t = input.value.trim(); if (!t) return; input.disabled = true;
     const mentions = Object.values(ppl).filter(x => t.toLowerCase().includes("@" + x.name.toLowerCase())).map(x => x.user);
@@ -407,11 +428,13 @@ function chatTab(body, p, ppl, n) {
   input.addEventListener("keydown", e => { if (e.key === "Enter") send(); });
   const file = el("input", { type: "file", hidden: true, onchange: async () => { const f = file.files[0]; if (f) { toast("Encrypting and sending", f.name); try { await upload(sp.id, f); home(); } catch (e) { toast("Couldn't send it", e.message); } } } });
   put(body, el("div", { class: "chat-head" }, el("button", { type: "button", class: "btn sm", onclick: () => { R.chat = null; home(); } }, "‹ Spaces"), el("b", {}, sp.kind === "channel" ? "# " + sname : sname),
-      sp.kind !== "personal" ? el("button", { type: "button", class: "btn sm", onclick: () => huddle(sp.id) }, "Huddle") : null),
+      sp.kind !== "personal" ? el("button", { type: "button", class: "btn sm", onclick: () => huddle(sp.id) }, "Huddle") : null,
+      other ? el("button", { type: "button", class: "more", "aria-label": "Report or block this person", onclick: () => personMenu(other, p, ppl) }, "⋯") : null),
     el("div", { class: "msgs" }, msgs.length ? msgs.map(it => {
       const who = ppl[it.author] || {}, pl = it.payload || {};
-      return el("div", { class: "msg" }, el("span", { class: "av sm" }, ini(who.name)), el("div", {}, el("div", { class: "mh" }, el("b", {}, who.name || "Someone"), el("span", {}, hhmm(it.h.ts))),
-        it.h.kind === "msg" ? el("div", {}, it.payload ? pl.text : "This message can't be opened on this phone yet.")
+      return el("div", { class: "msg" }, el("span", { class: "av sm" }, ini(who.name)), el("div", {}, el("div", { class: "mh" }, el("b", {}, who.name || "Someone"), el("span", {}, hhmm(it.h.ts)),
+          it.h.kind !== "callsheet_row" ? el("button", { type: "button", class: "more sm", "aria-label": "Report, hide or block", onclick: () => itemMenu(it, p, ppl, it.h.kind === "file" ? "File" : "Message") }, "⋯") : null),
+        it.h.kind === "msg" ? (it.payload ? guarded(pl.text, () => el("div", {}, pl.text)) : el("div", {}, "This message can't be opened on this phone yet."))
           : it.h.kind === "file" ? el("button", { type: "button", class: "file", onclick: () => openFile(it.h.ref) }, pl.name, el("small", {}, bytesTxt(pl.size || 0)))
           : el("div", { class: "muted small" }, "Your times for the call sheet are on " + (myTier(p) === "cast" ? "My day" : "Today") + ".")));
     }) : el("p", { class: "muted" }, "No messages yet.")),
@@ -520,10 +543,151 @@ function meetingNow() {
       el("button", { type: "button", class: "btn", onclick: async () => { await MEET.room.disconnect(); MEET.room = null; home(); } }, "Leave")));
 }
 
+/* ---------------- safety (1.2.0): terms, report, block, hide, filter, reports, delete my account ---------------- */
+const blockedSet = () => new Set(((R.snap.safety || {}).blocks) || []);
+const shown = it => !blockedSet().has(it.author) && !(R.st.hidden || []).includes(it.h.id);
+const filterOn = () => R.st.filter !== false;
+/* text that trips the filter is held back behind a tap */
+function guarded(text, make) {
+  if (!filterOn() || !OFFENSIVE.test(text || "")) return make();
+  const box = el("div", { class: "collapsed" }, "Hidden: may contain offensive language. ",
+    el("button", { type: "button", class: "link", onclick: () => box.replaceWith(...[make()].flat()) }, "Show"));
+  return box;
+}
+function sheet(title, ...kids) {
+  document.querySelectorAll(".sheet").forEach(x => x.remove());
+  const s = el("div", { class: "sheet", role: "dialog", "aria-label": title }, el("h2", {}, title), ...kids,
+    el("button", { type: "button", class: "btn", onclick: () => s.remove() }, "Close"));
+  document.body.append(s);
+  return s;
+}
+function termsBody() {
+  return el("div", { class: "terms" },
+    el("p", {}, el("b", {}, "No tolerance for objectionable content or abusive people. "), "The Room is your production's private workspace. Don't post anything abusive, harassing, hateful, sexual, violent or threatening, anything that encourages self-harm, or spam. Anyone who does can have what they posted removed, and can be removed from the production."),
+    el("p", {}, el("b", {}, "Report and block. "), "Every message, note and file has ⋯ › Report. A report goes to the production's executives and producers, who review it and act within 24 hours: they remove what was posted, remove the person, or dismiss the report. Block someone to stop them messaging you and to hide what they post."),
+    el("p", {}, el("b", {}, "Privacy. "), "Everything is encrypted on your device before it leaves. The production's executives can read every space, file and private message, and each read is recorded in the audit log."),
+    el("p", {}, el("b", {}, "Your account. "), "You can delete your account in this Room at any time: tap your initials at the top, then Delete my account."),
+    SUPPORT ? el("p", {}, el("b", {}, "Contact. "), "To report a problem to Saracen Bridge: ", el("a", { href: "mailto:" + SUPPORT }, SUPPORT)) : null);
+}
+function termsGate() {
+  put($app(), el("div", { class: "intro" }, el("h1", {}, "The Room's terms"), termsBody(),
+    el("button", { type: "button", class: "btn primary big", onclick: async ev => {
+      const b = ev.currentTarget; b.disabled = true;
+      try { await api("POST", "/api/terms", { version: (R.snap.safety || {}).terms || TERMS_VERSION }); await sync(); home(); }
+      catch (e) { toast("Couldn't save that", e.message); b.disabled = false; } } }, "I agree")));
+}
+const canManage = p => ["producer", "executive"].includes(myTier(p));
+function itemMenu(it, p, ppl, label) {
+  const mine = it.author === R.st.user, who = (ppl[it.author] || {}).name || "this person";
+  const s = sheet(label,
+    !mine ? el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); reportSheet({ item: it.h.id }); } }, "Report…") : null,
+    el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); hide(it.h.id); } }, "Hide this on this phone"),
+    !mine ? el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); setBlock(it.author, true, who); } }, `Block ${who}`) : null,
+    mine || canManage(p) ? el("button", { type: "button", class: "row-btn danger", onclick: async () => {
+      s.remove();
+      if (!confirm("Delete this for everyone?")) return;
+      try { await api("POST", `/api/items/${it.h.id}/delete`, {}); await sync(); home(); } catch (e) { toast("Couldn't delete it", e.message); } } }, "Delete for everyone") : null);
+}
+function personMenu(user, p, ppl) {
+  const who = (ppl[user] || {}).name || "this person";
+  const s = sheet(who,
+    el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); reportSheet({ production: p, about: user }); } }, `Report ${who}…`),
+    blockedSet().has(user)
+      ? el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); setBlock(user, false, who); } }, `Unblock ${who}`)
+      : el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); setBlock(user, true, who); } }, `Block ${who}`));
+}
+function reportSheet(target) {
+  const s = sheet("Report",
+    el("p", { class: "muted small" }, "Why are you reporting this? The production's executives and producers see the report and act within 24 hours. Only the reason is sent; they read what was posted in their own Room."),
+    REASONS.map(([k, label]) => el("button", { type: "button", class: "row-btn", onclick: async () => {
+      s.remove();
+      try {
+        await api("POST", "/api/reports", Object.assign({ reason: k }, target));
+        if (target.item) await hide(target.item, true);
+        toast("Reported", "Thanks. The production's executives and producers will review it.");
+      } catch (e) { toast("Couldn't report it", e.message); } } }, label)));
+}
+async function hide(id, quiet) {
+  R.st.hidden = [...new Set([...(R.st.hidden || []), id])].slice(-2000); await saveState();
+  if (!quiet) toast("Hidden", "Only on this phone. Show it again under You.");
+  home();
+}
+async function setBlock(user, on, who) {
+  try {
+    await api("POST", "/api/blocks", { user, blocked: on }); await sync();
+    toast(on ? `${who} is blocked` : `${who} is unblocked`, on ? "They can't message you, and what they post is hidden from you." : "");
+    home();
+  } catch (e) { toast("Couldn't do that", e.message); }
+}
+function youSheet(p, ppl) {
+  const me = ppl[R.st.user] || { name: (R.st.profile || {}).name || "You" };
+  const open = ((R.snap.safety || {}).reports_open || {})[p] || 0;
+  const blocked = [...blockedSet()];
+  const s = sheet(me.name || "You",
+    canManage(p) ? el("button", { type: "button", class: "row-btn", onclick: () => { s.remove(); R.tab = "reports"; home(); } }, "Reports", el("small", {}, open ? `${open} open` : "None open")) : null,
+    el("label", { class: "row-btn" }, "Hide offensive words",
+      el("input", { type: "checkbox", class: "toggle", checked: filterOn(), onchange: async e => { R.st.filter = e.target.checked; await saveState(); home(); } })),
+    el("div", { class: "lbl" }, "Blocked people"),
+    blocked.length ? blocked.map(u => el("div", { class: "row-btn" }, (ppl[u] || {}).name || "Someone",
+      el("button", { type: "button", class: "btn sm", onclick: () => { s.remove(); setBlock(u, false, (ppl[u] || {}).name || "They"); } }, "Unblock")))
+      : el("p", { class: "muted small" }, "Nobody. Block someone from ⋯ on anything they post."),
+    (R.st.hidden || []).length ? el("button", { type: "button", class: "row-btn", onclick: async () => { R.st.hidden = []; await saveState(); s.remove(); home(); } }, "Show everything I've hidden") : null,
+    el("button", { type: "button", class: "row-btn", onclick: () => sheet("The Room's terms", termsBody()) }, "The Room's terms"),
+    SUPPORT ? el("a", { class: "row-btn", href: "mailto:" + SUPPORT + "?subject=" + encodeURIComponent("Saracen Bridge: reporting a problem") }, "Contact Saracen Bridge", el("small", {}, SUPPORT)) : null,
+    el("button", { type: "button", class: "row-btn danger", onclick: () => deleteAccountSheet() }, "Delete my account…"));
+}
+function deleteAccountSheet() {
+  sheet("Delete my account",
+    el("p", {}, "This deletes your account in this Room: your messages, notes and files, your call-sheet confirmations, your place in every production here, and this phone's access. What you posted is removed from everyone's devices."),
+    el("p", { class: "muted small" }, "It can't be undone. The Room's audit log keeps one line saying the account was deleted, because the log can't be changed. To come back, you'd need a new invite."),
+    el("button", { type: "button", class: "btn big danger", onclick: async ev => {
+      const b = ev.currentTarget; b.disabled = true;
+      try {
+        await api("POST", "/api/me/delete", { confirm: "DELETE" });
+        R.gone = true; try { if (LIVE) LIVE.close(); } catch (e) { /* already closed */ }
+        await DB.clear(); await native("delete", { name: "device" }); await native("delete", { name: "state" });
+        R.st = {}; R.dev = null; R.token = null;
+        document.querySelectorAll(".sheet").forEach(x => x.remove());
+        put($app(), el("div", { class: "intro" }, el("h1", {}, "Your account is deleted"), el("p", {}, "Everything you had in this Room has been removed.")));
+        await native("deleted");
+      } catch (e) { toast("Couldn't delete it", e.message); b.disabled = false; } } }, "Delete my account"));
+}
+async function reportsTab(body, p, ppl) {
+  put(body, el("div", { class: "eyebrow" }, "REPORTS"), el("p", { class: "muted" }, "Loading…"));
+  let rows = [];
+  try { rows = await api("GET", `/api/reports?production=${encodeURIComponent(p)}`); } catch (e) { return put(body, el("p", { class: "muted" }, e.message)); }
+  const exec = myTier(p) === "executive";
+  const preview = r => {
+    if (r.gone) return "Already removed.";
+    const it = r.item && R.items.get(r.item);
+    if (!it || !it.payload) return r.readable ? "Open it from the space it was posted in." : "Only an executive can open this one.";
+    return it.payload.text || it.payload.title || it.payload.name || "An item";
+  };
+  const act = async (r, outcome) => {
+    try {
+      await api("POST", `/api/reports/${r.id}/resolve`, { outcome });
+      toast("Done", outcome === "dismissed" ? "Report dismissed." : outcome === "item_removed" ? "Removed for everyone." : "Removed from the production.");
+      await sync(); home();
+    } catch (e) { toast("Couldn't do that", e.message); }
+  };
+  put(body, el("div", { class: "chat-head" }, el("button", { type: "button", class: "btn sm", onclick: () => { R.tab = "today"; home(); } }, "‹ Back"), el("b", {}, "Reports")),
+    el("p", { class: "muted small" }, "Deal with each report within 24 hours: remove what was posted, remove the person, or dismiss it. Every decision is in the audit log."),
+    rows.length ? rows.map(r => el("div", { class: "card" },
+      el("div", { class: "meta" }, el("span", {}, ((REASONS.find(x => x[0] === r.reason) || [])[1] || r.reason).toUpperCase()), el("span", {}, `${dayLbl(r.ts)} ${hhmm(r.ts)}`)),
+      el("b", {}, `About ${(ppl[r.about] || {}).name || "someone"}`),
+      el("div", { class: "muted small" }, `Reported by ${(ppl[r.reporter] || {}).name || "someone"}`),
+      r.item ? el("p", { class: "pre" }, preview(r)) : el("p", { class: "muted small" }, "A report about the person, not one post."),
+      el("div", { class: "row" },
+        r.item && !r.gone ? el("button", { type: "button", class: "btn", onclick: () => act(r, "item_removed") }, "Remove it") : null,
+        exec && !r.about_is_exec ? el("button", { type: "button", class: "btn", onclick: () => { if (confirm("Remove this person from the production?")) act(r, "person_removed"); } }, "Remove person") : null,
+        el("button", { type: "button", class: "btn", onclick: () => act(r, "dismissed") }, "Dismiss"))))
+      : el("p", { class: "muted" }, "No open reports."));
+}
+
 /* ---------------- live updates ---------------- */
 let LIVE = null;
 function live() {
-  if (LIVE) return;
+  if (LIVE || R.gone) return;
   const url = location.origin.replace(/^http/, "ws") + "/api/live";
   const open = async () => {
     try {
@@ -532,7 +696,7 @@ function live() {
       ws.onmessage = async ev => { const m = JSON.parse(ev.data); if (m.seq > (R.st.seq || 0)) { const before = (R.snap.notifications || []).length; await sync().catch(() => null);
         const fresh = (R.snap.notifications || []).slice(before); if (fresh.length && document.visibilityState === "visible") toast("Something new", "Pull down or open the tab to see it.");
         if (!document.activeElement || !document.activeElement.matches("input, textarea")) home(); } };
-      ws.onclose = () => { LIVE = null; setTimeout(live, 5000); };
+      ws.onclose = () => { LIVE = null; if (!R.gone) setTimeout(live, 5000); };
     } catch (e) { LIVE = null; setTimeout(live, 5000); }
   };
   open();

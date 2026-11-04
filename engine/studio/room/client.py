@@ -533,6 +533,31 @@ class RoomClient:
     def audit(self) -> dict:
         return self._req("GET", "/api/audit")
 
+    # ------------------------------------------------------------------ safety (1.2.0): terms, reports, blocking, deletion
+    def accept_terms(self, version: str) -> dict:
+        return self._req("POST", "/api/terms", json={"version": version})
+
+    def report(self, reason: str, *, item: str | None = None, production: str | None = None, about: str | None = None) -> str:
+        """Report an item (or a person) to the production's executives and producers. Only the reason crosses to the
+        hub; they read the item in their own Room."""
+        return self._req("POST", "/api/reports", json={"reason": reason, "item": item, "production": production,
+                                                       "about": about})["id"]
+
+    def reports(self, production: str, status: str = "open") -> list[dict]:
+        return self._req("GET", "/api/reports", params={"production": production, "status": status})
+
+    def resolve_report(self, report_id: str, outcome: str):
+        self._req("POST", f"/api/reports/{report_id}/resolve", json={"outcome": outcome})
+        self.sync()
+
+    def block(self, user: str, on: bool = True):
+        self._req("POST", "/api/blocks", json={"user": user, "blocked": on})
+        self.sync()
+
+    def delete_my_account(self):
+        """This person's account in the Room deleted, with their messages, files and devices."""
+        self._req("POST", "/api/me/delete", json={"confirm": "DELETE"})
+
     # ------------------------------------------------------------------ files
     def outbox(self) -> Path:
         d = self.dir / "outbox"

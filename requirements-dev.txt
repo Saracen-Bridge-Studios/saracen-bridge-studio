@@ -2,3 +2,4 @@
 pytest>=8
 pyinstaller>=6.10
 httpx>=0.27
+PyYAML>=6     # the demo kit test reads cloud-init.yaml

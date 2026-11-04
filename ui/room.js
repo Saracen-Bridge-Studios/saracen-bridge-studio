@@ -175,7 +175,7 @@ function roomDraw() {
     v.dms.map(d => item(d.id, el("span", { class: "av" }, (d.name || "?").split(/\s+/).map(x => x[0]).slice(0, 2).join("").toUpperCase()), d.name,
       d.oversight ? el("span", { class: "ov", title: "Not your conversation. Reading it is logged." }, icon("eye")) : el("span", { class: "tierlbl" }, d.tier), d.unread)),
     !v.archived ? el("button", { type: "button", class: "rs-add", onclick: roomNewDM }, icon("plus"), "New message") : null,
-    v.can_manage ? el("a", { class: "rs-access", href: "#/room/access" }, icon("users"), "Members & access", v.pending ? el("span", { class: "n" }, v.pending) : null) : null,
+    v.can_manage ? el("a", { class: "rs-access", href: "#/room/access" }, icon("users"), "Members & access", (v.pending || 0) + (v.reports_open || 0) ? el("span", { class: "n" }, (v.pending || 0) + (v.reports_open || 0)) : null) : null,
     v.can_manage && !v.archived ? el("a", { class: "rs-access", href: "#/room/callsheet" }, icon("doc"), "Call sheets") : null);
   const main = el("section", { class: "room-main" });
   const aside = el("aside", { class: "room-aside", "aria-label": "Voice and people" });
@@ -508,6 +508,7 @@ async function roomAccess() {
     el("div", { class: "acc-head" }, el("div", {}, el("h1", {}, `Who sees what on ${v.production_name}`),
       el("p", { class: "lede" }, "Each production has its own people, tiers and spaces: someone can be a key on one film and not appear on the next. Everyone joins by invite, and an executive approves each device. Tier and department decide which spaces and people they see; anything else is hidden, not just locked.")),
       el("div", { class: "row" }, el("a", { class: "btn quiet", href: `#/room/${v.production}` }, "Back to the Room"), el("button", { type: "button", class: "btn primary", onclick: () => roomInvite(a) }, icon("plus"), "Invite someone"))),
+    roomReports(a, v),
     a.can_approve ? el("section", { class: "card acc-sec" }, el("div", { class: "sec-h" }, el("h2", {}, "Waiting for your approval"), el("span", { class: "muted small" }, "Check the safety words with them on a call before approving.")), pend) : null,
     a.invites.length ? el("section", { class: "card acc-sec" }, el("h2", {}, "Invites not yet used"),
       el("ul", { class: "plain" }, a.invites.map(i => el("li", {}, el("span", {}, `${i.name} · ${i.tier} · ${i.status} · ${plural(i.days_left, "day")} left`))))) : null,
@@ -543,6 +544,24 @@ async function roomAccess() {
     try { const b2 = await api.get(`/api/room/access?production=${encodeURIComponent(v.production)}`); if (JSON.stringify(b2.pending) !== JSON.stringify(a.pending)) { a.pending = b2.pending; drawPending(b2.pending); } } catch (e) { /* hub busy */ }
     setTimeout(tick, 2500); };
   setTimeout(tick, 2500);
+}
+/* Reports (1.2.0): what people reported from the Room, on a phone or here. Each one is dealt with within 24 hours. */
+function roomReports(a, v) {
+  const act = async (r, outcome) => {
+    if (outcome === "person_removed" && !(await modal({ icon: "alert", title: `Remove ${r.about} from ${v.production_name}?`, body: ["They lose this production's spaces and its keys change. Other productions are unaffected."], actions: [["Cancel", false], ["Remove", true, true]] }))) return;
+    try { await api.post(`/api/room/reports/${r.id}/resolve`, { production: v.production, outcome }); toast("ok", outcome === "dismissed" ? "Report dismissed" : outcome === "item_removed" ? "Removed for everyone" : `${r.about} is removed from the production`); RM.v = null; roomAccess(); }
+    catch (e) { toast("bad", "Couldn't do that", e.message); }
+  };
+  return el("section", { class: "card acc-sec" + ((a.reports || []).length ? " reports-open" : "") },
+    el("div", { class: "sec-h" }, el("h2", {}, "Reports"), el("span", { class: "muted small" }, "Deal with each one within 24 hours: remove what was posted, remove the person, or dismiss it. Every decision goes in the audit log.")),
+    (a.reports || []).length ? el("div", { class: "reports" }, a.reports.map(r => el("div", { class: "pend-row" },
+      el("div", { class: "pd" }, el("b", {}, `${r.reason}: about ${r.about}`), el("div", { class: "muted small" }, `Reported by ${r.reporter} · ${new Date(r.when * 1000).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`),
+        r.item ? el("p", { class: "small", style: "white-space:pre-wrap;margin:6px 0 0" }, r.text) : el("p", { class: "muted small", style: "margin:6px 0 0" }, "A report about the person, not one post.")),
+      el("div", { class: "pa" },
+        r.item && !r.gone ? el("button", { type: "button", class: "btn sm", onclick: () => act(r, "item_removed") }, "Remove it") : null,
+        r.can_remove_person ? el("button", { type: "button", class: "btn sm", onclick: () => act(r, "person_removed") }, "Remove person") : null,
+        el("button", { type: "button", class: "btn sm quiet", onclick: () => act(r, "dismissed") }, "Dismiss")))))
+      : el("p", { class: "muted small" }, "No open reports."));
 }
 const S_TIER = t => ({ executive: "Executive", producer: "Producer", key: "Key personnel", crew: "Crew", cast: "Cast", guest: "Guest" })[t] || t;
 

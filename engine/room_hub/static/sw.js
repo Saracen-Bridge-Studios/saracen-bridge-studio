@@ -1,6 +1,6 @@
 /* The Room's service worker (1.0.8): keeps the app shell for a poor signal, and shows notifications.
    A push carries only a production id; the name comes from this phone's own store. Nothing else is in a push. */
-const SHELL = "room-shell-1.1.7";       /* 1.1.7: the iPhone app bridge */
+const SHELL = "room-shell-1.2.0";       /* 1.2.0: report, block, filter, terms, delete my account; iPad layout */
 const FILES = ["/app/", "/app/index.html", "/app/app.css", "/app/app.js", "/app/room-crypto.js", "/app/words.txt",
   "/app/vendor/libsodium.js", "/app/vendor/libsodium-wrappers.js", "/app/vendor/livekit-client.umd.js",
   "/app/vendor/livekit-client.e2ee.worker.js", "/app/fonts/Geist-Variable.woff2", "/app/fonts/SourceSerif4-Variable.woff2",

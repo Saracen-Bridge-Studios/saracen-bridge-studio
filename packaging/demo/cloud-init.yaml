@@ -1,0 +1,162 @@
+#cloud-config
+# Saracen Bridge demo Studio for App Review (built from setup.sh by make_cloud_init.py; don't edit by hand).
+# Before pasting: put the repository in DEMO_REPO, and a name pointing at this server in DEMO_HOST (or leave AUTO).
+write_files:
+  - path: /etc/saracen-demo.env
+    permissions: "0644"
+    content: |
+      DEMO_REPO=git@github.com:OWNER/saracen-bridge-studio.git
+      DEMO_HOST=AUTO
+  - path: /root/saracen-demo-setup.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # The demo Studio for Apple's reviewers, on a fresh Ubuntu 24.04 server (2 CPUs, 4 GB). See README.md.
+      #
+      # Run as root. The first run installs everything and prints a deploy key: add it to the GitHub repository
+      # (Settings > Deploy keys > Add, read-only), then run this script again. The second run fetches the code and
+      # starts the Studio, the keeper and https.
+      #
+      #   DEMO_REPO   the repository, as git@github.com:OWNER/NAME.git   (required)
+      #   DEMO_HOST   the server's name, such as demo.example.com, pointing at this server; AUTO uses <ip>.sslip.io
+      #
+      # What's open to the internet: 443 and 80 (https, through Caddy), 7881/tcp and 50000-50100/udp (call audio), 22 (ssh).
+      # The Studio's own pages stay on 127.0.0.1; the Room's hub and the call server are reached only through Caddy.
+      # Never port 8799.
+      set -euo pipefail
+
+      [ "$(id -u)" = 0 ] || { echo "Run this as root (sudo)."; exit 1; }
+      [ -f /etc/saracen-demo.env ] && . /etc/saracen-demo.env
+      DEMO_REPO="${DEMO_REPO:?Set DEMO_REPO, such as git@github.com:OWNER/saracen-bridge-studio.git}"
+      DEMO_HOST="${DEMO_HOST:-AUTO}"
+      LIVEKIT_VERSION="v1.13.10"
+      APP=/opt/saracen
+      DATA=/var/lib/saracen
+      REVIEW=/srv/review
+
+      export DEBIAN_FRONTEND=noninteractive
+
+      # ------------------------------------------------------------------ 1. system packages, Caddy, uv, Go
+      if [ ! -f /var/lib/saracen-demo.base ]; then
+        apt-get update -q
+        apt-get install -yq git curl ca-certificates gnupg ufw golang-go debian-keyring debian-archive-keyring apt-transport-https
+        curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt > /etc/apt/sources.list.d/caddy-stable.list
+        apt-get update -q && apt-get install -yq caddy
+        id saracen >/dev/null 2>&1 || useradd --system --create-home --home-dir "$DATA" --shell /usr/sbin/nologin saracen
+        install -d -o saracen -g saracen "$DATA" "$REVIEW"
+        curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin INSTALLER_NO_MODIFY_PATH=1 sh
+        ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw allow 7881/tcp && ufw allow 50000:50100/udp
+        ufw --force enable
+        touch /var/lib/saracen-demo.base
+      fi
+
+      # ------------------------------------------------------------------ 2. the deploy key (read-only access to the code)
+      KEY=/root/.ssh/saracen_demo
+      if [ ! -f "$KEY" ]; then
+        install -d -m 700 /root/.ssh
+        ssh-keygen -q -t ed25519 -N "" -C "saracen-demo@$(hostname)" -f "$KEY"
+      fi
+      cat > /root/.ssh/config <<CFG
+      Host github.com
+        IdentityFile $KEY
+        IdentitiesOnly yes
+        StrictHostKeyChecking accept-new
+      CFG
+      if ! GIT_SSH_COMMAND="ssh -F /root/.ssh/config" git ls-remote "$DEMO_REPO" >/dev/null 2>&1; then
+        echo
+        echo "Add this deploy key to the GitHub repository (Settings > Deploy keys > Add deploy key, leave write access off):"
+        echo
+        cat "$KEY.pub"
+        echo
+        echo "Then run this script again:  sudo bash /root/saracen-demo-setup.sh"
+        exit 0
+      fi
+
+      # ------------------------------------------------------------------ 3. the code, Python 3.13, the call server
+      if [ -d "$APP/.git" ]; then
+        GIT_SSH_COMMAND="ssh -F /root/.ssh/config" git -C "$APP" pull --ff-only
+      else
+        GIT_SSH_COMMAND="ssh -F /root/.ssh/config" git clone --depth 1 "$DEMO_REPO" "$APP"
+      fi
+      uv venv --python 3.13 "$APP/.venv"
+      uv pip install --python "$APP/.venv/bin/python" -q -r "$APP/requirements.txt"
+      if [ ! -x /usr/local/bin/livekit-server ]; then
+        # LiveKit (Apache-2.0) built from its published source, as the Windows and Mac builds are; Go fetches the toolchain
+        # the module asks for
+        GOTOOLCHAIN=auto GOBIN=/tmp/lkbin go install "github.com/livekit/livekit-server/cmd/server@$LIVEKIT_VERSION"
+        install -m 755 /tmp/lkbin/server /usr/local/bin/livekit-server
+      fi
+
+      # ------------------------------------------------------------------ 4. the name, https, the services
+      if [ "$DEMO_HOST" = AUTO ]; then
+        IP=$(curl -fsS https://api.ipify.org)
+        DEMO_HOST="$(echo "$IP" | tr . -).sslip.io"
+      fi
+      cat > /etc/caddy/Caddyfile <<CADDY
+      $DEMO_HOST {
+      	encode zstd gzip
+      	handle_path /review* {
+      		root * $REVIEW
+      		file_server
+      	}
+      	@rtc path /rtc /rtc/*
+      	handle @rtc {
+      		reverse_proxy 127.0.0.1:7880
+      	}
+      	handle {
+      		reverse_proxy 127.0.0.1:8710
+      	}
+      }
+      CADDY
+
+      cat > /etc/systemd/system/saracen-studio.service <<UNIT
+      [Unit]
+      Description=Saracen Bridge demo Studio (headless, hosting the made-up production)
+      After=network-online.target
+      Wants=network-online.target
+
+      [Service]
+      User=saracen
+      WorkingDirectory=$APP
+      Environment=STUDIO_HOME=$DATA/studio
+      Environment=ROOM_PUBLIC_BASE=https://$DEMO_HOST
+      Environment=ROOM_LIVEKIT_PUBLIC_URL=wss://{host}
+      Environment=ROOM_LIVEKIT_EXTERNAL_IP=1
+      Environment=ROOM_LIVEKIT_BIN=/usr/local/bin/livekit-server
+      ExecStart=$APP/.venv/bin/python studio_launcher.py --headless --port 8796
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+      UNIT
+
+      cat > /etc/systemd/system/saracen-demo-keeper.service <<UNIT
+      [Unit]
+      Description=Saracen Bridge demo keeper (reviewer invites and approvals)
+      After=saracen-studio.service
+      Requires=saracen-studio.service
+
+      [Service]
+      User=saracen
+      WorkingDirectory=$APP
+      ExecStart=$APP/.venv/bin/python packaging/demo/demo_keeper.py --studio http://127.0.0.1:8796 --review-dir $REVIEW
+      Restart=always
+      RestartSec=5
+
+      [Install]
+      WantedBy=multi-user.target
+      UNIT
+
+      chown -R saracen:saracen "$DATA" "$REVIEW"
+      systemctl daemon-reload
+      systemctl enable --now saracen-studio saracen-demo-keeper
+      systemctl restart caddy
+
+      for i in $(seq 1 120); do [ -s "$REVIEW/index.html" ] && break; sleep 2; done
+      echo
+      echo "The demo Studio is running. The reviewer's page:  https://$DEMO_HOST/review/"
+      echo "Put that address in App Store Connect > App Review Information > Notes."
+runcmd:
+  - [bash, -c, "bash /root/saracen-demo-setup.sh > /root/saracen-demo-setup.log 2>&1"]

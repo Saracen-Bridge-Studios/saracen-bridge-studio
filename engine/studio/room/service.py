@@ -356,6 +356,7 @@ def view(c: RoomClient, production: str | None = None) -> dict:
            "departments": [{"id": k, "name": v.get("name", "")} for k, v in names["department"].items()],
            "can_manage": tier in ("executive", "producer"), "is_exec": c.is_exec, "tier": tier,
            "pending": c.snapshot.get("pending", 0), "oversight": OVERSIGHT,
+           "reports_open": ((c.snapshot.get("safety") or {}).get("reports_open") or {}).get(pid, 0),
            "oversight_seen": bool(c.state.get("oversight_seen")),
            "notifications": _notifications(c, pid), "live": not _LIVE["error"], "live_error": _LIVE["error"],
            "uploads": list(UPLOADS.values()), "problems": c.problems[-5:]}

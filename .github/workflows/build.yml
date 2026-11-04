@@ -1,15 +1,19 @@
-# Saracen Bridge Studio for both systems, and the iPhone app. Every push to main (or a manual run) builds the Mac app on
-# one of GitHub's Apple Silicon Macs (tests, app, smoke test hosting a production, disk image), runs the tests on real
-# Windows, and builds the iPhone app and runs it in the iPhone simulator against a Studio hosting a test production
-# (screenshots of every step kept as the iphone-screenshots artifact).
+# Saracen Bridge Studio for both systems, and the iPhone app.
+# Every push to main runs the tests on Linux (cheap). A release tag (v*) or a manual run (Actions › Build › Run workflow)
+# also builds the Mac app on one of GitHub's Apple Silicon Macs (tests, app, smoke test hosting a production, disk
+# image), runs the tests on real Windows, and builds the iPhone and iPad app and runs it in the simulators against a
+# Studio hosting a made-up production (screenshots of every step kept as the iphone-screenshots artifact). Mac and
+# Windows minutes cost more against the account's allowance, which is why they wait for a tag or a manual run.
 # The Windows installer itself is still built with packaging/build_windows_on_linux.sh.
 #
 # Mac signing turns on by itself once these repository secrets exist (Settings › Secrets and variables › Actions):
 #   MAC_CERT_P12 (base64 of the Developer ID Application certificate, .p12), MAC_CERT_PASSWORD,
 #   MAC_SIGN_IDENTITY ("Developer ID Application: <name> (<team id>)"),
 #   NOTARY_KEY_P8 (App Store Connect API key, the .p8 text), NOTARY_KEY_ID, NOTARY_ISSUER.
-# iPhone builds go to TestFlight by themselves once IOS_TEAM_ID exists too (the same App Store Connect API key,
-# with the App Manager role, signs and uploads them).
+# iPhone builds go to TestFlight by themselves once IOS_TEAM_ID exists too (the same App Store Connect API key, with
+# the Admin role: Xcode's cloud signing for distribution needs it), and once the repository variables SUPPORT_EMAIL
+# and PRIVACY_POLICY_URL are set (Settings › Secrets and variables › Actions › Variables): App Review requires both
+# inside the app.
 name: Build
 
 on:
@@ -19,8 +23,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  linux-tests:
+    name: Tests (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: python -m pip install -q -r requirements-dev.txt
+      - run: python -m pytest -q -p no:cacheprovider
+      - name: The phone Room page parses
+        run: node --check engine/room_hub/static/app.js && node --check ui/room.js
+
   mac:
     name: Mac (Apple Silicon)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: macos-15
     timeout-minutes: 90
     env:
@@ -81,6 +103,7 @@ jobs:
 
   windows-tests:
     name: Windows tests
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -92,13 +115,23 @@ jobs:
       - run: python -m pytest -q -p no:cacheprovider
 
   iphone:
-    name: iPhone app
-    runs-on: macos-15
-    timeout-minutes: 60
+    name: iPhone and iPad app
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    # since 28 April 2026 App Store Connect takes only builds made with Xcode 26 and the iOS 26 SDK
+    runs-on: macos-26
+    timeout-minutes: 75
     env:
       HAS_ASC: ${{ secrets.NOTARY_KEY_P8 != '' && secrets.IOS_TEAM_ID != '' }}
+      SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+      PRIVACY_POLICY_URL: ${{ vars.PRIVACY_POLICY_URL }}
     steps:
       - uses: actions/checkout@v4
+      - name: Xcode 26
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$X" ] && sudo xcode-select -s "$X"
+          xcodebuild -version
+          xcodebuild -version | head -1 | grep -Eq "Xcode (2[6-9]|[3-9][0-9])" || { echo "App Store Connect needs Xcode 26 or later"; exit 1; }
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
@@ -117,25 +150,39 @@ jobs:
         run: |
           brew install xcodegen
           xcodegen generate
-      - name: A Studio hosting a test production, seeded, with an invite for the phone
+      - name: A Studio hosting a made-up production (The Lighthouse Keeper), seeded
         run: |
           python -m pip install -q -r requirements.txt
           STUDIO_HOME="$RUNNER_TEMP/studio" CI_KEYCHAIN=1 python studio_launcher.py --headless --port 8796 > "$RUNNER_TEMP/studio.log" 2>&1 &
           for i in $(seq 1 60); do curl -sf http://127.0.0.1:8796/api/health >/dev/null && break; sleep 1; done
-          echo "ROOM_TEST_INVITE=$(python ios/ci/studio_for_tests.py http://127.0.0.1:8796 invite)" >> "$GITHUB_ENV"
-      - name: Build and run in the iPhone simulator (screenshots of every step)
+          python ios/ci/studio_for_tests.py http://127.0.0.1:8796 seed
+      - name: Build, then run in the simulators (the App Store's screenshot sizes; every step kept)
         working-directory: ios/App
         run: |
-          python ../ci/studio_for_tests.py http://127.0.0.1:8796 approve "UI Test Phone" 900 > "$RUNNER_TEMP/approve.log" 2>&1 &
-          DEVICE=$(xcrun simctl list devices available -j | python3 -c "import json,sys; d=json.load(sys.stdin)['devices']; print(next(x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if x['name'].startswith('iPhone') and 'Pro' in x['name']))")
-          TEST_RUNNER_ROOM_TEST_INVITE="$ROOM_TEST_INVITE" xcodebuild test -project SaracenBridge.xcodeproj -scheme SaracenBridge \
-            -destination "id=$DEVICE" -resultBundlePath "$RUNNER_TEMP/ui.xcresult" CODE_SIGNING_ALLOWED=NO | tail -40
+          # iPhone 6.9-inch, iPhone 6.3-inch and iPad 13-inch: each joins as a new phone, approved as an executive would
+          pick() { xcrun simctl list devices available -j | python3 -c "import json,sys,re; d=json.load(sys.stdin)['devices']; print(next((x['udid'] for k in sorted(d, reverse=True) if 'iOS' in k for x in d[k] if re.fullmatch(sys.argv[1], x['name'])), ''))" "$1"; }
+          n=0
+          for spec in "iPhone 1[6-9] Pro Max|6.9-inch iPhone" "iPhone 1[6-9] Pro|6.3-inch iPhone" "iPad Pro 13-inch.*|13-inch iPad"; do
+            re="${spec%%|*}"; label="${spec##*|}"; n=$((n+1))
+            DEVICE=$(pick "$re")
+            if [ -z "$DEVICE" ]; then echo "::warning::No simulator for $label"; continue; fi
+            name="UI Test $n"
+            INVITE=$(python ../ci/studio_for_tests.py http://127.0.0.1:8796 invite "$name")
+            python ../ci/studio_for_tests.py http://127.0.0.1:8796 approve "$name" 900 > "$RUNNER_TEMP/approve-$n.log" 2>&1 &
+            TEST_RUNNER_ROOM_TEST_INVITE="$INVITE" TEST_RUNNER_ROOM_TEST_NAME="$name" xcodebuild test -project SaracenBridge.xcodeproj -scheme SaracenBridge \
+              -destination "id=$DEVICE" -resultBundlePath "$RUNNER_TEMP/ui-$n.xcresult" CODE_SIGNING_ALLOWED=NO | tail -40
+            echo "$label" > "$RUNNER_TEMP/ui-$n.label"
+          done
       - name: Export the screenshots
         if: always()
         run: |
           mkdir -p iphone-screenshots
-          xcrun xcresulttool export attachments --path "$RUNNER_TEMP/ui.xcresult" --output-path iphone-screenshots || true
-          cp "$RUNNER_TEMP/studio.log" "$RUNNER_TEMP/approve.log" iphone-screenshots/ 2>/dev/null || true
+          for r in "$RUNNER_TEMP"/ui-*.xcresult; do
+            [ -e "$r" ] || continue
+            n=$(basename "$r" .xcresult); label=$(cat "$RUNNER_TEMP/$n.label" 2>/dev/null || echo "$n")
+            xcrun xcresulttool export attachments --path "$r" --output-path "iphone-screenshots/$label" || true
+          done
+          cp "$RUNNER_TEMP/studio.log" "$RUNNER_TEMP"/approve-*.log iphone-screenshots/ 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -151,11 +198,15 @@ jobs:
           ASC_ISSUER: ${{ secrets.NOTARY_ISSUER }}
           DEVELOPMENT_TEAM: ${{ secrets.IOS_TEAM_ID }}
         run: |
+          [ -n "$SUPPORT_EMAIL" ] && [ -n "$PRIVACY_POLICY_URL" ] || { echo "Set the repository variables SUPPORT_EMAIL and PRIVACY_POLICY_URL first: App Review requires both in the app."; exit 1; }
           printf '%s\n' "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
           AUTH="-allowProvisioningUpdates -authenticationKeyPath $RUNNER_TEMP/asc.p8 -authenticationKeyID $ASC_KEY_ID -authenticationKeyIssuerID $ASC_ISSUER"
           xcodegen generate
           xcodebuild archive -project SaracenBridge.xcodeproj -scheme SaracenBridge -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/SaracenBridge.xcarchive" CURRENT_PROJECT_VERSION=${{ github.run_number }} DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" $AUTH | tail -20
+          APP="$RUNNER_TEMP/SaracenBridge.xcarchive/Products/Applications/SaracenBridge.app"
+          test -f "$APP/PrivacyInfo.xcprivacy" || { echo "The privacy manifest isn't in the app"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :SaracenSupportEmail" "$APP/Info.plist"
           cat > "$RUNNER_TEMP/export.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

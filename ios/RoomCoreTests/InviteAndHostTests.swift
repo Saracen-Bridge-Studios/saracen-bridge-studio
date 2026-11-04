@@ -55,5 +55,7 @@ final class HostStoreTests: XCTestCase {
         let h = RoomHost(id: "x", hub: URL(string: "http://192.168.1.20:8710")!, name: "Jon", port: 47380, added: Date())
         XCTAssertEqual(h.pageURL().absoluteString, "http://127.0.0.1:47380/app/")
         XCTAssertEqual(h.pageURL(join: "tok").absoluteString, "http://127.0.0.1:47380/app/#join=tok")
+        XCTAssertEqual(h.pageURL(fragment: "delete-account").absoluteString, "http://127.0.0.1:47380/app/#delete-account")
+        XCTAssertEqual(h.pageURL(join: "tok", fragment: "delete-account").absoluteString, "http://127.0.0.1:47380/app/#join=tok")
     }
 }

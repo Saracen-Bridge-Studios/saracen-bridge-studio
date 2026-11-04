@@ -19,10 +19,11 @@ from fastapi.staticfiles import StaticFiles
 
 import room_crypto as rc
 
+from . import safety
 from .access import TIERS, View
 from .db import Store
 
-VERSION = "1.0.8"
+VERSION = "1.2.0"
 TOKEN_HOURS = 12
 INVITE_DAYS = 14
 MAX_CHUNK = rc.CHUNK + 1024
@@ -177,7 +178,9 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             store.x("INSERT INTO devices (id, user, x, ed, status, invite, commit_, created, seq) VALUES (?,?,?,?,?,?,?,?,?)",
                     (dev["id"], user, dev["x"], dev["ed"], "pending", inv["id"], commit, int(time.time()), seq))
             store.x("UPDATE invites SET status='joining', user=?, seq=? WHERE id=?", (user, seq, inv["id"]))
-        return {"user": user, "founder": _founder_record(), "production": inv["production"]}
+            if body.get("terms") == safety.TERMS_VERSION:          # the Room's terms, accepted on the join screen
+                safety.accept_terms(store, user, safety.TERMS_VERSION)
+        return {"user": user, "founder": _founder_record(), "production": inv["production"], "terms": safety.TERMS_VERSION}
 
     @app.get("/api/join/state")
     def join_state(ctx: Ctx = Depends(any_device)):
@@ -426,6 +429,9 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             store.x("DELETE FROM space_members WHERE user=?", (user,))
             store.x("DELETE FROM confirmations WHERE user=?", (user,))
             store.x("DELETE FROM notifications WHERE user=?", (user,))
+            store.x("DELETE FROM blocks WHERE user=? OR blocked=?", (user, user))
+            store.x("DELETE FROM terms WHERE user=?", (user,))
+            store.x("UPDATE reports SET reporter='' WHERE reporter=?", (user,))
             store.x("DELETE FROM tokens WHERE device IN (SELECT id FROM devices WHERE user=?)", (user,))
             store.x("UPDATE devices SET status='revoked', seq=? WHERE user=?", (seq, user))
             store.x("UPDATE users SET deleted=1, exec=0, seq=? WHERE id=?", (seq, user))
@@ -508,7 +514,7 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             if len(members) != 2 or ctx.user not in members:
                 raise HTTPException(400, "A private conversation has two people, you and one other.")
             other = next(m for m in members if m != ctx.user)
-            if not v.can_reach(p, other):
+            if not v.can_reach(p, other) or safety.blocked_either_way(store, ctx.user, other):
                 raise HTTPException(403, "You can't start a conversation with that person.")
             existing = [s for s, sp in v.spaces.items() if sp["kind"] == "dm" and sp["production"] == p
                         and sp.get("explicit", set()) == set(members)]
@@ -626,6 +632,9 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         p, spaces = _item_spaces_ok(it, v, ctx)
         if store.one("SELECT archived FROM productions WHERE id=?", (p,))["archived"]:
             raise HTTPException(409, "This production is archived.")
+        blockers = safety.blockers_of(store, ctx.user)
+        if blockers and any(v.spaces[s]["kind"] == "dm" and v.space_members(s) & blockers for s in spaces):
+            raise HTTPException(403, "This person isn't taking messages from you.")
         readers = set().union(*(v.space_members(s) for s in spaces))
         mentions = [m for m in body.get("mentions", []) if m in readers or m in v.execs]
         wake = readers | v.execs
@@ -802,6 +811,8 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         spaces = v.visible_spaces()
         member_spaces = [s for s in spaces if v.is_member(s)]
         dev_rows = store.q("SELECT * FROM devices WHERE status IN ('approved','revoked') AND record IS NOT NULL")
+        part = safety.sync_part(store, ctx.user, v)
+        blocked = set(part["blocks"]) | safety.blockers_of(store, ctx.user)
         out = {
             "seq": store.seq,
             "me": {"user": ctx.user, "device": ctx.device["id"], "exec": v.exec,
@@ -812,7 +823,7 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
             "people": [{"user": u, "production": p, "tier": v.tier(p, u),
                         "department": (v.members.get(p, {}).get(u) or {}).get("department", ""),
                         "second_ad": bool((v.members.get(p, {}).get(u) or {}).get("second_ad")),
-                        "can_reach": v.can_reach(p, u)}
+                        "can_reach": v.can_reach(p, u) and u not in blocked}
                        for p, us in people.items() for u in sorted(us)],
             "devices": [{"record": json.loads(d["record"]), "status": d["status"]} for d in dev_rows
                         if d["user"] in seen_users],
@@ -856,6 +867,7 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
         conf = store.q("SELECT c.item, c.version, c.user, c.ts, i.production FROM confirmations c JOIN items i ON i.id=c.item")
         out["confirmations"] = [dict(r) for r in conf if r["user"] == ctx.user or v.can_manage(r["production"])]
         out["tasks"] = _tasks(ctx, v, spaces)
+        out["safety"] = part
         if v.exec:
             out["pending"] = store.one("SELECT COUNT(*) AS n FROM devices WHERE status='pending'")["n"]
         return out
@@ -984,4 +996,5 @@ def create_app(data: Path | str, *, livekit: dict | None = None, push=None) -> F
     from . import meetings, retention   # noqa: E402 - feature routes share the store and auth above
     meetings.install(app, store, approved, View)
     retention.install(app, store)
+    safety.install(app, store, approved, any_device, _delete_items, _mark_rotation_for_user)
     return app

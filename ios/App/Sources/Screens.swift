@@ -15,8 +15,8 @@ struct RootView: View {
                 NavigationStack {
                     StudiosView()
                         .navigationDestination(item: $model.current) { host in
-                            RoomScreen(host: host, joinToken: model.joinToken)
-                                .onDisappear { model.joinToken = nil }
+                            RoomScreen(host: host, joinToken: model.joinToken, part: model.openPart)
+                                .onDisappear { model.joinToken = nil; model.openPart = nil }
                         }
                 }
             }
@@ -44,7 +44,8 @@ struct StudiosView: View {
                             Button { model.current = host } label: { HostRow(host: host) }
                                 .listRowBackground(Theme.card)
                                 .swipeActions {
-                                    Button("Leave", role: .destructive) { model.remove(host) }
+                                    // only this phone forgets it; deleting the account is in Settings and the Room
+                                    Button("Remove", role: .destructive) { model.remove(host) }
                                 }
                                 .accessibilityIdentifier("host-\(host.name)")
                         }
@@ -223,11 +224,36 @@ struct SettingsSheet: View {
                     Text("Asks for Face ID (or your passcode) whenever the app comes back from the background.").foregroundStyle(Theme.muted)
                 }
                 if !model.hosts.isEmpty {
-                    Section("Studios") {
+                    Section {
                         ForEach(model.hosts) { host in
                             Button(host.name) { renaming = host; newName = host.name }
                         }
+                    } header: { Text("Studios") } footer: {
+                        Text("Tap a Studio to rename it on this phone. Swiping one away in Your Studios only removes it from this phone.").foregroundStyle(Theme.muted)
                     }
+                    Section {
+                        ForEach(model.hosts) { host in
+                            Button(role: .destructive) {
+                                dismiss()       // the sheet closes first, then the Room opens at "Delete my account"
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { model.deleteAccount(in: host) }
+                            } label: {
+                                Text("Delete my account in \(host.name)…")
+                            }
+                            .accessibilityIdentifier("delete-\(host.name)")
+                        }
+                    } header: { Text("Your account") } footer: {
+                        Text("Deletes your account in that Studio's Room: your messages, notes and files, your place in its productions, and this phone's access. It can't be undone.").foregroundStyle(Theme.muted)
+                    }
+                }
+                Section {
+                    if let mail = Company.reportMail() {
+                        Link(destination: mail) { Label("Report a problem or abuse", systemImage: "exclamationmark.bubble") }
+                    }
+                    if let privacy = Company.privacyURL {
+                        Link(destination: privacy) { Label("Privacy policy", systemImage: "hand.raised") }
+                    }
+                } header: { Text("Safety and privacy") } footer: {
+                    Text("In any Room, ⋯ on a message, note or file lets you report it, hide it or block the person. Reports go to the production's executives and producers, who act within 24 hours.").foregroundStyle(Theme.muted)
                 }
                 Section {
                     LabeledContent("Version", value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")

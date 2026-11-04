@@ -1,7 +1,9 @@
-"""A Studio hosting a test production for the iPhone app's UI test (and for screenshots), then standing in for the
-executive: checks and approves the test phone when it asks to join, as Jon would on a call.
+"""A Studio hosting a made-up production for the iPhone app's UI test and the App Store screenshots, then standing in
+for the executive: checks and approves each test phone when it asks to join, as an executive would on a call.
+Everything here is invented (THE LIGHTHOUSE KEEPER, its people and places): no real production appears in a screenshot.
 
-    python ios/ci/studio_for_tests.py STUDIO_URL invite     -> starts a production, seeds it, prints an invite link
+    python ios/ci/studio_for_tests.py STUDIO_URL seed              -> hosts the production and fills its board and chat
+    python ios/ci/studio_for_tests.py STUDIO_URL invite [NAME]     -> prints an invite link for NAME (a producer)
     python ios/ci/studio_for_tests.py STUDIO_URL approve NAME [SECONDS]
         -> waits for NAME's phone, checks its safety words, approves it, then puts NAME on today's call sheet
 
@@ -23,8 +25,8 @@ def space(view, name):
     return next(s["id"] for s in view["spaces"] if s["name"] == name)
 
 
-def invite(base):
-    call(base, "POST", "/api/room/host", {"name": "Jon Saracen", "production": "SHADE"})
+def seed(base):
+    call(base, "POST", "/api/room/host", {"name": "Alex Morgan", "production": "The Lighthouse Keeper"})
     for _ in range(30):
         try:
             v = call(base, "GET", "/api/room/view")
@@ -38,13 +40,18 @@ def invite(base):
     cast = space(v, "Cast")
     call(base, "POST", "/api/room/note", {"spaces": [office, cast], "title": "Day 12 call sheet v3", "status": "Open", "pinned": True,
                                           "body": "Unit call 06:30. Weather cover moved to Stage B."})
-    call(base, "POST", "/api/room/note", {"spaces": [office], "title": "Recce: quarry location, Thursday", "status": "Open",
-                                          "body": "Keys only. Vans leave base 07:00; bring permits."})
-    call(base, "POST", "/api/room/note", {"spaces": [office], "title": "Spanish incentive confirmed", "status": "Decision",
-                                          "body": "Gross benefit at gate PRELIMINARY. Finance plan updated."})
+    call(base, "POST", "/api/room/note", {"spaces": [office], "title": "Recce: harbour wall, Thursday", "status": "Open",
+                                          "body": "Keys only. Vans leave base 07:00; bring the harbour master's permit."})
+    call(base, "POST", "/api/room/note", {"spaces": [office], "title": "Night shoot moved to Friday", "status": "Decision",
+                                          "body": "Tide tables suit Friday. Catering and transport told."})
     call(base, "POST", "/api/room/message", {"space": office, "text": "Morning all. Call sheet v3 is on the board; weather cover moved to Stage B."})
     call(base, "POST", "/api/room/message", {"space": office, "text": "Recce vans leave base at 07:00 on Thursday."})
-    link = call(base, "POST", "/api/room/invite", {"production": prod, "tier": "producer", "name": "UI Test Phone", "role": "Line producer"})["link"]
+    call(base, "POST", "/api/room/message", {"space": cast, "text": "Sides for scenes 14 and 15 are in your day. Pickups are on the call sheet."})
+
+
+def invite(base, name="UI Test Phone"):
+    v = call(base, "GET", "/api/room/view")
+    link = call(base, "POST", "/api/room/invite", {"production": v["production"], "tier": "producer", "name": name, "role": "Line producer"})["link"]
     print(link)
 
 
@@ -66,8 +73,8 @@ def approve(base, name, seconds=600):
             if me:
                 call(base, "POST", "/api/room/callsheets", {
                     "production": prod, "day": "Day 12", "date": time.strftime("%Y-%m-%d"), "unit_call": "06:30",
-                    "location": "Quarry, Northfield", "weather_cover": "Stage B", "hospital": "St Mary's, Northfield",
-                    "scenes": [{"no": "14", "slug": "EXT. QUARRY - DAY", "pages": "2"}, {"no": "15", "slug": "EXT. QUARRY ROAD - DAY", "pages": "1 3/8"}],
+                    "location": "Harbour wall, Porthallow", "weather_cover": "Stage B", "hospital": "Royal Cornwall, Truro",
+                    "scenes": [{"no": "14", "slug": "EXT. HARBOUR WALL - DAY", "pages": "2"}, {"no": "15", "slug": "EXT. LIGHTHOUSE STEPS - DAY", "pages": "1 3/8"}],
                     "rows": [{"user": me, "call": "06:00", "pickup": "05:20", "pickup_address": "12 Harbour Row", "driver": "Dan"}]})
                 print("call sheet posted", flush=True)
             return
@@ -77,7 +84,9 @@ def approve(base, name, seconds=600):
 
 if __name__ == "__main__":
     base, what = sys.argv[1].rstrip("/"), sys.argv[2]
-    if what == "invite":
-        invite(base)
+    if what == "seed":
+        seed(base)
+    elif what == "invite":
+        invite(base, sys.argv[3] if len(sys.argv) > 3 else "UI Test Phone")
     else:
         approve(base, sys.argv[3], sys.argv[4] if len(sys.argv) > 4 else 600)

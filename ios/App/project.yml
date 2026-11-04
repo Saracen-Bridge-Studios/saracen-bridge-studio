@@ -17,6 +17,10 @@ settings:
     MARKETING_VERSION: "1.0.0"
     CURRENT_PROJECT_VERSION: "1"
     DEVELOPMENT_TEAM: "${DEVELOPMENT_TEAM}"
+    # shown in the app (Settings, and the Room's terms) and required by App Review: the company's address for reports
+    # of abuse, and its privacy policy page. The workflow refuses to upload a build while either is empty.
+    SUPPORT_EMAIL: "${SUPPORT_EMAIL}"
+    PRIVACY_POLICY_URL: "${PRIVACY_POLICY_URL}"
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 targets:
   SaracenBridge:
@@ -43,6 +47,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UIUserInterfaceStyle: Dark
+        # an encrypted huddle or meeting keeps going when the screen locks (WebKit keeps the microphone with this)
         UIBackgroundModes: [audio]
         # the host's Room is on the office network at a plain address; from iOS 17, IP addresses need this exception
         NSAppTransportSecurity:
@@ -51,6 +56,8 @@ targets:
         NSMicrophoneUsageDescription: Your microphone is used in the Room's huddles and meetings, which are end-to-end encrypted and never recorded.
         NSCameraUsageDescription: The camera scans an invite's QR code from a Studio's screen.
         NSFaceIDUsageDescription: Face ID locks the Room on this phone.
+        SaracenSupportEmail: $(SUPPORT_EMAIL)
+        SaracenPrivacyURL: $(PRIVACY_POLICY_URL)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.saracenbridge.room

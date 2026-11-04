@@ -77,8 +77,10 @@ def lan_ip() -> str:
 
 
 def address() -> str:
-    """The address people on this network use: it goes into invite links."""
-    return f"http://{lan_ip()}:{PORT}"
+    """The address people on this network use: it goes into invite links. A Studio run as a public server (the demo
+    Studio for Apple's reviewers, behind https) names its own address in ROOM_PUBLIC_BASE."""
+    public = os.environ.get("ROOM_PUBLIC_BASE", "").rstrip("/")
+    return public or f"http://{lan_ip()}:{PORT}"
 
 
 def local() -> str:
@@ -114,7 +116,9 @@ def _lk_up() -> bool:
 
 def _start_livekit(cfg: dict) -> dict | None:
     """Start LiveKit for huddles and meetings (or reuse one this computer already started). None if it isn't bundled."""
-    lk = {"url": f"http://127.0.0.1:{LK_PORT}", "public_url": "ws://{host}:%d" % LK_PORT,
+    # ROOM_LIVEKIT_PUBLIC_URL: where devices reach the call server's signalling when it sits behind https on a public
+    # server (wss://{host}, with /rtc passed to port 7880); otherwise the host's own address on port 7880.
+    lk = {"url": f"http://127.0.0.1:{LK_PORT}", "public_url": os.environ.get("ROOM_LIVEKIT_PUBLIC_URL") or "ws://{host}:%d" % LK_PORT,
           "key": cfg["lk_key"], "secret": cfg["lk_secret"]}
     if _lk_up():
         return lk
@@ -125,7 +129,8 @@ def _start_livekit(cfg: dict) -> dict | None:
     # A UDP port range rather than one shared UDP port: the shared-port mode failed to open its socket on the
     # Windows test machine (winapi error 10045); the range works. Keys go in the file (kept in this user's folder).
     conf.write_text(f"port: {LK_PORT}\nrtc:\n  tcp_port: {LK_TCP}\n  port_range_start: {LK_UDP[0]}\n"
-                    f"  port_range_end: {LK_UDP[1]}\n  use_external_ip: false\n"
+                    f"  port_range_end: {LK_UDP[1]}\n"
+                    f"  use_external_ip: {'true' if os.environ.get('ROOM_LIVEKIT_EXTERNAL_IP') else 'false'}\n"
                     f"keys:\n  {cfg['lk_key']}: {cfg['lk_secret']}\nlogging:\n  level: warn\n")
     try:
         os.chmod(conf, 0o600)

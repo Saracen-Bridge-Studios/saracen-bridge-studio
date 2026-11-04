@@ -4,6 +4,17 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## Unreleased (planned as 1.2.0), safety in the Room and the App Store
+Built after a Rule 1 pass on Apple's current review rules (4 Nov): the iPhone and iPad app can only be approved with the Room's safety tools, account deletion in the app, a Room the reviewer can reach, Xcode 26 and a privacy manifest. Tests: 270 passed, 1 skipped on Linux; RoomCore's 8 Swift tests pass on Linux. (S-113)
+- Added: the Room's terms, accepted when joining (zero tolerance for objectionable content and abusive people; reports reviewed within 24 hours). Members who joined before are asked once. (S-114)
+- Added: Report, Hide and Block on every message, note and file, and Report or Block on a private conversation. Only which item or person, and a reason from a fixed list, reach the Studio, never the content. A blocked person can't start a conversation with you or post in one you share, and their posts are hidden from you, on all your devices. (S-114)
+- Added: an offensive-words filter, on by default, that holds matching text behind Show (initials › Hide offensive words). (S-114)
+- Added: Reports for producers and executives, on the phone (initials › Reports) and in the Studio (Members & access › Reports, with the post shown decrypted): Remove it, Remove person (executives only) or Dismiss, each in the audit log; a notification when a report arrives. (S-114)
+- Added: Delete my account, in the Room (initials) and in the iPhone app's Settings: deletes the person's posts, files, confirmations, memberships and devices; the audit log keeps one line that it happened. (S-115)
+- Added: the demo Studio kit for Apple's reviewers (`packaging/demo/`): a made-up production on a rented server behind https, with a review page that hands out invites and lets reviewer devices in by itself. A public Studio names its address with ROOM_PUBLIC_BASE. (S-116)
+- Changed: the iPhone app: Settings has Delete my account in [Studio], Report a problem or abuse, and the privacy policy; a privacy manifest; the company's contact and privacy address come from the build; swiping a Studio away says Remove (this phone only). The Room page widens on iPad. (S-115, S-117)
+- Changed: the build: Linux tests on every push; the Mac, Windows and iPhone jobs on release tags and manual runs; the iPhone job on GitHub's macOS 26 Macs with Xcode 26, screenshots on iPhone 6.9″, iPhone 6.3″ and iPad 13″ of an invented production, and an upload that checks for the privacy manifest, the contact address and the privacy policy. (S-117)
+
 ## Unreleased (planned as 1.2.0), the Mac version
 One codebase, two installers: the Windows Setup.exe as before, and a Mac disk image for Apple Silicon Macs (2020 on), built and tested on GitHub's Macs. Not yet built: waiting on the GitHub repository.
 - Added: the Mac app. Its own window (the same Tauri shell as Windows) carries the Dock icon and menus; settings and data live in ~/Library/Application Support/SaracenStudio; saved keys and the Room's device keys are sealed with a key kept in the Mac's Keychain (Windows keeps DPAPI). (S-91)

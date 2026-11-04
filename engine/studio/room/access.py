@@ -5,10 +5,15 @@ import time
 
 from . import service as S
 
+REASON = {"abusive": "Abusive or offensive", "harassment": "Harassment or bullying", "hate": "Hate or discrimination",
+          "sexual": "Sexual content", "violence": "Violence or threats", "self-harm": "Self-harm", "spam": "Spam",
+          "other": "Something else"}
+
 KIND = {"read a space they aren't in": "OVERSIGHT", "opened a file in a space they aren't in": "OVERSIGHT",
         "granted contact": "ACCESS", "revoked contact": "ACCESS", "changed who is in a space": "ACCESS",
         "made an executive": "ACCESS", "removed an executive": "ACCESS", "set a member's tier": "ACCESS",
-        "changed a space's keys": "KEYS"}
+        "changed a space's keys": "KEYS", "reported content": "SAFETY", "dealt with a report": "SAFETY",
+        "deleted their own account": "MEMBER", "accepted the Room's terms": "MEMBER"}
 
 
 def _all_names(c) -> dict:
@@ -91,10 +96,30 @@ def view(c, production: str) -> dict:
                                                                           or "member" in e["action"] or "invite" in e["action"]
                                                                           else "ROOM")}
             for e in a["entries"][:300]]}
+    out["reports"] = reports(c, production, allnames)
     for inv in c._req("GET", "/api/invites"):
         if inv["production"] == production:
             det = c._open_dir_item(inv["details"], production) if inv.get("details") else None
             out["invites"].append({"id": inv["id"], "name": (det or {}).get("name", "Someone"), "tier": S.TIER_LABEL.get(inv["tier"], ""),
                                    "status": "Joining" if inv["status"] == "joining" else "Not used yet",
                                    "expires": inv["expires"], "days_left": max(0, int((inv["expires"] - time.time()) // 86400))})
+    return out
+
+
+def reports(c, production: str, allnames: dict | None = None) -> list[dict]:
+    """Open reports for this production (1.2.0), with what was posted shown here, decrypted on this computer, when this
+    device holds the keys. Producers see reports in the spaces they're in; executives see them all."""
+    allnames = allnames if allnames is not None else _all_names(c)
+    out = []
+    for r in c.reports(production):
+        it = c.items.get(r["item"]) if r["item"] else None
+        pl = (it or {}).get("payload") or {}
+        text = pl.get("text") or pl.get("title") or pl.get("name") or ""
+        if r["item"] and not text:
+            text = "Already removed." if r["gone"] else "Open it from the space it was posted in." if r["readable"] \
+                else "Only an executive can open this one."
+        out.append({"id": r["id"], "reason": REASON.get(r["reason"], r["reason"]), "when": r["ts"], "item": r["item"],
+                    "gone": r["gone"], "text": text, "about": allnames.get(r["about"], "someone"),
+                    "reporter": allnames.get(r["reporter"], "someone") if r["reporter"] else "someone who has since left",
+                    "can_remove_person": c.is_exec and not r["about_is_exec"]})
     return out

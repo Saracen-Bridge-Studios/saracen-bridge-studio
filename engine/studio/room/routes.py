@@ -449,6 +449,15 @@ def grant_revoke(gid: str):
     return {"ok": True}
 
 
+@router.post("/reports/{rid}/resolve")
+def report_resolve(rid: str, body: dict = Body(...)):
+    """An executive or producer deals with a report: dismissed, item_removed or person_removed (1.2.0)."""
+    c = _c(production=body["production"])
+    _run(c.resolve_report, rid, body.get("outcome") or "")
+    S.bumped()
+    return {"ok": True}
+
+
 @router.post("/execs")
 def execs(body: dict = Body(...)):
     _run(_c().make_exec, body["user"], bool(body.get("on", True)))

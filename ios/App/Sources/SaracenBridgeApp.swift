@@ -21,6 +21,25 @@ struct SaracenBridgeApp: App {
     }
 }
 
+/// The company's contact address and privacy policy, from the build (Info.plist). Empty until they're set.
+enum Company {
+    private static func value(_ key: String) -> String {
+        let v = (Bundle.main.infoDictionary?[key] as? String ?? "").trimmingCharacters(in: .whitespaces)
+        return v.hasPrefix("$") ? "" : v                  // an unset build setting arrives as its own name
+    }
+    static var supportEmail: String { value("SaracenSupportEmail") }
+    static var privacyURL: URL? { URL(string: value("SaracenPrivacyURL")).flatMap { $0.scheme == "https" ? $0 : nil } }
+    static func reportMail(about: String = "") -> URL? {
+        guard !supportEmail.isEmpty else { return nil }
+        let subject = "Saracen Bridge: reporting a problem" + (about.isEmpty ? "" : " (\(about))")
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.path = supportEmail
+        c.queryItems = [URLQueryItem(name: "subject", value: subject)]
+        return c.url
+    }
+}
+
 enum Theme {
     static let gold = Color(red: 0.776, green: 0.604, blue: 0.227)          // #C69A3A, the software's gold
     static let ink = Color(red: 0.035, green: 0.027, blue: 0.055)
@@ -35,6 +54,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var hosts: [RoomHost] = []
     @Published var current: RoomHost?          // the Studio whose Room is open
     @Published var joinToken: String?
+    @Published var openPart: String?            // a part of the Room page to open with it (delete-account)
     @Published var locked = false
     @Published var notice: String?
     @Published var lockWithFaceID = UserDefaults.standard.bool(forKey: "lockWithFaceID") {
@@ -71,6 +91,20 @@ final class AppModel: ObservableObject {
         } catch {
             notice = error.localizedDescription
         }
+    }
+
+    /// From Settings: open this Studio's Room straight at "Delete my account".
+    func deleteAccount(in host: RoomHost) {
+        joinToken = nil
+        openPart = "delete-account"
+        current = host
+    }
+
+    /// The Room page said this person's account there is deleted: forget the Studio on this phone too.
+    func accountDeleted(_ host: RoomHost) {
+        current = nil
+        remove(host)
+        notice = "Your account in \(host.name) is deleted, and it's gone from this phone."
     }
 
     func rename(_ host: RoomHost, _ name: String) {

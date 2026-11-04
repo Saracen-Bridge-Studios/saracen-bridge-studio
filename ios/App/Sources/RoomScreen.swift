@@ -8,6 +8,7 @@ struct RoomScreen: View {
     @EnvironmentObject var model: AppModel
     let host: RoomHost
     let joinToken: String?
+    var part: String? = nil
     @State private var state: Phase = .connecting
 
     enum Phase: Equatable { case connecting, ready, unreachable(String) }
@@ -19,7 +20,8 @@ struct RoomScreen: View {
             case .connecting:
                 ProgressView("Connecting to \(host.name)…").tint(Theme.gold).foregroundStyle(Theme.muted)
             case .ready:
-                RoomWebView(host: host, page: host.pageURL(join: joinToken))
+                RoomWebView(host: host, page: host.pageURL(join: joinToken, fragment: part),
+                            onDeleted: { Task { @MainActor in model.accountDeleted(host) } })
                     .ignoresSafeArea(edges: .bottom)
             case .unreachable(let why):
                 Unreachable(host: host, why: why) { Task { await connect() } }
@@ -70,8 +72,9 @@ struct Unreachable: View {
 struct RoomWebView: UIViewRepresentable {
     let host: RoomHost
     let page: URL
+    var onDeleted: () -> Void = {}
 
-    func makeCoordinator() -> Coordinator { Coordinator(host: host) }
+    func makeCoordinator() -> Coordinator { Coordinator(host: host, onDeleted: onDeleted) }
 
     func makeUIView(context: Context) -> WKWebView {
         let cfg = WKWebViewConfiguration()
@@ -82,8 +85,11 @@ struct RoomWebView: UIViewRepresentable {
         let ucc = WKUserContentController()
         ucc.addScriptMessageHandler(context.coordinator, contentWorld: .page, name: "saracen")
         // tells the Room page it's inside the app (no "add to home screen", no web notifications)
-        ucc.addUserScript(WKUserScript(source: "window.SaracenApp = { platform: 'ios', version: '\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")' };",
-                                       injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        let info: [String: String] = ["platform": "ios",
+                                      "version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "",
+                                      "support": Company.supportEmail]       // the Room's terms and Contact show it
+        let json = (try? JSONSerialization.data(withJSONObject: info)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        ucc.addUserScript(WKUserScript(source: "window.SaracenApp = \(json);", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         cfg.userContentController = ucc
         let web = WKWebView(frame: .zero, configuration: cfg)
         web.isOpaque = false
@@ -105,10 +111,11 @@ struct RoomWebView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandlerWithReply, WKDownloadDelegate {
         let host: RoomHost
+        let onDeleted: () -> Void
         weak var web: WKWebView?
         private var downloads: [ObjectIdentifier: URL] = [:]
 
-        init(host: RoomHost) { self.host = host }
+        init(host: RoomHost, onDeleted: @escaping () -> Void) { self.host = host; self.onDeleted = onDeleted }
 
         private func isRoom(_ origin: WKSecurityOrigin) -> Bool {
             origin.host == "127.0.0.1" && origin.port == Int(host.port)
@@ -182,7 +189,7 @@ struct RoomWebView: UIViewRepresentable {
 
         /// The page's bridge: `await window.webkit.messageHandlers.saracen.postMessage({op, name, value})`.
         /// get / put / delete: this Studio's `device` key or Room `state` in the Keychain (this phone only, never
-        /// backed up). haptic: a light tap. share: text to the share sheet.
+        /// backed up). haptic: a light tap. share: text to the share sheet. deleted: the account here was deleted.
         func userContentController(_ ucc: WKUserContentController, didReceive message: WKScriptMessage,
                                    replyHandler: @escaping (Any?, String?) -> Void) {
             guard isRoom(message.frameInfo.securityOrigin), let body = message.body as? [String: Any], let op = body["op"] as? String else {
@@ -203,6 +210,9 @@ struct RoomWebView: UIViewRepresentable {
             case "share":
                 share([body["text"] as? String ?? ""])
                 replyHandler(true, nil)
+            case "deleted":                         // the person deleted their account in this Room
+                replyHandler(true, nil)
+                DispatchQueue.main.async { self.onDeleted() }
             default:
                 replyHandler(nil, "unknown op")
             }
