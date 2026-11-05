@@ -371,22 +371,30 @@ def _reap_stale() -> None:
     except (OSError, ValueError):
         return
     try:
-        name = subprocess.run(["ps", "-p", str(pid), "-o", "comm="], capture_output=True, text=True, timeout=5).stdout
-        if "llama-server" in name:
+        # the program, or a script's path after its interpreter (macOS reports a script as /bin/sh); -ww: no width cut (1.2.1)
+        cmd = subprocess.run(["ps", "-ww", "-p", str(pid), "-o", "command="], capture_output=True, text=True, timeout=5).stdout.split()
+        if any(Path(a).name == "llama-server" for a in cmd[:2]):
             os.kill(pid, signal.SIGTERM)
     except (OSError, subprocess.SubprocessError):
         pass
     f.unlink(missing_ok=True)
 
 
-def _child_setup():
-    """POSIX only (runs in the child before exec): get SIGTERM if the Studio dies (Linux; see _reap_stale for Mac)."""
+_PRCTL = None
+if sys.platform.startswith("linux"):
     try:
         import ctypes
-        import signal
-        ctypes.CDLL("libc.so.6", use_errno=True).prctl(1, int(signal.SIGTERM))   # PR_SET_PDEATHSIG (Linux)
-    except Exception:  # noqa: BLE001 - macOS has no prctl; a clean exit still stops the engine
-        pass
+        _PRCTL = ctypes.CDLL("libc.so.6", use_errno=True).prctl         # loaded here, in the Studio, never in the child
+    except Exception:  # noqa: BLE001
+        _PRCTL = None
+
+
+def _child_setup():
+    """Linux only (runs in the child between fork and exec): get SIGTERM if the Studio dies. Nothing is imported or
+    loaded here: the Studio has many threads, and an import or library load in a forked child can hang on a lock
+    another thread held (1.2.1: on the Mac the engine never started; the Mac uses _reap_stale instead)."""
+    if _PRCTL is not None:
+        _PRCTL(1, 15)                                                   # PR_SET_PDEATHSIG, SIGTERM
 
 class _Bundled:
     """Starts the bundled llama.cpp server on first use and stops it when the Studio exits.
@@ -444,7 +452,7 @@ class _Bundled:
             args += ["--mmproj", str(projector)]
         self.proc = subprocess.Popen(args,
                                      stdout=log, stderr=log, creationflags=flags,
-                                     preexec_fn=None if sys.platform == "win32" else _child_setup)
+                                     preexec_fn=_child_setup if _PRCTL is not None else None)
         _tie_to_studio(self.proc)
         if sys.platform != "win32":
             try:

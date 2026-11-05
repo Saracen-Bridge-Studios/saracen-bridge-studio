@@ -28,6 +28,17 @@ python3 -m pip install -q -r requirements-dev.txt
 # 2. OCR for scanned scripts: Apple's Vision text recognition, answering in Tesseract's format
 swiftc -O -target arm64-apple-macos13 -o packaging/macos/build/studio-ocr packaging/macos/studio-ocr.swift
 
+# what the Mac OCR reads from the scanned fixture, in the log, so a misread can be seen and fixed (1.2.1)
+STUDIO_TESSERACT="$ROOT/packaging/macos/build/studio-ocr" PYTHONPATH=engine python3 - <<'PY' || true
+from pathlib import Path
+from studio import script
+data = Path("tests/fixtures/sample_scanned.pdf").read_bytes()
+r = script.parse("sample_scanned.pdf", data)
+print("== Mac OCR of sample_scanned.pdf: cast", [(c["name"], c["dialogue_blocks"]) for c in r["cast"]], "scenes", r["scene_count"])
+print(script.text("sample_scanned.pdf", data))
+print("== end of Mac OCR")
+PY
+
 # 3. Tests, natively on the Mac, with the Mac OCR reading the scanned-script fixture
 STUDIO_TESSERACT="$ROOT/packaging/macos/build/studio-ocr" python3 -m pytest -q -p no:cacheprovider
 
