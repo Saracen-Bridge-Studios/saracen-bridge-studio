@@ -35,6 +35,8 @@ STUDIO_TESSERACT="$ROOT/packaging/macos/build/studio-ocr" python3 -m pytest -q -
 if [ ! -x packaging/livekit/livekit-server ]; then
   rm -rf "$WORK/livekit"
   git clone -q --depth 1 --branch "v$LK_VERSION" https://github.com/livekit/livekit-server "$WORK/livekit"
+  # the module download can drop on a build machine's network (5 Nov, Windows job: proxy.golang.org stream error); try it three times
+  (cd "$WORK/livekit" && for t in 1 2 3; do go mod download && break; echo "go mod download failed (try $t); retrying"; sleep $((15 * t)); done)
   (cd "$WORK/livekit" && go build -trimpath -ldflags "-s -w" -o "$ROOT/packaging/livekit/livekit-server" ./cmd/server)
 fi
 packaging/livekit/livekit-server --version
