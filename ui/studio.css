@@ -1079,3 +1079,26 @@ main#app > h1:first-child + .lede::after { content: ""; display: block; width: 4
 .mark small { margin-top: 8px; }
 nav .grp { margin-top: 9px; }
 .list .when { font: 500 12px var(--sans); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+
+/* ================================================================ "purple is the jewel, not the room" (Tim, 5 Nov: less purple,
+   purple as the luxury, cleaner). The rooms go to neutral near-black, faintly warm so gold sits richly on it; purple stays where it
+   means something: the crest, the Home marquee's light, the suite's icon wells, the AI (Jonny, notices, AI pills) and switches. */
+:root {
+  --ink-0: #0a0a0b; --ink-1: #0f0f10; --ink-2: #151516; --ink-3: #1c1c1e; --ink-4: #252527; --ink-5: #303033;
+  --line: rgba(255, 248, 235, .07); --line-2: rgba(255, 248, 235, .12); --line-3: rgba(255, 248, 235, .2);
+  --fg-2: #bbb5ac; --fg-3: #8a857d; --fg-4: #5f5b56;
+  --plum-glow: rgba(107, 52, 190, .2);
+}
+body::before { background:
+  radial-gradient(520px 380px at -4% -8%, var(--plum-glow), transparent 64%),          /* a single plum light behind the crest */
+  radial-gradient(700px 420px at 108% -14%, rgba(219, 165, 52, .05), transparent 60%); }
+.main { background: linear-gradient(180deg, #121213 0%, #0d0d0e 520px); border-color: rgba(255, 248, 235, .06); }
+.topbar { background: linear-gradient(180deg, rgba(18, 18, 19, .9), rgba(18, 18, 19, .72)); }
+.marquee { background: #0e0d11; }                                                         /* the marquee keeps its purple light */
+.tile { background: linear-gradient(180deg, #171719, #121213) padding-box,
+  linear-gradient(155deg, rgba(242, 192, 77, .28), rgba(255, 248, 235, .06) 38%, rgba(255, 248, 235, .035) 100%) border-box; }
+.tile .glyph { background: linear-gradient(160deg, #5a2fa0, #241040); box-shadow: 0 0 0 1px rgba(242, 192, 77, .26) inset, 0 1px 0 rgba(255, 240, 210, .14) inset, 0 8px 18px -12px rgba(90, 47, 160, .8); }
+.drop { background: radial-gradient(500px 200px at 50% 0%, rgba(219, 165, 52, .06), transparent 70%), var(--ink-1); border-color: rgba(255, 248, 235, .16); }
+.drop .art { background: linear-gradient(160deg, #5a2fa0, #241040); }
+.mark img { box-shadow: 0 0 0 1px rgba(242, 192, 77, .3), 0 18px 40px -16px rgba(90, 47, 160, .7); }
+::selection { background: rgba(219, 165, 52, .35); }
