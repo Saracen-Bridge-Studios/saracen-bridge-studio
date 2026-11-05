@@ -18,6 +18,7 @@ import hashlib
 import os
 import threading
 import shutil
+import re
 import statistics
 import subprocess
 import sys
@@ -172,6 +173,13 @@ def tsv_to_lines(tsv: str) -> list[str]:
     for top, left, _, text in rows:
         if prev_top is not None and top - prev_top > 1.5 * min(pitch, DPI / 6 * 1.2):
             out.append("")
-        out.append(" " * max(0, round((left - margin) / CHAR_PX)) + text)
+        out.append(" " * max(0, round((left - margin) / CHAR_PX)) + _fix_extension(text))
         prev_top = top
     return out
+
+
+def _fix_extension(text: str) -> str:
+    """A cue's extension as printed: OCR can read the O of (O.S.), (V.O.) or (O.C.) as a zero (Mac Vision, 5 Nov:
+    "TOM (0.S.)"), and a cue with a zero isn't seen as a cue."""
+    return re.sub(r"\((0|O)\.? ?(S|C)\.?\)|\(V\.? ?(0|O)\.?\)",
+                  lambda m: "(V.O.)" if m.group(0).upper().startswith("(V") else f"(O.{m.group(2)}.)", text)
