@@ -2,7 +2,7 @@
 ; Build:  iscc packaging\installer.iss   (after PyInstaller; Inno Setup 6.5+)
 #define AppVersion GetEnv("STUDIO_VERSION")
 #if AppVersion == ""
-  #define AppVersion "1.2.2"
+  #define AppVersion "1.2.3"
 #endif
 
 ; Gemma (optional) is NOT downloaded by this installer any more (1.0.2). On Jon's PC, 13 Oct, the installer's own

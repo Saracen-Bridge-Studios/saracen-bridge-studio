@@ -4,6 +4,9 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.2.3 (5 Nov 2026), Locate is always there
+- Fixed: on Jon's Mac (5 Nov, 1.2.2 opened fine) the Gemma card showed an old download "paused at 0%" and, in that state, no **Locate a model file…** button. Locate now shows in every state but a running download, and once a model has been found or chosen, an old paused or failed download steps aside for it. (S-126)
+
 ## 1.2.2 (5 Nov 2026), Macs: Intel and Apple Silicon, and Gemma from anywhere
 Tim, 5 Nov, on a call with Jon (a 2019 13-inch MacBook Pro: Intel Core i5, 8 GB, macOS 15.8.1): "i need a mac version",
 then, after Gemma was downloaded by hand and the Studio opened to a black screen, "we need a search button to be able to
