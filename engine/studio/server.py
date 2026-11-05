@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -160,7 +160,52 @@ def _resume_download_once():
 @app.get("/api/ai/download")
 def ai_download_status():
     _resume_download_once()
-    return fetch.status()
+    out = fetch.status()
+    out["located"] = _located()
+    return out
+
+
+def _located() -> dict | None:
+    """The model the Studio will run when it isn't one it downloaded itself (chosen in Settings, or found in Downloads)."""
+    files = llm.bundled_files()
+    m = files[1] if files else (llm.chosen_model() or next(iter(llm.located_models()), None))
+    if not m or m.parent == llm.bundled_dir() / "models":
+        return None
+    return {"path": str(m), "name": m.stem, "chosen": m == llm.chosen_model(), "vision": bool(llm.projector_for(m))}
+
+
+@app.post("/api/ai/locate")
+def ai_locate(body: dict = Body(default={})):
+    """Point the Studio at a model file anywhere on this computer (1.2.2): {"path": ...}, or no path to open the
+    system's Open dialog here, or {"clear": true} to go back to finding it by itself."""
+    from . import picker
+    s = store.load_settings()
+    eng = s.setdefault("ai_engine", {})
+    if body.get("clear"):
+        eng.pop("model_path", None)
+        store.save_settings(s)
+        return {"cleared": True, "located": _located()}
+    path = str(body.get("path") or "").strip()
+    if not path:
+        try:
+            path = picker.choose_file("Choose the Gemma model file (.gguf)") or ""
+        except (RuntimeError, OSError, subprocess.SubprocessError) as e:
+            raise HTTPException(400, str(e)) from e
+        if not path:
+            return {"cancelled": True}
+    p = Path(path).expanduser()
+    if not p.is_file():
+        raise HTTPException(400, f"There's no file at {p}.")
+    if p.suffix.lower() != ".gguf":
+        raise HTTPException(400, "That isn't a model file: Gemma's file ends in .gguf.")
+    if "mmproj" in p.name.lower():
+        raise HTTPException(400, "That's Gemma's vision add-on (mmproj). Choose the model itself; the add-on is found beside it.")
+    if p.stat().st_size < llm.MIN_MODEL_BYTES:
+        raise HTTPException(400, "That file is too small to be a Gemma model, or it hasn't finished downloading.")
+    eng["model_path"] = str(p)
+    store.save_settings(s)
+    return {"path": str(p), "name": p.stem, "located": _located(), "engine_installed": not fetch.missing("engine"),
+            "vision": bool(llm.projector_for(p))}
 
 
 @app.post("/api/ai/download")

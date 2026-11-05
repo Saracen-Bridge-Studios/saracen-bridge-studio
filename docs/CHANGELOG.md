@@ -4,6 +4,16 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.2.2 (5 Nov 2026), Macs: Intel and Apple Silicon, and Gemma from anywhere
+Tim, 5 Nov, on a call with Jon (a 2019 13-inch MacBook Pro: Intel Core i5, 8 GB, macOS 15.8.1): "i need a mac version",
+then, after Gemma was downloaded by hand and the Studio opened to a black screen, "we need a search button to be able to
+locate the LLM manually in any mac folder".
+- Added: the Mac build for Intel Macs beside Apple Silicon (GitHub's macos-15-intel); Intel Macs fetch llama.cpp's macOS x64 engine. The first Mac builds ever run, so they found what the Linux and Windows runs couldn't (below). (S-125)
+- Added: Settings › Gemma on this computer › **Locate a model file…** opens the Mac's or Windows' own Open dialog and uses the .gguf chosen from any folder; the Studio also finds a Gemma .gguf at the top of Downloads by itself. A model found that way shows where it is and whether its vision add-on sits beside it, and **Get the AI engine to run it** downloads only the engine (12 MB on a Mac). A wrong file says why: not a .gguf, the vision add-on, or too small (still downloading). (S-126)
+- Fixed: the black screen on Jon's 8 GB Mac. At every launch the Studio resumed an unfinished writing job and started Gemma with two 16K slots, which took the whole memory. The engine is now sized to the machine (12 GB or less: one slot, at most 8K; Intel Macs run it on the processor), and a queue left from the last session waits 20 seconds, until the window is up; a new job still starts at once. (S-126)
+- Fixed (Mac): the engine start no longer imports or loads anything in the forked child (it could hang on a lock another thread held); the stale-engine check reads the full command line (`ps -ww`). (S-125)
+- Fixed: OCR reads a zero in a cue's (O.S.), (V.O.) or (O.C.) as an O (Apple Vision read "TOM (0.S.)"). Still open: Vision misses one cue in the scanned fixture, so on the Mac those two tests are marked known and the build log prints what it read (S-123); Room hosting is out of the Mac smoke gate after it timed out on GitHub's Mac (S-124).
+
 ## 1.2.1 (5 Nov 2026), crisp black, purple as the jewel
 Tim, 5 Nov: "make it more classy and rich looking … do a rule 1", then "less purple … make purple the luxury but make it cleaner",
 then "leave the crisp black, don't dull it down", and "yes I like this, let's see this change in the actual build". The review, with

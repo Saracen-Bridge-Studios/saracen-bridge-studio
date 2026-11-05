@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import atexit
 import json
+import platform
 import os
 import signal
 import socket
@@ -229,21 +230,74 @@ def can_see(engine: "Engine | None") -> tuple[bool, str]:
         return False, "No AI engine connected."
     if engine.kind == "bundled":
         files = bundled_files()
-        gguf = bundled_dir() / "models" / f"{engine.model}.gguf"
-        if not gguf.exists() and files:
-            gguf = files[1]
-        if projector_for(gguf):
+        gguf = model_file(engine.model) or (files[1] if files else None)
+        if gguf and projector_for(gguf):
             return True, ""
         return False, ("Gemma's vision add-on is not installed yet. Settings › Gemma on this computer downloads it "
                        "(175 MB for Gemma 4 12B, 1.0 GB for E4B).")
     return True, ""
 
 
+MIN_MODEL_BYTES = 500_000_000      # anything smaller isn't a usable Gemma (or is still downloading)
+
+
+def chosen_model() -> Path | None:
+    """The model file picked with Settings › Locate a model (1.2.2), wherever it is, if it is still there."""
+    from . import store
+    p = ((store.load_settings().get("ai_engine") or {}).get("model_path") or "").strip()
+    f = Path(p).expanduser() if p else None
+    return f if f and f.is_file() and f.suffix.lower() == ".gguf" else None
+
+
+def located_models() -> list[Path]:
+    """Models outside the Studio's own folder (1.2.2; Tim, 5 Nov, on Jon's Mac): the chosen file, then any Gemma
+    .gguf at the top of Downloads. Downloads isn't searched when a test or support build sets STUDIO_LLM_DIR."""
+    out = [m for m in [chosen_model()] if m]
+    if not os.environ.get("STUDIO_LLM_DIR"):
+        try:
+            for f in sorted((Path.home() / "Downloads").glob("*.gguf")):
+                n = f.name.lower()
+                if "gemma" in n and "mmproj" not in n and f not in out and f.stat().st_size >= MIN_MODEL_BYTES:
+                    out.append(f)
+        except OSError:
+            pass
+    return out
+
+
+def model_file(stem: str) -> Path | None:
+    """The file for a model name, in the Studio's folder or where it was found."""
+    return next((m for m in _models(bundled_dir()) + located_models() if m.stem == stem), None)
+
+
 def bundled_files() -> tuple[Path, Path] | None:
-    """The engine and its largest installed model (the larger Gemma writes better)."""
-    d = bundled_dir()
-    exe, models = d / SERVER_EXE, _models(d)
-    return (exe, max(models, key=lambda m: m.stat().st_size)) if exe.exists() and models else None
+    """The engine and the model to run: the one chosen in Settings, else the largest in the Studio's folder (the larger
+    Gemma writes better), else the largest Gemma found in Downloads."""
+    exe = bundled_dir() / SERVER_EXE
+    if not exe.exists():
+        return None
+    chosen = chosen_model()
+    if chosen:
+        return exe, chosen
+    models = _models(bundled_dir()) or located_models()
+    return (exe, max(models, key=lambda m: m.stat().st_size)) if models else None
+
+
+def _memory_gb() -> int:
+    from . import fetch
+    return fetch.memory_gb()
+
+
+def fit_engine(ctx: int, gpu_layers: int, slots: int) -> tuple[list[int], int, int]:
+    """Size the engine to the machine (1.2.2). On 12 GB or less: one slot and at most an 8K context, so loading the
+    model can't take the whole memory (Jon's 8 GB MacBook locked up with two 16K slots). Intel Macs run it on the
+    processor: their built-in graphics share the same small memory."""
+    tries = [slots, 1] if slots > 1 else [1]
+    mem = _memory_gb()
+    if mem and mem <= 12:
+        tries, ctx = [1], min(ctx, 8192)
+    if sys.platform == "darwin" and platform.machine() == "x86_64":
+        gpu_layers = 0
+    return tries, ctx, gpu_layers
 
 
 MODES = ("quick", "deep")
@@ -271,7 +325,7 @@ def resolve(settings: dict, mode: str | None = None, use: str = "writing") -> tu
         if want not in names:
             return None, f"The {mode} model '{want}' is not installed in Ollama at {engine.url}."
     elif engine.kind == "bundled":
-        if not any(f.stem == want for f in _models(bundled_dir())):
+        if not model_file(want):
             return None, f"The {mode} model '{want}' is not in this installation."
     return Engine(engine.kind, engine.url, want, engine.api_key), ""
 
@@ -421,15 +475,16 @@ class _Bundled:
             if not files:
                 raise EngineError("No built-in model in this installation.")
             exe, gguf = files
-            if model and (bundled_dir() / "models" / f"{model}.gguf").exists():
-                gguf = bundled_dir() / "models" / f"{model}.gguf"
+            if model and model_file(model):
+                gguf = model_file(model)
             projector = projector_for(gguf)
             if self.proc and self.proc.poll() is None:
                 if self.model == gguf and self.projector == projector:
                     return self.url
                 self.stop()                                   # switching model: one loaded at a time
             self.model, self.projector = gguf, projector
-            for slots in ([self.SLOTS, 1] if self.SLOTS > 1 else [1]):
+            tries, ctx, gpu_layers = fit_engine(ctx, gpu_layers, self.SLOTS)
+            for slots in tries:
                 if self._start(exe, gguf, projector, ctx, gpu_layers, slots, load_timeout):
                     self.slots = slots
                     return self.url

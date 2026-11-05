@@ -13,17 +13,23 @@ from . import bfiread, brandspot, casting, coverage, elements, lookbook, report,
 _lock = threading.Lock()
 _thread: threading.Thread | None = None
 _stop = threading.Event()
+_wake = threading.Event()
 POLL = 2.0
 
 
-def ensure_worker() -> None:
+def ensure_worker(delay: float = 0) -> None:
+    """Start the worker. At launch the Studio passes a delay (1.2.2): a queue left from the last session waits that long,
+    so the window has opened before the engine loads (Jon's 8 GB Mac stayed black while it loaded at once). A job
+    added from the interface wakes the worker straight away."""
     global _thread
     with _lock:
         if _thread and _thread.is_alive():
+            _wake.set()
             return
         store.requeue_interrupted()
         _stop.clear()
-        _thread = threading.Thread(target=_loop, name="studio-jobs", daemon=True)
+        _wake.clear()
+        _thread = threading.Thread(target=_loop, args=(delay,), name="studio-jobs", daemon=True)
         _thread.start()
 
 
@@ -34,7 +40,9 @@ def stop_worker(timeout: float = 10) -> None:
         _thread.join(timeout)
 
 
-def _loop() -> None:
+def _loop(delay: float = 0) -> None:
+    if delay:
+        _wake.wait(delay)
     while not _stop.is_set():
         job = store.claim_job()
         if not job:

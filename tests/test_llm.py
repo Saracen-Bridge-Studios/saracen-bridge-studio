@@ -221,6 +221,7 @@ def test_built_in_engine_gives_a_job_and_the_chat_a_slot_each(monkeypatch, tmp_p
     monkeypatch.setenv("STUDIO_LLM_DIR", str(tmp_path))
     monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
     monkeypatch.setenv("FAKE_ARGS", str(tmp_path / "args.jsonl"))
+    monkeypatch.setattr(llm, "_memory_gb", lambda: 32)   # a 32 GB machine: two slots (smaller ones: tests/test_locate_model.py)
     b = llm._Bundled()
     try:
         b.ensure(16384, 99, load_timeout=30)

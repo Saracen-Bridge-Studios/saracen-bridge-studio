@@ -451,7 +451,7 @@ def main() -> None:
     log("Loading the engine")
     server = serve(port)
     from studio import jobs
-    jobs.ensure_worker()          # resume any coverage queue left from the last session
+    jobs.ensure_worker(delay=20)  # resume any queue left from the last session, once the window is up (1.2.2)
     url = f"http://127.0.0.1:{port}/"
     log(f"Saracen Bridge Studio {_version()} running at {url}")
     if args.headless:

@@ -2850,10 +2850,30 @@ function gemmaCard() {
       el("div", { class: "row", style: "margin-top:14px" }, el("button", { type: "button", class: "btn primary sm", onclick: () => go(d.model) }, icon("download"), "Try again"))];
     else {
       const have = Object.keys(d.options).filter(m => opt(m).installed);
-      bodyEls = [have.length ? el("p", { class: "small", style: "margin:0 0 12px" }, icon("check"), ` ${have.map(m => opt(m).name).join(" and ")} installed and ready.`) : null,
-        el("div", { class: "row", style: "gap:10px" }, ["12b", "e4b"].filter(m => !opt(m).installed).map(m => el("button", { type: "button", class: "btn sm" + (m === rec && !have.length ? " primary" : ""), onclick: () => go(m) },
+      const L = d.located;            /* 1.2.2: a model found in Downloads, or chosen with Locate, anywhere on the computer */
+      const locatedEls = L ? [el("p", { class: "small", style: "margin:0 0 6px" }, icon("check"), " ", el("b", {}, L.name), L.chosen ? " (chosen by you)" : " (found in Downloads)"),
+        el("p", { class: "muted small", style: "margin:0 0 10px;overflow-wrap:anywhere" }, L.path, L.vision ? " · vision add-on found beside it" : " · no vision add-on beside it (Look Book needs it)"),
+        !d.engine_installed ? el("div", { class: "row", style: "gap:10px;margin-bottom:12px" },
+          el("button", { type: "button", class: "btn primary sm", onclick: () => go("engine") }, icon("download"), `Get the AI engine to run it · ${(d.engine_bytes / 1e6).toFixed(0)} MB`)) : null] : [];
+      const locate = async clear => {
+        try {
+          const r = await api.post("/api/ai/locate", clear ? { clear: true } : {});
+          if (r.cancelled) return;
+          if (r.cleared) toast("info", "The Studio will find Gemma by itself again");
+          else toast("ok", `Using ${r.name}`, r.engine_installed ? "Writing tools use it from now on." : "Next: get the AI engine to run it (one small download).");
+          AI = await api.get("/api/ai/status").catch(() => AI); engineChip();
+        } catch (e) { toast("bad", "Couldn't use that file", e.message); }
+        draw();
+      };
+      const locateRow = el("div", { class: "row", style: "gap:10px;margin-top:12px" },
+        el("button", { type: "button", class: "btn sm", onclick: () => locate(false) }, icon("search"), L ? "Choose a different model file…" : "Locate a model file…"),
+        L && L.chosen ? el("button", { type: "button", class: "btn quiet sm", onclick: () => locate(true) }, "Stop using this file") : null);
+      bodyEls = [...locatedEls, have.length && !L ? el("p", { class: "small", style: "margin:0 0 12px" }, icon("check"), ` ${have.map(m => opt(m).name).join(" and ")} installed and ready.`) : null,
+        el("div", { class: "row", style: "gap:10px" }, ["12b", "e4b"].filter(m => !opt(m).installed).map(m => el("button", { type: "button", class: "btn sm" + (m === rec && !have.length && !L ? " primary" : ""), onclick: () => go(m) },
           icon("download"), `${have.length ? "Also download" : "Download"} ${opt(m).name} · ${gb(opt(m).to_download)}`))),
-        !have.length ? el("p", { class: "muted small", style: "margin:10px 0 0" }, d.memory_gb ? `This computer has about ${d.memory_gb} GB of memory: ${rec === "12b" ? "Gemma 4 12B (best writing) suits it." : "Gemma 4 E4B (lighter) suits it; 12B wants about 16 GB."}` : "Gemma 4 12B writes best and wants about 16 GB of memory; E4B is lighter.") : null];
+        !have.length ? el("p", { class: "muted small", style: "margin:10px 0 0" }, d.memory_gb ? `This computer has about ${d.memory_gb} GB of memory: ${rec === "12b" ? "Gemma 4 12B (best writing) suits it." : "Gemma 4 E4B (lighter) suits it; 12B wants about 16 GB."}` : "Gemma 4 12B writes best and wants about 16 GB of memory; E4B is lighter.") : null,
+        locateRow,
+        el("p", { class: "muted small", style: "margin:8px 0 0" }, "Already downloaded Gemma yourself? The Studio looks in Downloads, or choose the .gguf file from any folder.")];
     }
     put(box, head, note, ...bodyEls);
     if (AI.download ? (AI.download.state !== d.state || AI.download.done_bytes !== d.done_bytes) : true) { AI.download = d; engineChip(); }

@@ -60,10 +60,11 @@ ITEMS: dict[str, dict] = {
                    "url": "https://huggingface.co/google/gemma-4-E4B-it-qat-q4_0-gguf/resolve/main/gemma-4-E4B-it-mmproj.gguf",
                    "sha256": "7498a37cb619e55f2fcf87eb931f56e99389ed6d432e4c5c66110694c0d65578"},
 }
-PLANS = {"12b": ("engine", "12b", "12b-vision"), "e4b": ("engine", "e4b", "e4b-vision")}
+PLANS = {"12b": ("engine", "12b", "12b-vision"), "e4b": ("engine", "e4b", "e4b-vision"),
+         "engine": ("engine",)}      # 1.2.2: only the engine, for a model the person already has (Settings › Locate)
 if os.environ.get("STUDIO_FETCH_ITEMS"):        # test builds only: the same items served from a local test server
     ITEMS = {**ITEMS, **json.loads(Path(os.environ["STUDIO_FETCH_ITEMS"]).read_text(encoding="utf-8"))}
-NAMES = {"12b": "Gemma 4 12B", "e4b": "Gemma 4 E4B"}
+NAMES = {"12b": "Gemma 4 12B", "e4b": "Gemma 4 E4B", "engine": "the AI engine"}
 
 CHUNK = 1 << 20
 READ_TIMEOUT = 60            # seconds without a byte before a connection counts as stalled
@@ -192,7 +193,10 @@ def status() -> dict:
     s["active"] = s.get("state") in ("downloading", "retrying", "checking", "unpacking", "starting")
     s["memory_gb"] = memory_gb()
     s["options"] = {m: {"name": NAMES[m], "bytes": sum(ITEMS[k]["size"] for k in PLANS[m]),
-                        "to_download": sum(ITEMS[k]["size"] for k in missing(m)), "installed": not missing(m)} for m in PLANS}
+                        "to_download": sum(ITEMS[k]["size"] for k in missing(m)), "installed": not missing(m)}
+                    for m in PLANS if m != "engine"}
+    s["engine_installed"] = not missing("engine")
+    s["engine_bytes"] = ITEMS["engine"]["size"]
     if not s["active"] and model and s.get("state") not in ("error", "paused"):
         rest = missing(model)
         s["state"] = "done" if not rest else ("waiting" if s.get("state") == "idle" else s.get("state"))
