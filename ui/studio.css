@@ -999,3 +999,83 @@ td.evidence { min-width: 320px; white-space: normal; }
 .pf-list li { margin: 2px 0; }
 .pf details summary { cursor: pointer; color: var(--fg-3); }
 .pf details p { margin: 6px 0 0; color: var(--fg-2); max-width: 760px; }
+
+/* ================================================================ 1.2.1 refinement ("quiet luxury", Rule 1, 5 Nov 2026)
+   Same palette, fonts and rules (Tim, 12-13 Oct: purple crest, black and gold, gold gradient on every selected control,
+   no category label above titles). What changes is restraint: gold that reads as metal and glows less, labels set in the
+   interface typeface instead of a terminal font, one surface per region instead of boxes inside boxes, a quieter rail,
+   quieter notices, and figures set like a ledger. */
+:root {
+  /* metal: a specular band near the top and a darker rim, so gold reads as polished metal rather than yellow plastic */
+  --gold-metal: linear-gradient(180deg, #fbe7ad 0%, #fff6d8 18%, #efc65f 46%, #d9a53a 70%, #a8761c 100%);
+  --gold-tab: radial-gradient(120% 140% at 20% -20%, rgba(255, 250, 230, .7) 0%, rgba(255, 250, 230, 0) 50%),
+    linear-gradient(112deg, #f6e2a8 0%, #efcd78 28%, #ddb052 56%, #c18f30 82%, #a57620 100%);
+  --gold-tab-shadow: inset 0 1px 0 rgba(255, 252, 238, .55), inset 0 -1px 0 rgba(108, 75, 15, .4), 0 0 0 1px rgba(181, 134, 46, .55),
+    0 4px 12px -8px rgba(219, 165, 52, .55);
+  --label: 600 10px/1.2 var(--sans);           /* small caps-style labels, in Geist (the bundled serif has no small caps) */
+  --surface-sheen: linear-gradient(180deg, rgba(255, 246, 230, .022), rgba(255, 246, 230, 0) 120px);
+}
+
+/* labels: the interface typeface, uppercase with open tracking and capital-height punctuation; monospace stays for codes and keys */
+nav .grp, th, .kpi .l, .eyebrow, .section-title small, .tabs .lbl, .run-meta, .ledger .l, .tile .code, .side-foot .ver,
+.palette .grp, .side-card h2 small, .cloud-card h2 small, .provs button small, .tag, .mark small {
+  font: var(--label); letter-spacing: .15em; font-feature-settings: "case"; }
+.eyebrow { font-size: 10.5px; letter-spacing: .24em; }
+.run-meta { font-size: 10.5px; letter-spacing: .16em; }
+.mark small { font-size: 9px; letter-spacing: .62em; color: var(--gold-300); opacity: .7; }
+th { color: var(--fg-3); }
+
+/* figures: lining and tabular in Geist, right-aligned, like a ledger; monospace only where the value is a code */
+.num, td.num, th.num { font-family: var(--sans); font-variant-numeric: lining-nums tabular-nums; letter-spacing: .01em; }
+td { font-variant-numeric: tabular-nums; }
+
+/* the rail: recedes once you have arrived (Linear, Mar 2026: "don't compete for attention you haven't earned") */
+nav a { height: 28px; color: var(--fg-3); font-size: 13.25px; }
+nav a .ic { color: var(--fg-4); opacity: .85; }
+nav .grp { margin: 10px 10px 4px; color: rgba(135, 127, 143, .7); }
+@media (hover: hover) { nav a:hover { color: var(--fg); } }
+/* every page fits at 900 px high; when it doesn't, the edges fade to say the list scrolls */
+nav.fade-b { mask-image: linear-gradient(180deg, #000 calc(100% - 26px), transparent 100%); }
+nav.fade-t { mask-image: linear-gradient(180deg, transparent 0, #000 18px); }
+nav.fade-t.fade-b { mask-image: linear-gradient(180deg, transparent 0, #000 18px, #000 calc(100% - 26px), transparent 100%); }
+
+/* one surface per region: a card inside a card loses its fill and lift and keeps a hairline */
+.card { background-image: var(--surface-sheen); border-color: rgba(222, 200, 255, .065); }
+.card .card, .card .kpi, .card .side-card { background: transparent !important; box-shadow: none; border-color: var(--line); }   /* !important: some panels set their fill inline */
+.kpi { background: rgba(7, 5, 11, .35); }
+.kpi .v { font-size: 36px; letter-spacing: -.01em; margin-top: 14px; }
+
+/* notices: a quiet line, not a banner on every page (banner blindness; the message still leads) */
+.notice { background: linear-gradient(90deg, rgba(107, 63, 180, .12), rgba(107, 63, 180, 0) 70%); border: 0; border-left: 2px solid rgba(157, 111, 226, .6);
+  border-radius: 0 var(--r) var(--r) 0; padding: 12px 14px 12px 16px; font-size: 13px; }
+.notice .ic { width: 28px; height: 28px; background: transparent; box-shadow: 0 0 0 1px rgba(157, 111, 226, .3) inset; }
+.notice .sub { color: var(--fg-3); }
+
+/* inputs: a lifted, faintly lit field rather than a hole; the focus ring sits just outside in gold */
+input[type=text], input[type=number], input[type=search], input[type=password], select, textarea {
+  background-color: rgba(255, 246, 230, .028); border-color: rgba(222, 200, 255, .11); box-shadow: 0 1px 0 rgba(0, 0, 0, .25) inset; }
+@media (hover: hover) { input:hover:not(:focus), select:hover:not(:focus), textarea:hover:not(:focus) { border-color: rgba(222, 200, 255, .2); } }
+input:focus, select:focus, textarea:focus { background-color: rgba(255, 246, 230, .04); border-color: rgba(239, 198, 95, .7);
+  box-shadow: 0 0 0 3px rgba(219, 165, 52, .12), 0 1px 0 rgba(0, 0, 0, .25) inset; }
+label.f { color: var(--fg-2); font-weight: 450; font-size: 12.5px; }
+
+/* buttons: the primary is metal with a fine dark rim and a short, low glow; secondaries are quiet glass */
+.btn.primary { color: #241a07; letter-spacing: .005em;
+  box-shadow: 0 1px 0 rgba(255, 252, 238, .7) inset, 0 -1px 0 rgba(90, 60, 10, .35) inset, 0 0 0 1px rgba(140, 100, 30, .7), 0 6px 16px -10px rgba(219, 165, 52, .7); }
+.btn:not(.primary):not(.quiet) { background: rgba(255, 246, 230, .035); border-color: rgba(222, 200, 255, .12); }
+@media (hover: hover) { .btn:not(.primary):not(.quiet):hover { background: rgba(255, 246, 230, .065); border-color: rgba(239, 198, 95, .35); } }
+
+/* tables: structure felt, not seen */
+th { background: transparent; border-bottom-color: rgba(222, 200, 255, .1); padding-top: 14px; }
+td { border-bottom-color: rgba(222, 200, 255, .05); }
+@media (hover: hover) { tbody tr:hover td { background: rgba(219, 165, 52, .03); } }
+
+/* page head: a fine gold hairline closes the title block (an ornament, not a label) */
+main#app > h1:first-child + .lede::after { content: ""; display: block; width: 44px; height: 1px; margin-top: 22px;
+  background: linear-gradient(90deg, var(--gold-400), rgba(242, 192, 77, 0)); }
+/* the rail's crest plate a touch smaller, so all seventeen pages and their groups fit at 900 px */
+.mark { padding-bottom: 6px; }
+.mark img, .mark .sb3d { max-width: 178px; }
+.mark small { margin-top: 8px; }
+nav .grp { margin-top: 9px; }
+.list .when { font: 500 12px var(--sans); font-variant-numeric: tabular-nums; letter-spacing: .02em; }

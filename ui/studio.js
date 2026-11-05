@@ -616,6 +616,16 @@ function buildNav(route) {
     CAT.groups.map(g => [el("div", { class: "grp" }, g), CAT.tools.filter(t => t.group === g && t.menu !== false).map(t => link(`#/tool/${t.id}`, t.name, ICONS[t.id] ? t.id : "file"))]),
     el("div", { class: "grp" }, "Studio"), link("#/room", "Room", "users", typeof roomBadge === "function" ? roomBadge() : null),
     link("#/library", "Library", "library"), link("#/settings", "Settings", "settings"));
+  /* on a short window the rail scrolls: keep the page you're on in view (1.2.1) */
+  const cur = nav.querySelector('[aria-current="page"]');
+  requestAnimationFrame(() => { if (cur) cur.scrollIntoView({ block: "nearest" }); navFade(); });
+  if (!nav.dataset.fade) { nav.dataset.fade = "1"; nav.addEventListener("scroll", navFade, { passive: true }); addEventListener("resize", navFade); }
+}
+/* fade an edge of the rail only when there is more list beyond it */
+function navFade() {
+  const n = document.getElementById("nav"); if (!n) return;
+  n.classList.toggle("fade-t", n.scrollTop > 2);
+  n.classList.toggle("fade-b", n.scrollTop + n.clientHeight < n.scrollHeight - 2);
 }
 const prettyModel = m => String(m || "").replace(/\.gguf$/i, "").replace(/[-_](it|instruct)([-_].*)?$/i, "").split(/[-_:\s]+/).filter(Boolean)
   .map((w, i) => /^\d+(\.\d+)?[bkm]$/i.test(w) || /^e\d+b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
