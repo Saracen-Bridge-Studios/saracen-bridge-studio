@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
-from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, refdata, script, store, termsheet
+from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
 VERSION = "1.1.7"
 UI_DIR = refdata.app_root() / "ui"
@@ -869,6 +869,37 @@ def incentive_programmes(country: str = "", all: bool = False):
     return lookups.programmes(country, include_unavailable=all)
 
 
+@app.get("/api/tools/incentives/producer-fees")
+def producer_fee_routes():
+    """Saracen Bridge's producer-fee allowance table (1.2.0): the routes and the method notes."""
+    t = producerfee.table()
+    return {"routes": producerfee.summary(), "notes": t["notes"], "checked": t["checked"], "source": t["source"]}
+
+
+@app.post("/api/tools/incentives/producer-fee")
+def producer_fee_check(body: dict = Body(...)):
+    try:
+        return producerfee.assess(body.get("route", ""), body)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+
+def _route_fees(r: dict, pf: dict | None) -> dict | None:
+    """The producer-fee allowance for one incentive route, from the page's fees and the route's own figures."""
+    if not pf or not (pf.get("fees") and any(f.get("amount") not in (None, "") for f in pf["fees"])):
+        return None
+    route = producerfee.for_programme(r["programme_id"])
+    if not route:
+        return {"route": None, "status": "uncovered", "status_label": "Not in Saracen Bridge's producer-fee table"}
+    rule = refdata.programme_rule(r["programme_id"])
+    ctx = dict(pf, local_spend=r.get("qualifying_spend"),
+               worldwide_budget=r.get("project_cost") if r.get("project_cost") is not None else pf.get("worldwide_budget"),
+               incentive_rate=rule.get("rate_1"))
+    out = producerfee.assess(route["id"], ctx)
+    out["currency"] = rule["programme_currency"]          # the route's figures are in the programme's currency
+    return out
+
+
 @app.post("/api/tools/incentives/calc")
 def incentive_calc(body: dict = Body(...)):
     routes = body.get("routes", [])
@@ -877,12 +908,27 @@ def incentive_calc(body: dict = Body(...)):
     unknown = [r.get("programme_id") for r in routes if not refdata.has_programme(r.get("programme_id"))]
     if unknown:
         raise HTTPException(400, f"Unknown programme: {', '.join(map(str, unknown))}. Pick it from the list.")
+    pf = body.get("producer_fees") or None
     for r in routes:
-        res = incentive.calculate(r["programme_id"], r.get("qualifying_spend"), project_cost=r.get("project_cost"),
+        fees = _route_fees(r, pf)
+        spend, note = r.get("qualifying_spend"), None
+        if r.get("fees_in_spend") and fees and spend is not None:
+            if fees.get("excluded") is not None:
+                spend = max(spend - fees["excluded"], 0.0)
+                if fees["excluded"]:
+                    note = (f"Producer and EP fees above the allowance ({fees['excluded']:,.0f}) are kept out of the "
+                            f"qualifying spend (Saracen Bridge producer-fee table).")
+        res = incentive.calculate(r["programme_id"], spend, project_cost=r.get("project_cost"),
                                   eligibility=r.get("eligibility", "Unknown"), selected=selected)
+        if note:
+            res.reasons.append(note)
+        if r.get("fees_in_spend") and fees and fees.get("excluded") is None:
+            res._downgrade("PRELIMINARY", "Producer and EP fees are in the spend, but their allowance isn't settled: "
+                           + ("; ".join(fees.get("needs", []) + fees.get("confirm", [])) or fees.get("status_label", "")))
         rule = refdata.programme_rule(r["programme_id"])
         results.append(asdict(res) | {"programme_name": rule["programme_name"], "jurisdiction": rule["jurisdiction"],
-                                      "last_verified": rule["last_verified"], "official_source": rule["official_source"]})
+                                      "last_verified": rule["last_verified"], "official_source": rule["official_source"],
+                                      "producer_fee": fees})
     if body.get("save", True) and results:
         store.save_run("incentives", body.get("title") or ", ".join(sorted(selected)), body, {"results": results})
     return results

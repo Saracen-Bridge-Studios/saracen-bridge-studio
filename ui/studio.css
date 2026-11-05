@@ -991,3 +991,11 @@ td.evidence { min-width: 320px; white-space: normal; }
   box-shadow: 0 18px 40px rgba(0, 0, 0, .45); }
 .ms-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px 14px; }
 .ms-opt { display: flex; align-items: center; font-size: 13.5px; color: var(--fg-2); cursor: pointer; font-weight: 450; }
+
+/* 1.2.0: producer and EP fees (Location & Incentives) */
+.pf { margin-top: 10px; display: grid; gap: 6px; }
+.pf-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pf-list { margin: 0; padding-left: 18px; color: var(--fg-2); }
+.pf-list li { margin: 2px 0; }
+.pf details summary { cursor: pointer; color: var(--fg-3); }
+.pf details p { margin: 6px 0 0; color: var(--fg-2); max-width: 760px; }

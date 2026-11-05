@@ -1233,11 +1233,31 @@ function warningGroups(warnings) {
 
 /* ---------------- results: one view each, used by the tool page and by the Library (15 Oct audit: the Library showed raw JSON) */
 const kpi = (l, v, edge) => el("div", { class: "kpi" + (edge ? " edge" : "") }, el("div", { class: "l" }, l), el("div", { class: "v" }, v));
+/* 1.2.0: producer and EP fees, from Saracen Bridge's producer-fee allowance table (sources checked 21 Oct 2026) */
+const PF_PILL = { rule: "PASS", benchmark: "WARN", actual: "WARN", confirm: "PRELIMINARY", zero: "FAIL", unavailable: "FAIL", uncovered: "PRELIMINARY" };
+function producerFeeResult(a, compact) {
+  if (!a) return null;
+  if (a.status === "uncovered") return el("div", { class: "pf small" }, el("span", { class: "pill PRELIMINARY" }, "Producer fees"), " Not in Saracen Bridge's producer-fee table: confirm with the local incentive accountant.");
+  const cur = a.currency ? ` ${a.currency}` : "";
+  const head = el("div", { class: "pf-head" }, el("span", { class: "pill " + (PF_PILL[a.status] || "WARN") }, a.status_label),
+    el("b", {}, a.eligible === null || a.eligible === undefined ? "Eligible amount not settled" : `Eligible ${fmt(a.eligible)}${cur} of ${fmt(a.total_fees)}`),
+    a.excluded ? el("span", { class: "muted" }, ` · ${fmt(a.excluded)} stays out of the incentive`) : null,
+    a.share_of_budget !== null && a.share_of_budget !== undefined ? el("span", { class: "muted" }, ` · ${pct(a.share_of_budget)} of the worldwide budget`) : null);
+  return el("div", { class: "pf" }, head,
+    compact ? null : el("div", { class: "small muted" }, `${a.country} · ${a.regions} · ${a.name}`),
+    (a.basis || []).length ? el("ul", { class: "pf-list small" }, a.basis.map(b => el("li", {}, b))) : null,
+    (a.lines || []).filter(l => l.why).length ? el("ul", { class: "pf-list small" }, a.lines.filter(l => l.why).map(l => el("li", {}, `${l.role} (${fmt(l.amount)}): ${l.why}`))) : null,
+    (a.needs || []).length ? el("div", { class: "small", style: "color:var(--warn)" }, "Needs: ", a.needs.join(" ")) : null,
+    (a.confirm || []).length ? el("div", { class: "small", style: "color:var(--warn)" }, a.confirm.join(" ")) : null,
+    compact ? null : el("details", { class: "small" }, el("summary", {}, "Saracen Bridge's note"), el("p", {}, a.allowance), a.apply ? el("p", {}, a.apply) : null,
+      el("p", { class: "muted" }, `Source: ${a.source || "Saracen Bridge"}; checked ${a.checked}. Have the local incentive accountant confirm the route and any "confirm" entries before locking the finance plan.`)));
+}
 function incentivesResult(res) {
   return [el("div", { class: "card flush" }, table(["Programme", "Gate", "#Eligible base", "#Gross benefit", "#Tax effect", "#Net"], res.map(r => el("tr", {},
       el("td", {}, el("div", { style: "white-space:nowrap;font-weight:650" }, r.programme_id, el("span", { class: "muted mono", style: "font-weight:400;margin-left:8px" }, r.currency)), el("div", { class: "small muted" }, r.programme_name),
         r.last_verified ? el("div", { class: "small muted" }, "Verified " + String(r.last_verified).slice(0, 10)) : null,
-        (r.reasons || []).length ? el("div", { class: "small", style: "margin-top:6px;color:var(--fg-2)" }, r.reasons.join(" ")) : null),
+        (r.reasons || []).length ? el("div", { class: "small", style: "margin-top:6px;color:var(--fg-2)" }, r.reasons.join(" ")) : null,
+        r.producer_fee ? producerFeeResult(r.producer_fee, true) : null),
       el("td", {}, el("span", { class: "pill " + r.gate }, r.gate)), el("td", { class: "num" }, fmt(r.eligible_base)),
       el("td", { class: "num" }, fmt(r.gross_benefit)), el("td", { class: "num" }, fmt(r.tax_effect)), el("td", { class: "num" }, el("b", {}, fmt(r.net_after_tax))))))),
     el("p", { class: "muted small" }, "Rules from the Saracen Bridge audited incentive model (26 Aug 2026). Unknown inputs stay unknown and keep a result PRELIMINARY. Confirm with the authority and local advisers before relying on any figure.")];
@@ -1332,7 +1352,8 @@ function agreementResult(r, withFiles) {
 /* what was entered, shown above a saved result */
 function inputsView(r) {
   const i = r.inputs || {}, box = (title, node) => el("div", { class: "card flush", style: "margin-top:22px" }, el("h2", { style: "padding:20px 20px 0" }, title), node);
-  if (r.tool === "incentives") return box("Routes", table(["Programme", "#Spend", "#Project cost", "Eligibility"], (i.routes || []).map(x => el("tr", {}, el("td", {}, el("b", {}, x.programme_id)), el("td", { class: "num" }, fmt(x.qualifying_spend)), el("td", { class: "num" }, fmt(x.project_cost)), el("td", {}, x.eligibility || "Unknown")))));
+  if (r.tool === "incentives") return [box("Routes", table(["Programme", "#Spend", "#Project cost", "Eligibility", "Fees in spend"], (i.routes || []).map(x => el("tr", {}, el("td", {}, el("b", {}, x.programme_id)), el("td", { class: "num" }, fmt(x.qualifying_spend)), el("td", { class: "num" }, fmt(x.project_cost)), el("td", {}, x.eligibility || "Unknown"), el("td", {}, x.fees_in_spend ? "Yes" : "No"))))),
+    ((i.producer_fees || {}).fees || []).length ? box("Producer and EP fees", table(["Role", "#Fee", "Resident there", "Paid as"], i.producer_fees.fees.map(f => el("tr", {}, el("td", {}, f.role), el("td", { class: "num" }, fmt(f.amount)), el("td", {}, f.resident), el("td", {}, f.paid_as))))) : null];
   if (r.tool === "finance" && !r.outputs.termsheet) return box(`Sources · gross budget ${fmt(i.gross_budget)} ${i.currency || ""}`, table(["Source", "#Amount", "Status", "Cash", "Inside package"], (i.sources || []).map(x => el("tr", {}, el("td", {}, x.name), el("td", { class: "num" }, fmt(x.amount)), el("td", {}, x.status), el("td", {}, x.cash === false ? "No" : "Yes"), el("td", { class: "muted" }, x.parent || "—")))));
   if (r.tool === "greenlight") return box("Scores entered", table(["Check", "Value"], [["Overall", i.overall + "%"], ["Finance", i.finance + "%"], ["Legal", i.legal + "%"], ["Bond & insurance", i.bond_insurance + "%"], ["Production & delivery", i.production_delivery + "%"], ["Critical blockers", i.critical_blockers ?? 0],
     ["Funding gap remains", i.funding_gap ? "Yes" : "No"], ["All sign-offs approved", i.signoffs_approved ? "Yes" : "No"], ["Every condition has an owned, dated cure", i.cures_owned_and_timed ? "Yes" : "No"]].map(([k, v]) => el("tr", {}, el("td", {}, k), el("td", {}, String(v))))));
@@ -2262,27 +2283,67 @@ const PANELS = {
     }]]);
   },
   async incentives(box) {
+    /* producer and EP fees (1.2.0): shared by the routes below and by the allowance check */
+    const pfTable = await api.get("/api/tools/incentives/producer-fees").catch(() => ({ routes: [], notes: [] }));
+    const fees = [], feeBody = el("tbody", {});
+    const num = (label, ph) => el("input", { type: "number", min: 0, placeholder: ph || "", "aria-label": label });
+    const sel = (label, opts) => el("select", { "aria-label": label }, opts.map(([v, t]) => el("option", { value: v }, t)));
+    const pfBC = num("B+C (production plus post costs)"), pfATL = num("Other ATL in the pool"), pfOH = num("Overheads in the pool");
+    const pfDoc = el("input", { type: "checkbox", "aria-label": "Documentary" });
+    const addFee = (f) => { fees.push(Object.assign({ role: "Producer", amount: null, resident: "unknown", paid_as: "unknown", related: false }, f || {})); drawFees(); };
+    const drawFees = () => put(feeBody, fees.length ? fees.map((f, i) => {
+      const amt = num(`Fee ${i + 1}`, "Fee"); amt.value = f.amount ?? ""; amt.addEventListener("input", () => { f.amount = amt.value === "" ? null : Number(amt.value); });
+      const role = sel(`Role ${i + 1}`, ["Producer", "Executive producer", "Co-producer", "Line producer"].map(x => [x, x])); role.value = f.role; role.addEventListener("change", () => { f.role = role.value; });
+      const res = sel(`Resident ${i + 1}`, [["unknown", "Unknown"], ["yes", "Yes"], ["no", "No"]]); res.value = f.resident; res.addEventListener("change", () => { f.resident = res.value; });
+      const paid = sel(`Paid as ${i + 1}`, [["unknown", "Unknown"], ["salary", "Salary (payroll / W-2)"], ["loan-out", "Loan-out or contract"], ["company", "Production company fee"]]); paid.value = f.paid_as; paid.addEventListener("change", () => { f.paid_as = paid.value; });
+      const rel = el("input", { type: "checkbox", "aria-label": `Related party ${i + 1}`, checked: f.related, onchange: e => { f.related = e.target.checked; } });
+      return el("tr", {}, el("td", {}, role), el("td", {}, amt), el("td", {}, res), el("td", {}, paid), el("td", { style: "text-align:center" }, rel),
+        el("td", { style: "text-align:right" }, el("button", { type: "button", class: "btn quiet sm", onclick: () => { fees.splice(i, 1); drawFees(); } }, "Remove")));
+    }) : el("tr", {}, el("td", { colspan: 6, class: "muted small" }, "No fees yet. Add each producer's or executive producer's fee to see how much of it counts towards an incentive.")));
+    drawFees();
+    const pfContext = () => ({ fees: fees.filter(f => f.amount !== null && f.amount !== ""), bc: pfBC.value === "" ? null : Number(pfBC.value),
+      other_atl: pfATL.value === "" ? null : Number(pfATL.value), overheads: pfOH.value === "" ? null : Number(pfOH.value), documentary: pfDoc.checked });
+    const pfRoute = el("select", { "aria-label": "Producer-fee route", style: "min-width:min(360px, 100%)" });
+    const areas = [...new Set(pfTable.routes.map(r => r.area))];
+    put(pfRoute, areas.map(a => el("optgroup", { label: a }, pfTable.routes.filter(r => r.area === a).map(r => el("option", { value: r.id }, `${r.country === "United States" || r.country === "Canada" ? "" : r.country + " · "}${r.regions} · ${r.route}`)))));
+    const pfWB = num("Worldwide budget"), pfLocal = num("Local qualifying spend"), pfOut = el("div", { style: "margin-top:14px" });
+    box.append(el("h2", {}, "Producer and EP fees"),
+      el("p", { class: "muted small", style: "max-width:760px" }, `How much of each producer's or executive producer's fee can count as qualifying expenditure, route by route, from Saracen Bridge's producer-fee table (sources checked ${pfTable.checked || "21 October 2026"}). The eligible fee comes first; any excess stays out of the incentive. Amounts are in the route's own currency.`),
+      el("div", { class: "card flush" }, table(["Role", "#Fee", "Resident there", "Paid as", "Related party", ""], feeBody)),
+      el("div", { class: "row", style: "margin-top:10px" }, el("button", { type: "button", class: "btn", onclick: () => addFee() }, "Add a fee")),
+      el("div", { class: "row", style: "margin-top:14px" }, el("label", { class: "f" }, "B+C (production plus post costs)", pfBC), el("label", { class: "f" }, "Other ATL sharing the pool", pfATL),
+        el("label", { class: "f" }, "Overheads sharing the pool", pfOH), el("label", { class: "small muted", style: "padding-bottom:11px" }, pfDoc, " Documentary")),
+      el("div", { class: "row", style: "margin-top:14px" }, el("label", { class: "f" }, "Check a route", pfRoute), el("label", { class: "f" }, "Worldwide budget", pfWB), el("label", { class: "f" }, "Local qualifying spend", pfLocal),
+        el("button", { type: "button", class: "btn", onclick: async () => {
+          if (!pfContext().fees.length) return toast("info", "Add a fee first", "Enter at least one producer or EP fee.");
+          try { put(pfOut, el("div", { class: "card" }, producerFeeResult(await api.post("/api/tools/incentives/producer-fee", Object.assign(pfContext(), { route: pfRoute.value,
+            worldwide_budget: pfWB.value === "" ? null : Number(pfWB.value), local_spend: pfLocal.value === "" ? null : Number(pfLocal.value) }))))); }
+          catch (e) { put(pfOut, errBox(e)); }
+        } }, "Check allowance")), pfOut,
+      el("hr", { style: "margin:28px 0;border:0;border-top:1px solid var(--line)" }));
     const country = el("input", { type: "search", placeholder: "Filter by country or region", "aria-label": "Filter programmes" });
     const prog = el("select", { "aria-label": "Programme", style: "min-width:min(320px, 100%)" });
     const spend = el("input", { type: "number", placeholder: "Qualifying spend", "aria-label": "Qualifying spend" });
     const cost = el("input", { type: "number", placeholder: "Total production cost", "aria-label": "Total production cost" });
     const all = el("input", { type: "checkbox", "aria-label": "Include limited and closed programmes" });
     const elig = el("select", { "aria-label": "Eligibility" }, ["Eligible", "Unknown", "Manual Review", "Excluded"].map(v => el("option", {}, v)));
+    const inSpend = el("input", { type: "checkbox", "aria-label": "Producer and EP fees are inside this spend" });
     const routes = [], list = el("tbody", {}), out = el("div", { style: "margin-top:20px" });
     const load = async () => { const ps = await api.get(`/api/tools/incentives/programmes?country=${encodeURIComponent(country.value)}&all=${all.checked}`);
       put(prog, ps.map(p => el("option", { value: p.programme_id }, `${p.programme_id} · ${p.programme_name} (${p.programme_currency})${p.availability_status === "Active" ? "" : " · " + p.availability_status}`))); };
     country.addEventListener("input", load); all.addEventListener("change", load); await load();
-    const redraw = () => put(list, routes.length ? routes.map((r, i) => el("tr", {}, el("td", {}, el("b", {}, r.programme_id)), el("td", { class: "num" }, fmt(r.qualifying_spend)), el("td", { class: "num" }, fmt(r.project_cost)), el("td", {}, r.eligibility),
+    const redraw = () => put(list, routes.length ? routes.map((r, i) => el("tr", {}, el("td", {}, el("b", {}, r.programme_id)), el("td", { class: "num" }, fmt(r.qualifying_spend)), el("td", { class: "num" }, fmt(r.project_cost)), el("td", {}, r.eligibility), el("td", {}, r.fees_in_spend ? "Yes" : "No"),
       el("td", { style: "text-align:right" }, el("button", { type: "button", class: "btn quiet sm", onclick: () => { routes.splice(i, 1); redraw(); } }, "Remove"))))
-      : el("tr", {}, el("td", { colspan: 5, class: "muted small" }, "No routes yet. Pick a programme, enter the spend and add it.")));
+      : el("tr", {}, el("td", { colspan: 6, class: "muted small" }, "No routes yet. Pick a programme, enter the spend and add it.")));
     redraw();
     box.append(el("h2", {}, "Routes to compare"), el("div", { class: "row" }, el("label", { class: "f" }, "Country", country), el("label", { class: "f" }, "Programme", prog), el("label", { class: "small muted", style: "padding-bottom:11px" }, all, " Include limited and closed")),
       el("div", { class: "row", style: "margin-top:12px" }, el("label", { class: "f" }, "Qualifying spend (programme currency)", spend), el("label", { class: "f" }, "Total production cost", cost), el("label", { class: "f" }, "Eligibility", elig),
-        el("button", { type: "button", class: "btn", onclick: () => { routes.push({ programme_id: prog.value, qualifying_spend: spend.value === "" ? null : Number(spend.value), project_cost: cost.value === "" ? null : Number(cost.value), eligibility: elig.value }); redraw(); toast("info", "Route added", `${prog.value}: ${spend.value ? fmt(spend.value) : "spend unknown"}`); } }, "Add route")),
-      el("div", { class: "card flush", style: "margin-top:16px" }, table(["Programme", "#Spend", "#Project cost", "Eligibility", ""], list)),
+        el("label", { class: "small muted", style: "padding-bottom:11px" }, inSpend, " Producer and EP fees are inside this spend"),
+        el("button", { type: "button", class: "btn", onclick: () => { routes.push({ programme_id: prog.value, qualifying_spend: spend.value === "" ? null : Number(spend.value), project_cost: cost.value === "" ? null : Number(cost.value), eligibility: elig.value, fees_in_spend: inSpend.checked }); redraw(); toast("info", "Route added", `${prog.value}: ${spend.value ? fmt(spend.value) : "spend unknown"}`); } }, "Add route")),
+      el("div", { class: "card flush", style: "margin-top:16px" }, table(["Programme", "#Spend", "#Project cost", "Eligibility", "Fees in spend", ""], list)),
       el("button", { type: "button", class: "btn primary", style: "margin-top:16px", onclick: async () => {
         if (!routes.length) return toast("info", "Add a route first", "Pick a programme, enter the qualifying spend, then Add route.");
-        try { put(out, incentivesResult(await api.post("/api/tools/incentives/calc", { routes }))); }
+        try { put(out, incentivesResult(await api.post("/api/tools/incentives/calc", { routes, producer_fees: pfContext() }))); }
         catch (e) { put(out, errBox(e)); }
       } }, "Calculate"), out);
   },

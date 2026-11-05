@@ -98,10 +98,12 @@
     "Qualifying spend by location",
     "Total production cost",
     "Eligibility status",
-    "Programmes to compare"
+    "Programmes to compare",
+    "Producer and EP fees (optional)"
    ],
    "ready": [
-    "76 audited programmes (69 active), gates, caps, tiers and tax effects"
+    "76 audited programmes (69 active), gates, caps, tiers and tax effects",
+    "Producer-fee allowance for 54 routes (Saracen Bridge, sources checked 21 Oct 2026): the eligible fee, and any excess kept out of the incentive"
    ],
    "needs_ai": [],
    "ai_built": []

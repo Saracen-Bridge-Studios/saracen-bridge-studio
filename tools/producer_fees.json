@@ -1,0 +1,1045 @@
+{
+ "source": "Saracen Bridge Ltd (Jon Chadwick, Director): producer-fee allowance for incentive eligibility",
+ "checked": "2026-10-21",
+ "received": "2026-11-04",
+ "notes": [
+  "The figures concern eligible expenditure, before applying the rebate or tax-credit rate.",
+  "\"Confirm\" means a reliable numerical maximum could not be established for that route; it should not be treated as uncapped.",
+  "Calculate the eligible producer fee first, then express it as a percentage of the worldwide budget.",
+  "Where the cap is shared with other ATL costs or overheads, subtract those qualifying costs before calculating the remaining producer-fee allowance.",
+  "A contractual EP fee can exceed the eligible amount; the excess simply should not be included in the incentive calculation.",
+  "Have the local incentive accountant confirm the selected route and any entries marked \"confirm\" before locking the finance plan."
+ ],
+ "routes": [
+  {
+   "id": "UK-AVEC",
+   "area": "Europe",
+   "country": "United Kingdom",
+   "regions": "England, Scotland, Wales, Northern Ireland",
+   "route": "AVEC",
+   "status": "actual",
+   "currency": "GBP",
+   "programmes": [
+    "GBR-AVEC",
+    "GBR-AVEC-ANI",
+    "GBR-IFTC"
+   ],
+   "allowance": "No fixed producer-specific percentage identified for AVEC.",
+   "apply": "Claim only the qualifying production-related portion. HMRC requires allocation between development and qualifying production phases; a fee covering the whole project is not automatically wholly eligible.",
+   "source": "GOV.UK",
+   "calc": {}
+  },
+  {
+   "id": "IE-481",
+   "area": "Europe",
+   "country": "Ireland",
+   "regions": "All regions",
+   "route": "Section 481",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "IRL-481"
+   ],
+   "allowance": "Normally 10% or 15% of the global budget, shared between producer, co-producer, EP fees and production/corporate overheads.",
+   "apply": "Revenue normally accepts 15% where eligible expenditure exceeds 80% of the global budget, and 10% where it is below 80%. These are acceptance benchmarks: higher amounts can be substantiated. Exactly 80% needs clarification because the guidance's wording does not resolve that boundary.",
+   "source": "revenue.ie",
+   "calc": {
+    "ireland": true,
+    "shares_with": [
+     "overheads"
+    ]
+   }
+  },
+  {
+   "id": "DE-DFFF-I",
+   "area": "Europe",
+   "country": "Germany",
+   "regions": "All Länder",
+   "route": "DFFF I",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "DEU-DFFF-I"
+   ],
+   "allowance": "For budgets above €500,000: 5% of production costs excluding the producer fee, capped at €250,000.",
+   "apply": "Smaller-budget limits are €15,000 for budgets up to €300,000 and €25,000 for budgets above €300,000–€500,000. Exceptions require approval. This is a recognised-cost ceiling; German territorial eligibility still applies.",
+   "source": "FFA",
+   "calc": {
+    "bands": [
+     {
+      "up_to": 300000,
+      "cap": 15000
+     },
+     {
+      "up_to": 500000,
+      "cap": 25000
+     },
+     {
+      "pct": 0.05,
+      "base": "production_costs_ex_fee",
+      "cap": 250000
+     }
+    ]
+   }
+  },
+  {
+   "id": "DE-DFFF-II",
+   "area": "Europe",
+   "country": "Germany",
+   "regions": "All Länder",
+   "route": "DFFF II service-production route",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "DEU-DFFF-II"
+   ],
+   "allowance": "5% of the production costs for which the service producer is responsible, excluding its fee; maximum €350,000.",
+   "apply": "This concerns the production-service-provider fee, not an unrestricted additional foreign EP fee. Regional funds have separate conditions.",
+   "source": "FFA",
+   "calc": {
+    "pool": {
+     "pct": 0.05,
+     "base": "local_spend_ex_fee",
+     "cap": 350000
+    }
+   }
+  },
+  {
+   "id": "HU",
+   "area": "Europe",
+   "country": "Hungary",
+   "regions": "All regions",
+   "route": "Hungarian Film Incentive",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "HUN-FILM"
+   ],
+   "allowance": "4% of the Hungarian budget, pooled across producer fees.",
+   "apply": "Includes line, co-, executive and other producers. NFI also excludes purchases of goods/services from the foreign producer or co-producer, so a foreign company's fee needs particular scrutiny.",
+   "source": "Nemzeti Filmiroda",
+   "calc": {
+    "pool": {
+     "pct": 0.04,
+     "base": "local_budget"
+    }
+   }
+  },
+  {
+   "id": "IT-INTL",
+   "area": "Europe",
+   "country": "Italy",
+   "regions": "All regions",
+   "route": "Incoming / international tax-credit route",
+   "status": "zero",
+   "currency": "EUR",
+   "programmes": [
+    "ITA-INTL"
+   ],
+   "allowance": "0% for producer fees and general company overheads under this route's eligible-cost rules.",
+   "apply": "The separate 30% overall ATL ceiling does not make producer fees eligible. Domestic production credits and regional grants require separate assessment.",
+   "source": "italyformovies.com",
+   "calc": {}
+  },
+  {
+   "id": "MT-ATL",
+   "area": "Europe",
+   "country": "Malta",
+   "regions": "Malta, Gozo and Comino",
+   "route": "Individual ATL remuneration",
+   "status": "confirm",
+   "currency": "EUR",
+   "programmes": [],
+   "allowance": "Shared ATL allowance of €1 million or 30% of total Malta eligible spend, under the applicable approved option.",
+   "apply": "Shared with directors, cast and stunts; line producers are excluded from this ATL category. Only Malta-attributable work qualifies. The guidelines also cap the rebate generated by ATL expenditure at €5 million. Confirm the option with the Commission before budgeting it.",
+   "source": "Malta Film Commission guidelines",
+   "calc": {
+    "options": [
+     {
+      "label": "€1 million option",
+      "amount": 1000000
+     },
+     {
+      "label": "30% of Malta eligible spend",
+      "pct": 0.3,
+      "base": "local_spend"
+     }
+    ],
+    "shares_with": [
+     "other_atl"
+    ]
+   }
+  },
+  {
+   "id": "MT-SVC",
+   "area": "Europe",
+   "country": "Malta",
+   "regions": "Malta, Gozo and Comino",
+   "route": "Local production-service / co-production company fee",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [],
+   "allowance": "Lower of €100,000 or 20% of final actual Malta spend.",
+   "apply": "This is a separate fee category from the individual producer's ATL remuneration.",
+   "source": "Malta Film Commission guidelines",
+   "calc": {
+    "lower_of": [
+     {
+      "amount": 100000
+     },
+     {
+      "pct": 0.2,
+      "base": "local_spend"
+     }
+    ]
+   }
+  },
+  {
+   "id": "ES-ICAA",
+   "area": "Europe",
+   "country": "Spain",
+   "regions": "National framework, including mainland regions, Balearics and Canaries",
+   "route": "National recognised-cost framework (ICAA)",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "ESP-NAT-DOM"
+   ],
+   "allowance": "Executive-producer remuneration: 5% of the film's recognised realisation cost under ICAA cost-recognition rules.",
+   "apply": "Do not automatically apply this as the foreign-production tax-credit allowance. The Article 36.1/36.2 route and the fee's classification must be checked. A higher Canary Islands incentive rate does not itself increase the producer-fee allowance.",
+   "source": "spainfilmcommission.com",
+   "calc": {
+    "pool": {
+     "pct": 0.05,
+     "base": "worldwide_budget"
+    }
+   }
+  },
+  {
+   "id": "ES-FOREIGN",
+   "area": "Europe",
+   "country": "Spain",
+   "regions": "Mainland, Balearics and Canaries",
+   "route": "Foreign-production tax credit (Article 36.2)",
+   "status": "confirm",
+   "currency": "EUR",
+   "programmes": [
+    "ESP-NAT-FOR",
+    "ESP-CAN-FOR"
+   ],
+   "allowance": "Do not automatically apply the ICAA 5% executive-producer allowance to this route.",
+   "apply": "The Article 36.1/36.2 route and the fee's classification must be checked. A higher Canary Islands incentive rate does not itself increase the producer-fee allowance.",
+   "source": "spainfilmcommission.com",
+   "calc": {}
+  },
+  {
+   "id": "ES-NAV-65",
+   "area": "Europe",
+   "country": "Spain",
+   "regions": "Navarra",
+   "route": "Article 65.1 route",
+   "status": "rule",
+   "currency": "EUR",
+   "programmes": [
+    "ESP-NAV-DOM"
+   ],
+   "allowance": "Executive-producer remuneration up to the higher of 10% of production cost or €100,000, limited to the actual qualifying fee.",
+   "apply": "This is specific to that route; it should not be copied automatically into Navarra's foreign-service-production calculation.",
+   "source": "lexnavarra.navarra.es",
+   "calc": {
+    "higher_of": [
+     {
+      "pct": 0.1,
+      "base": "worldwide_budget"
+     },
+     {
+      "amount": 100000
+     }
+    ]
+   }
+  },
+  {
+   "id": "ES-NAV-FOREIGN",
+   "area": "Europe",
+   "country": "Spain",
+   "regions": "Navarra",
+   "route": "Foreign-service-production route",
+   "status": "confirm",
+   "currency": "EUR",
+   "programmes": [
+    "ESP-NAV-FOR"
+   ],
+   "allowance": "The Article 65.1 allowance should not be copied automatically into this calculation.",
+   "apply": "Confirm the fee treatment for Navarra's foreign-service-production route.",
+   "source": "lexnavarra.navarra.es",
+   "calc": {}
+  },
+  {
+   "id": "ES-BASQUE",
+   "area": "Europe",
+   "country": "Spain",
+   "regions": "Basque Country: Bizkaia, Gipuzkoa and Álava",
+   "route": "Provincial tax routes",
+   "status": "confirm",
+   "currency": "EUR",
+   "programmes": [
+    "ESP-BAS-ARA",
+    "ESP-BAS-BIZ",
+    "ESP-BAS-GIP"
+   ],
+   "allowance": "Confirm separately for each provincial tax route.",
+   "apply": "No universal producer-fee percentage has been verified across these three regimes.",
+   "source": "Provincial tax authorities",
+   "calc": {}
+  },
+  {
+   "id": "FR-TRIP",
+   "area": "Europe",
+   "country": "France",
+   "regions": "National, across rate-card regions",
+   "route": "TRIP",
+   "status": "confirm",
+   "currency": "EUR",
+   "programmes": [
+    "FRA-TRIP"
+   ],
+   "allowance": "Confirm the fee classification; no blanket producer-fee percentage verified.",
+   "apply": "The rules identify eligible production payroll and services, with territorial and nationality/residency conditions. They do not justify inserting an automatic percentage for a foreign producer's corporate fee.",
+   "source": "bofip.impots.gouv.fr",
+   "calc": {}
+  },
+  {
+   "id": "CZ",
+   "area": "Europe",
+   "country": "Czech Republic",
+   "regions": "All regions",
+   "route": "Czech audiovisual incentive",
+   "status": "actual",
+   "currency": "CZK",
+   "programmes": [
+    "CZE-PROD",
+    "CZE-DIGITAL"
+   ],
+   "allowance": "No fixed producer-specific percentage verified.",
+   "apply": "Actual qualifying Czech expenditure must be established. Fundraising activities, certain development costs, unpaid own contributions and remuneration for statutory company-office duties are excluded.",
+   "source": "Czech Film Commission",
+   "calc": {}
+  },
+  {
+   "id": "AU-PO",
+   "area": "Australia & New Zealand",
+   "country": "Australia",
+   "regions": "All states and territories",
+   "route": "Producer Offset",
+   "status": "rule",
+   "currency": "AUD",
+   "programmes": [
+    "AUS-PROD-FEAT",
+    "AUS-PROD-OTHER"
+   ],
+   "allowance": "For non-documentaries, 20% of total film expenditure is the shared ATL/development ceiling in the published guidance checked.",
+   "apply": "Producers share this allowance with other covered ATL expenditure. Documentaries are exempt from this cap. The announced removal should not be assumed effective without checking the applicable enacted rules.",
+   "source": "screenaustralia.gov.au",
+   "calc": {
+    "pool": {
+     "pct": 0.2,
+     "base": "worldwide_budget"
+    },
+    "shares_with": [
+     "other_atl"
+    ],
+    "documentary_exempt": true
+   }
+  },
+  {
+   "id": "AU-LOC",
+   "area": "Australia & New Zealand",
+   "country": "Australia",
+   "regions": "All states and territories",
+   "route": "Location Offset",
+   "status": "actual",
+   "currency": "AUD",
+   "programmes": [
+    "AUS-LOC"
+   ],
+   "allowance": "No fixed individual EP percentage identified. Corporate production-company/service fees are excluded as such.",
+   "apply": "An individual EP's actual services in Australia may qualify where they concern making the film. Fees solely for financing or distribution are excluded. Separately identifiable qualifying services can be assessed individually.",
+   "source": "arts.gov.au",
+   "calc": {
+    "individuals_only": true
+   }
+  },
+  {
+   "id": "AU-STATE",
+   "area": "Australia & New Zealand",
+   "country": "Australia",
+   "regions": "State and territory grants and top-ups",
+   "route": "State programmes",
+   "status": "confirm",
+   "currency": "AUD",
+   "programmes": [
+    "AUS-NSW-FIN",
+    "AUS-QLD-INC",
+    "AUS-VIC-INC",
+    "AUS-SA-PROD",
+    "AUS-WA-WAPAI",
+    "AUS-TAS-PROD",
+    "AUS-NT-FUND"
+   ],
+   "allowance": "Confirm against the particular programme and approved budget.",
+   "apply": "The federal Producer Offset's 20% figure is not a universal producer-fee allowance for every state grant.",
+   "source": "State screen agencies",
+   "calc": {}
+  },
+  {
+   "id": "NZ-INTL",
+   "area": "Australia & New Zealand",
+   "country": "New Zealand",
+   "regions": "All regions",
+   "route": "International rebate (NZSPR)",
+   "status": "actual",
+   "currency": "NZD",
+   "programmes": [],
+   "allowance": "Former 20% ATL cap removed for productions starting principal photography/eligible PDV from 1 January 2026.",
+   "apply": "This permits assessment of actual eligible expenditure, not an arbitrary budget percentage. Non-resident non-cast personnel must generally work in New Zealand for at least 14 days in aggregate.",
+   "source": "Rebate for International Productions (NZFC)",
+   "calc": {
+    "since": "2026-01-01"
+   }
+  },
+  {
+   "id": "CA-FED",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Federal",
+   "route": "CPTC / PSTC (CRA producer-fee policy)",
+   "status": "benchmark",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-FED-CPTC",
+    "CAN-FED-PSTC"
+   ],
+   "allowance": "The federal CRA's 10% × actual B+C producer-fee reference applies to specified related-party, ownership and financier-associated fees. CRA expressly says it is not a maximum.",
+   "apply": "Higher fees can be justified; arm's-length contractual fees are assessed differently. Provincial eligibility remains a separate calculation. B+C means production plus post-production costs, excluding the ATL and other budget sections.",
+   "source": "Canada.ca",
+   "calc": {
+    "benchmark": {
+     "pct": 0.1,
+     "base": "bc"
+    }
+   }
+  },
+  {
+   "id": "CA-BC",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "British Columbia: Vancouver, regional BC and Vancouver Island",
+   "route": "BC tax credits",
+   "status": "benchmark",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-BC-PSTC",
+    "CAN-BC-PSTC-DAVE",
+    "CAN-BC-FIBC",
+    "CAN-BC-FIBC-DAVE"
+   ],
+   "allowance": "BC expressly refers applicants to the CRA producer-fee policy.",
+   "apply": "Apply the qualifying BC labour rules; 10% of B+C is not a hard provincial budget cap.",
+   "source": "Province of British Columbia",
+   "calc": {
+    "benchmark": {
+     "pct": 0.1,
+     "base": "bc"
+    }
+   }
+  },
+  {
+   "id": "CA-ON",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Ontario: GTA, regional and northern Ontario",
+   "route": "Ontario credits",
+   "status": "confirm",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-ON-OFTTC",
+    "CAN-ON-OPSTC",
+    "CAN-ON-OCASE"
+   ],
+   "allowance": "Use the federal benchmark where applicable, but confirm the provincial fee allowance and labour/service allocation under the selected Ontario credit.",
+   "apply": "",
+   "source": "Ontario Creates",
+   "calc": {
+    "benchmark": {
+     "pct": 0.1,
+     "base": "bc"
+    }
+   }
+  },
+  {
+   "id": "CA-MB",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Manitoba: Winnipeg and regional Manitoba",
+   "route": "Manitoba credit",
+   "status": "confirm",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-MB-ALL",
+    "CAN-MB-LAB"
+   ],
+   "allowance": "Confirm for the labour-based or cost-of-production route selected.",
+   "apply": "Do not treat the federal 10% benchmark as a universal provincial ceiling.",
+   "source": "Manitoba Film & Music",
+   "calc": {}
+  },
+  {
+   "id": "CA-QC",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Québec: Montréal, Québec City and regional Québec",
+   "route": "Production-services credit",
+   "status": "actual",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-QC-SERVICE"
+   ],
+   "allowance": "0% for a non-Québec-resident producer's remuneration under the relevant producer provision.",
+   "apply": "Qualifying producer remuneration requires the individual to be Québec resident when providing the services. No separate fixed percentage verified for eligible resident fees.",
+   "source": "sodec.gouv.qc.ca",
+   "calc": {
+    "residents_only": true
+   }
+  },
+  {
+   "id": "CA-AB",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Alberta: Calgary, Edmonton and regional Alberta",
+   "route": "Alberta credit",
+   "status": "benchmark",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-AB-FTTC"
+   ],
+   "allowance": "10% of actual B+C is a general reasonableness reference, rather than an absolute maximum.",
+   "apply": "Higher fees require support.",
+   "source": "alberta.ca",
+   "calc": {
+    "benchmark": {
+     "pct": 0.1,
+     "base": "bc"
+    }
+   }
+  },
+  {
+   "id": "CA-SK",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Saskatchewan",
+   "route": "Creative Saskatchewan grant",
+   "status": "rule",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-SK-DOM",
+    "CAN-SK-SERVICE"
+   ],
+   "allowance": "Producer fees normally 10% of B+C; 15% for qualifying documentaries below C$2.5 million.",
+   "apply": "Corporate overhead has its own corresponding allowance. Exceptions are discretionary.",
+   "source": "creativesask.ca",
+   "calc": {
+    "pool": {
+     "pct": 0.1,
+     "base": "bc",
+     "documentary_pct": 0.15,
+     "documentary_budget_under": 2500000
+    }
+   }
+  },
+  {
+   "id": "CA-NS",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Nova Scotia: Halifax and regional areas",
+   "route": "Production Incentive Fund",
+   "status": "rule",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-NS-I",
+    "CAN-NS-II"
+   ],
+   "allowance": "Eligible compensation is limited by C$150,000 of incentive per individual, not C$150,000 of fee.",
+   "apply": "Thus the fee ceiling is C$150,000 ÷ applicable incentive rate: at 25%, C$600,000. Resident-labour and additional-role restrictions also apply.",
+   "source": "cch.novascotia.ca",
+   "calc": {
+    "incentive_cap_per_person": 150000
+   }
+  },
+  {
+   "id": "CA-NL",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Newfoundland and Labrador",
+   "route": "Labour-based and all-spend routes",
+   "status": "confirm",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-NL-ALL"
+   ],
+   "allowance": "Confirm separately for the labour-based and all-spend routes.",
+   "apply": "No reliable producer-specific numerical ceiling established in this review.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "CA-YT",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Yukon",
+   "route": "Media Production Fund",
+   "status": "rule",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-YT-PROD"
+   ],
+   "allowance": "Combined producer fees and corporate overhead: 30% of B+C for budgets up to C$500,000; above that, 20% of B+C, capped at C$2 million, under the published business guidelines.",
+   "apply": "Treaty co-productions use the Canadian share.",
+   "source": "yukon.ca",
+   "calc": {
+    "pool": {
+     "pct": 0.2,
+     "base": "bc",
+     "cap": 2000000,
+     "small_budget": 500000,
+     "small_pct": 0.3
+    },
+    "shares_with": [
+     "overheads"
+    ]
+   }
+  },
+  {
+   "id": "CA-NWT",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Northwest Territories",
+   "route": "Territorial rebate",
+   "status": "confirm",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-NWT-SCRIPT",
+    "CAN-NWT-NONSCRIPT"
+   ],
+   "allowance": "Confirm the approved territorial rebate cost schedule.",
+   "apply": "No numerical producer-fee maximum verified.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "CA-NU",
+   "area": "Canada",
+   "country": "Canada",
+   "regions": "Nunavut",
+   "route": "Nunavut Spend Incentive",
+   "status": "confirm",
+   "currency": "CAD",
+   "programmes": [
+    "CAN-NU-I",
+    "CAN-NU-II"
+   ],
+   "allowance": "Confirm the approved Nunavut-spend allocation.",
+   "apply": "Producer residency, ownership, control and reasonable remuneration are reviewed; no universal percentage verified.",
+   "source": "Nunavut Film Development Corporation",
+   "calc": {}
+  },
+  {
+   "id": "US-CA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "California: Los Angeles and outside the zone",
+   "route": "California credit",
+   "status": "zero",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "0% for ATL producer/EP fees.",
+   "apply": "Limited qualifying BTL work by someone also credited as a producer is a separate exception, capped at $100,000 for the specified roles.",
+   "source": "film.ca.gov",
+   "calc": {}
+  },
+  {
+   "id": "US-NY",
+   "area": "United States",
+   "country": "United States",
+   "regions": "New York: NYC and upstate",
+   "route": "Film tax credit",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [
+    "USA-NY-IND"
+   ],
+   "allowance": "Fees for no more than two producers, within a shared ATL pool of 40% of all other qualified production costs.",
+   "apply": "This is not 40% of the total budget.",
+   "source": "NYSenate.gov",
+   "calc": {
+    "max_people": 2,
+    "pool": {
+     "pct": 0.4,
+     "base": "other_qualified_costs"
+    },
+    "shares_with": [
+     "other_atl"
+    ]
+   }
+  },
+  {
+   "id": "US-NJ",
+   "area": "United States",
+   "country": "United States",
+   "regions": "New Jersey: inside and outside the 30-mile zone",
+   "route": "General route",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [
+    "USA-NJ-FILM"
+   ],
+   "allowance": "General route: $750,000 per individual.",
+   "apply": "Studio/film-lease routes have additional ATL allowances. Certain qualifying partner productions can also include apportioned out-of-state producer fees within a 7.5% pool shared with rights fees and production insurance.",
+   "source": "njeda.gov",
+   "calc": {
+    "per_person_cap": 750000
+   }
+  },
+  {
+   "id": "US-GA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Georgia",
+   "route": "Entertainment Industry Investment Act",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [
+    "USA-GA-FILM"
+   ],
+   "allowance": "$500,000 per person for W-2 compensation.",
+   "apply": "The same salary ceiling does not apply to qualifying loan-out/other eligible payment arrangements; Georgia work and tax requirements still apply.",
+   "source": "georgia.org",
+   "calc": {
+    "salary_cap_per_person": 500000
+   }
+  },
+  {
+   "id": "US-LA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Louisiana",
+   "route": "Motion picture production credit",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Shared ATL ceiling of 40% of Louisiana expenditure.",
+   "apply": "The former $3 million individual compensation limit was removed for the applicable post-July 2025 regime.",
+   "source": "opportunitylouisiana.gov",
+   "calc": {
+    "pool": {
+     "pct": 0.4,
+     "base": "local_spend"
+    },
+    "shares_with": [
+     "other_atl"
+    ]
+   }
+  },
+  {
+   "id": "US-IL",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Illinois",
+   "route": "Film production credit",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "$500,000 per individual, also constrained by 40% of Illinois production spending for all ATL, and 12% for related-party ATL in aggregate.",
+   "apply": "Limited exceptions exist to the 40% rule.",
+   "source": "Illinois Department of Revenue",
+   "calc": {
+    "per_person_cap": 500000,
+    "pool": {
+     "pct": 0.4,
+     "base": "local_spend"
+    },
+    "shares_with": [
+     "other_atl"
+    ],
+    "related_pool": {
+     "pct": 0.12,
+     "base": "local_spend"
+    }
+   }
+  },
+  {
+   "id": "US-TX",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Texas",
+   "route": "Moving Image Industry Incentive",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Published programme guidance: $1 million total compensation per Texas-resident worker per project.",
+   "apply": "Non-resident producer wages do not qualify under that resident-payroll provision.",
+   "source": "gov.texas.gov",
+   "calc": {
+    "residents_only": true,
+    "per_person_cap": 1000000
+   }
+  },
+  {
+   "id": "US-NC",
+   "area": "United States",
+   "country": "United States",
+   "regions": "North Carolina",
+   "route": "Film and entertainment grant",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "First $1 million per individual; excess compensation is excluded.",
+   "apply": "",
+   "source": "ncleg.gov",
+   "calc": {
+    "per_person_cap": 1000000
+   }
+  },
+  {
+   "id": "US-SC",
+   "area": "United States",
+   "country": "United States",
+   "regions": "South Carolina",
+   "route": "Payroll provision",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Payroll provision excludes an employee's salary where it is $1 million or more.",
+   "apply": "This is an exclusion threshold, not simply a rebate on the first $1 million.",
+   "source": "law.justia.com",
+   "calc": {
+    "exclude_at_or_above": 1000000
+   }
+  },
+  {
+   "id": "US-OK",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Oklahoma",
+   "route": "Film incentive",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Producer fees share the 25% ATL ceiling on statutory qualifying production expenditure.",
+   "apply": "Relevant Oklahoma taxpayer/loan-out requirements apply.",
+   "source": "oscn.net",
+   "calc": {
+    "pool": {
+     "pct": 0.25,
+     "base": "local_spend"
+    },
+    "shares_with": [
+     "other_atl"
+    ]
+   }
+  },
+  {
+   "id": "US-KY",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Kentucky",
+   "route": "Film incentive",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "First $1 million per ATL employee, resident or non-resident, subject to qualifying Kentucky services.",
+   "apply": "",
+   "source": "law.justia.com",
+   "calc": {
+    "per_person_cap": 1000000
+   }
+  },
+  {
+   "id": "US-OR",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Oregon",
+   "route": "OPIF",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "OPIF rules exclude compensation paid to an individual receiving more than $1 million.",
+   "apply": "Treat this as a potential whole-payment exclusion, not merely a cap on the excess.",
+   "source": "Oregon Film",
+   "calc": {
+    "exclude_above": 1000000
+   }
+  },
+  {
+   "id": "US-WA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Washington",
+   "route": "Washington Filmworks",
+   "status": "actual",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "0% for non-resident ATL producers.",
+   "apply": "Resident qualifying wages can be considered; no separate producer percentage established.",
+   "source": "washingtonfilmworks.org",
+   "calc": {
+    "residents_only": true
+   }
+  },
+  {
+   "id": "US-PR",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Puerto Rico",
+   "route": "Film incentive",
+   "status": "rule",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Producer fees up to 10% of total Puerto Rico production expenditure, restricted to Puerto Rico-resident producers, with payment and tax evidence.",
+   "apply": "",
+   "source": "docs.pr.gov",
+   "calc": {
+    "residents_only": true,
+    "pool": {
+     "pct": 0.1,
+     "base": "local_spend"
+    }
+   }
+  },
+  {
+   "id": "US-MA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Massachusetts",
+   "route": "Payroll and production-expense credits",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Route-dependent.",
+   "apply": "The payroll-credit exclusion for compensation of $1 million or more must be distinguished from the production-expense credit, which can have different treatment. Confirm before assigning a maximum.",
+   "source": "Mass.gov",
+   "calc": {}
+  },
+  {
+   "id": "US-MT",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Montana",
+   "route": "MEDIA Act credit",
+   "status": "unavailable",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Do not assume a currently available award: the state has paused new certification applications and says the first available credit is in 2031.",
+   "apply": "Existing certifications need separate review.",
+   "source": "Montana Department of Revenue",
+   "calc": {}
+  },
+  {
+   "id": "US-NM",
+   "area": "United States",
+   "country": "United States",
+   "regions": "New Mexico",
+   "route": "Film production credit",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm resident/non-resident status and ordinary versus Film Partner treatment.",
+   "apply": "No single current maximum verified for both routes.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-PA",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Pennsylvania",
+   "route": "Film production credit",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm producer-specific treatment.",
+   "apply": "The commonly quoted principal-cast ceiling should not be used as a producer-fee allowance.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-UT",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Utah",
+   "route": "Motion picture incentive",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm current individual compensation treatment in the approved incentive agreement.",
+   "apply": "No current numerical maximum verified.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-CO",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Colorado",
+   "route": "Film incentive",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm the approved qualifying compensation and fee allocation.",
+   "apply": "No producer-specific percentage verified.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-OH",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Ohio",
+   "route": "Motion picture credit",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm qualifying Ohio services and fee classification.",
+   "apply": "No producer-specific percentage verified.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-AZ",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Arizona",
+   "route": "Film incentive",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm qualifying Arizona production labour and fee classification.",
+   "apply": "No producer-specific percentage verified.",
+   "source": "",
+   "calc": {}
+  },
+  {
+   "id": "US-HI",
+   "area": "United States",
+   "country": "United States",
+   "regions": "Hawaiʻi: Oʻahu and neighbour islands",
+   "route": "Film credit",
+   "status": "confirm",
+   "currency": "USD",
+   "programmes": [],
+   "allowance": "Confirm qualifying producer compensation.",
+   "apply": "Different island incentive rates do not themselves establish a different producer-fee allowance.",
+   "source": "",
+   "calc": {}
+  }
+ ]
+}
