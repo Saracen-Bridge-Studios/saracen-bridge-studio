@@ -4,6 +4,16 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.2.1 (5 Nov 2026), crisp black, purple as the jewel
+Tim, 5 Nov: "make it more classy and rich looking … do a rule 1", then "less purple … make purple the luxury but make it cleaner",
+then "leave the crisp black, don't dull it down", and "yes I like this, let's see this change in the actual build". The review, with
+its Rule 1 sources, is `docs/CIPHER_SARACEN_STUDIO_COSMETIC_REVIEW_20261105.md`. Same fonts, the same layout, no feature changes.
+- Changed: the rooms are true black (#050505 to #2a2a2d) with sharp warm hairlines, instead of purple-tinted blacks. Purple is kept where it means something: the crest, the Home marquee's light, the suite's icon wells, the AI (Jonny, notices, AI pills) and switches. (S-122)
+- Changed: gold reads as polished metal (a specular band and a darker rim) with a shorter, lower glow; the selected-state gold gradient on every selected control stays (Tim, 13 Oct). (S-122)
+- Changed: labels (table headers, figures' captions, the rail's groups, the eyebrow) are set in Geist capitals with open tracking instead of Geist Mono; numbers in tables are lining and tabular in Geist. The bundled Source Serif 4 has no small caps, so none are faked. (S-122)
+- Changed: the "connect the AI engine" notice is a quiet hairline strip instead of a filled banner; a card inside a card keeps only a hairline; form fields are lifted rather than sunken, with the gold focus ring just outside; tables have softer rules; a fine gold hairline closes each page's title block. (S-122)
+- Fixed: at 1440 × 900 the rail couldn't show all 17 pages, so on Library or Settings the gold "you are here" bar sat half under the Local compute switch. The rail now fits at 900 px, keeps the current page in view on shorter windows, and fades an edge only when there is more list beyond it. (S-122)
+
 ## 1.2.0 (5 Nov 2026), safety in the Room, the App Store, and producer fees
 Built after a Rule 1 pass on Apple's current review rules (4 Nov): the iPhone and iPad app can only be approved with the Room's safety tools, account deletion in the app, a Room the reviewer can reach, Xcode 26 and a privacy manifest. Tests: 285 passed, 1 skipped on Linux; the Windows run on GitHub is green from S-120; RoomCore's 8 Swift tests pass on Linux. (S-113)
 - Added: the Room's terms, accepted when joining (zero tolerance for objectionable content and abusive people; reports reviewed within 24 hours). Members who joined before are asked once. (S-114)
