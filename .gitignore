@@ -12,3 +12,5 @@ packaging/macos/build/
 ios/.build/
 ios/.swiftpm/
 ios/App/*.xcodeproj/
+!packaging/shell/dist/
+!packaging/shell/dist/index.html
