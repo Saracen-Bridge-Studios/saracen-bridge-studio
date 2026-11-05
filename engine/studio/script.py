@@ -23,7 +23,7 @@ TIMES = ("NIGHT", "DAY", "DAWN", "DUSK", "MORNING", "EVENING", "AFTERNOON", "CON
 
 
 # Bump when reading changes, so scripts already in the Library are read again (13 Oct: WEREWOLF, 133 scenes read as 1).
-PARSER_VERSION = 5                                        # 4: scanned PDFs read by OCR (1.0.6); 5: registration lines aren't titles (1.1.1)
+PARSER_VERSION = 6                                        # 4: scanned PDFs read by OCR (1.0.6); 5: registration lines aren't titles (1.1.1); 6: Windows line endings (1.2.0)
 
 SCENE_NO = r"[A-Z]?\d{1,4}[A-Z]{0,3}"
 
@@ -103,6 +103,13 @@ def _from_lines(lines: list[str], forced: bool = False) -> list[dict]:
         if name and prev_blank and nxt and not HEADING.match(nxt):
             cur["characters"][name] = cur["characters"].get(name, 0) + 1
     return scenes
+
+
+def _text(data: bytes) -> str:
+    """Screenplay text as the parsers expect it: UTF-8 (a Windows byte-order mark dropped) with \n line endings.
+    A .fountain saved on Windows ends its lines with \r\n, which hid the blank line after the title page, so the
+    whole script was taken for a title page and read as no scenes (1.2.0)."""
+    return data.decode("utf-8-sig", errors="replace").replace("\r\n", "\n").replace("\r", "\n")
 
 
 def parse_fountain(text: str) -> dict:
@@ -193,7 +200,7 @@ def parse(filename: str, data: bytes) -> dict:
     elif name.endswith(".pdf"):
         res = parse_pdf(data, filename)
     else:
-        res = parse_fountain(data.decode("utf-8", errors="replace"))
+        res = parse_fountain(_text(data))
     res["title"] = clean_title(re.sub(r"^\s*title\s*:\s*", "", res["title"] or "", flags=re.I)) or title_from_filename(Path(filename).stem)
     res["parser"] = PARSER_VERSION
     return res
@@ -331,7 +338,7 @@ def text(filename: str, data: bytes) -> str:
             out.append(_unnumber(l))
             blank = False
         return "\n".join(out).strip()
-    return _fountain_body(data.decode("utf-8", errors="replace")).strip()
+    return _fountain_body(_text(data)).strip()
 
 
 def chunks(screenplay: str, max_chars: int = 12000) -> list[str]:
@@ -433,7 +440,7 @@ def scene_texts(filename: str, data: bytes) -> list[dict]:
         page = lambda i: printed[page_of[i] - 1] or page_of[i]
         estimated = False
     else:
-        text = data.decode("utf-8", errors="replace")
+        text = _text(data)
         head = text.split("\n\n", 1)
         body = head[1] if head and re.match(r"^\s*Title\s*:", head[0], re.I | re.M) and len(head) > 1 else text
         lines = _fountain_lines(body)

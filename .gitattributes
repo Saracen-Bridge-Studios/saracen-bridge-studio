@@ -1,0 +1,5 @@
+# Check out every text file with \n line endings on every system. Jon's agreement builder fingerprints its bundled
+# files byte for byte, and the tests read screenplay fixtures as bytes, so a Windows checkout must match a Mac one.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf

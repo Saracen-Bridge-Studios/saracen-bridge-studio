@@ -65,9 +65,9 @@ def test_js_and_python_read_each_other(tmp_path):
            "chunk": rc.b64e(rc.encrypt_chunk(k1, b"chunk one", "f_1", 1, 3)), "founder": founder, "records": records,
            "grants": grants, "revokes": [], "joiner": js.public(), "approver": e2.public(), "founder_ed": py.ed_pk,
            "nonce": rc.b64e(n1), "nonce2": rc.b64e(n2), "canon_obj": {"b": [1, None, True], "a": "x/y\"z", "c": {"z": 0, "y": -3}}}
-    (tmp_path / "t.js").write_text(JS)
+    (tmp_path / "t.js").write_text(JS, encoding="utf-8")
     r = subprocess.run([NODE, str(tmp_path / "t.js"), str(STATIC)], input=json.dumps(inp), capture_output=True, text=True,
-                       timeout=120)
+                       encoding="utf-8", timeout=120)
     assert r.returncode == 0, r.stderr[r.stderr.find("JSERROR"):][:600]
     out = json.loads(r.stdout)
     # JS reads Python

@@ -145,3 +145,17 @@ def test_a_leading_full_stop_forces_a_heading_only_in_fountain():
     assert [s["heading"] for s in sc] == ["EXT. HARBOUR - DAY"] and sc[0]["characters"] == {"MARA": 1}
     fountain = script.parse_fountain("EXT. HARBOUR - DAY\n\nGulls.\n\n.FLASHBACK - MARA AS A GIRL\n\nShe runs.\n\n.\n\nEnd.\n")
     assert [s["heading"] for s in fountain["scenes"]] == ["EXT. HARBOUR - DAY", "FLASHBACK - MARA AS A GIRL"]
+
+
+def test_a_fountain_saved_on_windows_reads_the_same_as_one_from_a_mac():
+    """5 Nov: the first Windows test run read the sample .fountain as 0 scenes. Windows editors end lines with \\r\\n,
+    which hid the blank line after the title page, so the whole script was taken for a title page. Notepad also
+    adds a byte-order mark."""
+    FIX = Path(__file__).parent / "fixtures"
+    mac = (FIX / "sample.fountain").read_bytes().replace(b"\r\n", b"\n")
+    windows = b"\xef\xbb\xbf" + mac.replace(b"\n", b"\r\n")
+    a, b = script.parse("sample.fountain", mac), script.parse("sample.fountain", windows)
+    assert a["scene_count"] == 4 and a["title"] == "The Lighthouse Keeper"
+    assert {k: b[k] for k in ("scene_count", "title", "speaking_roles", "scenes")} == {k: a[k] for k in ("scene_count", "title", "speaking_roles", "scenes")}
+    assert script.text("sample.fountain", windows) == script.text("sample.fountain", mac)
+    assert script.scene_texts("sample.fountain", windows) == script.scene_texts("sample.fountain", mac)
