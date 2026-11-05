@@ -18,7 +18,11 @@ LK_VERSION="${LK_VERSION:-1.13.10}"        # the same LiveKit release as the Win
 APP="dist/Saracen Bridge Studio.app"
 SIGN="${MAC_SIGN_IDENTITY:--}"             # "-" signs ad hoc
 VERSION=$(python3 -c "import re; print(re.search(r'^VERSION = \"([^\"]+)\"', open('engine/studio/server.py').read(), re.M).group(1))")
-[ "$(uname -s)-$(uname -m)" = "Darwin-arm64" ] || { echo "Build on an Apple Silicon Mac."; exit 1; }
+# Apple Silicon (arm64) or Intel (x86_64): each Mac builds its own kind (5 Nov: Jon's 2019 MacBook Pro is Intel)
+ARCH="$(uname -m)"
+case "$(uname -s)-$ARCH" in Darwin-arm64) RUST_T=aarch64-apple-darwin; KIND="Apple-Silicon";; Darwin-x86_64) RUST_T=x86_64-apple-darwin; KIND="Intel";;
+  *) echo "Build on a Mac."; exit 1;; esac
+export STUDIO_MAC_ARCH="$ARCH"
 mkdir -p "$WORK" packaging/macos/build dist/installer
 echo "== Saracen Bridge Studio $VERSION for Mac"
 
@@ -26,7 +30,7 @@ echo "== Saracen Bridge Studio $VERSION for Mac"
 python3 -m pip install -q -r requirements-dev.txt
 
 # 2. OCR for scanned scripts: Apple's Vision text recognition, answering in Tesseract's format
-swiftc -O -target arm64-apple-macos13 -o packaging/macos/build/studio-ocr packaging/macos/studio-ocr.swift
+swiftc -O -target "$ARCH-apple-macos13" -o packaging/macos/build/studio-ocr packaging/macos/studio-ocr.swift
 
 # what the Mac OCR reads from the scanned fixture, in the log, so a misread can be seen and fixed (1.2.1)
 STUDIO_TESSERACT="$ROOT/packaging/macos/build/studio-ocr" PYTHONPATH=engine python3 - <<'PY' || true
@@ -53,8 +57,8 @@ fi
 packaging/livekit/livekit-server --version
 
 # 5. The Studio's window: the same Tauri 2 shell as Windows, built for Apple Silicon
-rustup target add aarch64-apple-darwin >/dev/null 2>&1 || true
-(cd packaging/shell && CARGO_TARGET_DIR="$WORK/shell-target" cargo build --release --target aarch64-apple-darwin)
+rustup target add "$RUST_T" >/dev/null 2>&1 || true
+(cd packaging/shell && CARGO_TARGET_DIR="$WORK/shell-target" cargo build --release --target "$RUST_T")
 
 # 6. Ask Jonny's index of Jon's documents, then the app
 python3 scripts/build_knowledge.py
@@ -66,7 +70,7 @@ F="$APP/Contents/Frameworks"
 # 7. The window app goes inside the Studio's (Contents/Helpers): it carries the Dock icon, the menus and Cmd-Q
 W="$APP/Contents/Helpers/Saracen Bridge Studio.app"
 mkdir -p "$W/Contents/MacOS" "$W/Contents/Resources"
-cp "$WORK/shell-target/aarch64-apple-darwin/release/saracen-shell" "$W/Contents/MacOS/studio-window"
+cp "$WORK/shell-target/$RUST_T/release/saracen-shell" "$W/Contents/MacOS/studio-window"
 cp packaging/macos/studio.icns "$W/Contents/Resources/"
 sed "s/@VERSION@/$VERSION/g" packaging/macos/window-Info.plist > "$W/Contents/Info.plist"
 plutil -lint "$W/Contents/Info.plist"
@@ -88,7 +92,7 @@ kill $APP_PID; wait $APP_PID 2>/dev/null || true; trap - EXIT
 pkill -f "$SMOKE_HOME" 2>/dev/null || true          # the call server it started reads its config from there
 
 # 10. Disk image: the app beside a link to Applications, to drag across
-DMG="dist/installer/SaracenBridgeStudio-$VERSION.dmg"
+DMG="dist/installer/SaracenBridgeStudio-$VERSION-$KIND.dmg"
 STAGE="$WORK/dmg"
 rm -rf "$STAGE" "$DMG" && mkdir -p "$STAGE"
 ditto "$APP" "$STAGE/Saracen Bridge Studio.app"

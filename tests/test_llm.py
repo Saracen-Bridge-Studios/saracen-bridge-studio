@@ -192,7 +192,7 @@ def test_engine_that_dies_mid_job_says_so(monkeypatch):
 
 
 FAKE_SERVER = '''#!/usr/bin/env python3
-import json, os, sys
+import json, os, socketserver, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 open(os.environ["FAKE_ARGS"], "a").write(json.dumps(sys.argv[1:]) + "\\n")
 if os.environ.get("FAKE_NO_ROOM") and "-np" in sys.argv and sys.argv[sys.argv.index("-np") + 1] != "1":
@@ -203,7 +203,10 @@ class H(BaseHTTPRequestHandler):
         self.send_response(200); self.send_header("Content-Type", "application/json"); self.end_headers(); self.wfile.write(b"{}")
     def log_message(self, *a):
         pass
-HTTPServer(("127.0.0.1", port), H).serve_forever()
+class S(HTTPServer):
+    def server_bind(self):                      # skip getfqdn(): it can stall for many seconds on a Mac (5 Nov, first Mac run)
+        socketserver.TCPServer.server_bind(self); self.server_name, self.server_port = "127.0.0.1", port
+S(("127.0.0.1", port), H).serve_forever()
 '''
 
 

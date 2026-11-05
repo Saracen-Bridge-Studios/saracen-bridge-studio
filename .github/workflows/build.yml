@@ -47,9 +47,15 @@ jobs:
         run: node --check engine/room_hub/static/app.js && node --check ui/room.js
 
   mac:
-    name: Mac (Apple Silicon)
+    name: Mac (${{ matrix.kind }})
     if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["mac","all"]'), inputs.only))
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:                                    # Apple Silicon (2020 on) and Intel Macs (Jon's 2019 MacBook Pro, 5 Nov)
+          - { kind: Apple Silicon, runner: macos-15, tag: apple-silicon }
+          - { kind: Intel, runner: macos-15-intel, tag: intel }
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     env:
       HAS_CERT: ${{ secrets.MAC_CERT_P12 != '' }}
@@ -96,13 +102,13 @@ jobs:
         run: bash packaging/build_mac.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: SaracenBridgeStudio-mac
+          name: SaracenBridgeStudio-mac-${{ matrix.tag }}
           path: dist/installer/*.dmg
           retention-days: 30
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mac-build-logs
+          name: mac-build-logs-${{ matrix.tag }}
           path: |
             build/mac/*.log
           retention-days: 14

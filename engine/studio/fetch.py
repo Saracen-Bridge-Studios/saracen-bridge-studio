@@ -14,6 +14,7 @@ import http.client
 import json
 import os
 import shutil
+import platform
 import sys
 import tarfile
 import threading
@@ -38,9 +39,14 @@ ENGINES: dict[str, dict] = {
                "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11577/llama-b11577-bin-macos-arm64.tar.gz",
                "sha256": "fa6526afe087293ac83709fe6529fa087e7070f606e30dd452173c16ccebed8c", "done_when": "llama-server",
                "strip": "llama-b11577/"},
+    # Intel Macs (5 Nov 2026: Jon's 2019 MacBook Pro): the same release's macOS x64 build, checked when downloaded here
+    "darwin-x86_64": {"label": "AI engine (llama.cpp)", "name": "llama-mac.tar.gz", "dir": "", "unzip": True, "size": 11608121,
+               "url": "https://github.com/ggml-org/llama.cpp/releases/download/b11577/llama-b11577-bin-macos-x64.tar.gz",
+               "sha256": "a623d9b4a3bf6c4d1c3447b6d7d52b43976ab4b624426158d9ee4ec0a13370ea", "done_when": "llama-server",
+               "strip": "llama-b11577/"},
 }
 ITEMS: dict[str, dict] = {
-    "engine": ENGINES["darwin" if sys.platform == "darwin" else "win32"],
+    "engine": ENGINES[("darwin-x86_64" if platform.machine() == "x86_64" else "darwin") if sys.platform == "darwin" else "win32"],
     "12b": {"label": "Gemma 4 12B", "name": "gemma-4-12b-it-qat-q4_0.gguf", "dir": "models", "size": 6975879296,
             "url": "https://huggingface.co/google/gemma-4-12B-it-qat-q4_0-gguf/resolve/main/gemma-4-12b-it-qat-q4_0.gguf",
             "sha256": "93567e57a8fe10b23569b9d9ec38cd005deedf71e29477c421a4b83f418a538b"},

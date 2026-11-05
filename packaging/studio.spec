@@ -77,7 +77,7 @@ a.binaries = [b for b in a.binaries if not str(b[1]).lower().startswith(_ocr) or
 # otherwise PyInstaller signs ad hoc, which runs on the build Mac and on test Macs after "Open Anyway".
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="SaracenBridgeStudio", upx=False,  # UPX raises AV false positives
           console=sys.platform not in ("win32", "darwin"),
-          target_arch="arm64" if MAC else None,
+          target_arch=(os.environ.get("STUDIO_MAC_ARCH") or "arm64") if MAC else None,
           codesign_identity=(os.environ.get("MAC_SIGN_IDENTITY") or None) if MAC else None,
           entitlements_file=str(ROOT / "packaging" / "macos" / "entitlements.plist") if MAC else None,
           icon=(str(ROOT / "packaging" / "macos" / "studio.icns") if MAC
