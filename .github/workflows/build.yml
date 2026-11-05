@@ -107,18 +107,30 @@ jobs:
             build/mac/*.log
           retention-days: 14
 
-  windows-tests:
-    name: Windows tests
+  windows:
+    name: Windows installer
     if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["windows","all"]'), inputs.only))
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: python -m pip install -q -r requirements-dev.txt
-      - run: python -m pytest -q -p no:cacheprovider
+      - name: OCR for scanned scripts (Universitaet Mannheim's signed Tesseract, SHA-256 and signature checked)
+        run: .\packaging\fetch_ocr.ps1
+      - name: Version from the Studio
+        run: |
+          $v = (Select-String -Path engine\studio\server.py -Pattern '^VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          "STUDIO_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host "Saracen Bridge Studio $v for Windows"
+      - name: Tests, build, smoke test and installer (packaging\build_windows.ps1)
+        run: .\packaging\build_windows.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SaracenBridgeStudio-windows
+          path: dist/installer/*
+          retention-days: 30
 
   iphone:
     name: iPhone and iPad app
