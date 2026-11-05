@@ -1,6 +1,6 @@
 # Saracen Bridge Studio for both systems, and the iPhone app.
-# Every push to main runs the tests on Linux (cheap). A release tag (v*) or a manual run (Actions › Build › Run workflow)
-# also builds the Mac app on one of GitHub's Apple Silicon Macs (tests, app, smoke test hosting a production, disk
+# Every push to main runs the tests on Linux (cheap). A release tag (v*) builds everything; a manual run (Actions ›
+# Build › Run workflow) builds what's picked (iPhone by default): the Mac app on one of GitHub's Apple Silicon Macs (tests, app, smoke test hosting a production, disk
 # image), runs the tests on real Windows, and builds the iPhone and iPad app and runs it in the simulators against a
 # Studio hosting a made-up production (screenshots of every step kept as the iphone-screenshots artifact). Mac and
 # Windows minutes cost more against the account's allowance, which is why they wait for a tag or a manual run.
@@ -21,6 +21,12 @@ on:
     branches: [main]
     tags: ["v*"]
   workflow_dispatch:
+    inputs:
+      only:
+        description: "Which builds (Mac minutes count ten times against the allowance)"
+        type: choice
+        default: iphone
+        options: [iphone, mac, windows, all]
 
 jobs:
   linux-tests:
@@ -42,7 +48,7 @@ jobs:
 
   mac:
     name: Mac (Apple Silicon)
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["mac","all"]'), inputs.only))
     runs-on: macos-15
     timeout-minutes: 90
     env:
@@ -103,7 +109,7 @@ jobs:
 
   windows-tests:
     name: Windows tests
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["windows","all"]'), inputs.only))
     runs-on: windows-2022
     timeout-minutes: 30
     steps:
@@ -116,7 +122,7 @@ jobs:
 
   iphone:
     name: iPhone and iPad app
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && contains(fromJSON('["iphone","all"]'), inputs.only))
     # since 28 April 2026 App Store Connect takes only builds made with Xcode 26 and the iOS 26 SDK
     runs-on: macos-26
     timeout-minutes: 75
