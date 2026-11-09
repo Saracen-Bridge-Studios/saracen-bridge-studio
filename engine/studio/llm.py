@@ -254,13 +254,15 @@ def located_models() -> list[Path]:
     .gguf at the top of Downloads. Downloads isn't searched when a test or support build sets STUDIO_LLM_DIR."""
     out = [m for m in [chosen_model()] if m]
     if not os.environ.get("STUDIO_LLM_DIR"):
-        try:
-            for f in sorted((Path.home() / "Downloads").glob("*.gguf")):
-                n = f.name.lower()
-                if "gemma" in n and "mmproj" not in n and f not in out and f.stat().st_size >= MIN_MODEL_BYTES:
-                    out.append(f)
-        except OSError:
-            pass
+        for top in (Path.home() / "Downloads", Path.home() / "Desktop"):        # 1.2.4: and up to two folders down
+            for pattern in ("*.gguf", "*/*.gguf", "*/*/*.gguf"):
+                try:
+                    for f in sorted(top.glob(pattern)):
+                        n = f.name.lower()
+                        if "gemma" in n and "mmproj" not in n and f not in out and f.stat().st_size >= MIN_MODEL_BYTES:
+                            out.append(f)
+                except OSError:
+                    pass
     return out
 
 

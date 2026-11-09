@@ -119,3 +119,11 @@ def test_a_queue_from_the_last_session_waits_until_a_job_or_the_delay(monkeypatc
     time.sleep(0.5)
     assert claimed and claimed[0] - t0 < 5
     jobs.stop_worker(5)
+
+
+def test_gemma_is_found_in_a_subfolder_of_downloads_or_on_the_desktop(home):
+    """9 Nov: "it's not finding the gemma model" - files unzipped into a folder, or left on the Desktop."""
+    a = big(home / "user" / "Downloads" / "gemma-4" / "models" / "gemma-4-E4B_q4_0-it.gguf")
+    b = big(home / "user" / "Desktop" / "llm-off" / "models" / "gemma-4-12b-it-qat-q4_0.gguf")
+    big(home / "user" / "Downloads" / "a" / "b" / "c" / "gemma-too-deep.gguf")
+    assert set(llm.located_models()) == {a, b}

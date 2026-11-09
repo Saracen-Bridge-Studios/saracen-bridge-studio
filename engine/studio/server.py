@@ -22,7 +22,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.2.3"
+VERSION = "1.2.4"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -151,6 +151,8 @@ def _resume_download_once():
     """A download the installer asked for (llm/wanted.json), or one cut short, carries on when the Studio opens."""
     if not _RESUMED.is_set():
         _RESUMED.set()
+        if llm.bundled_files() or llm.located_models():
+            return                    # 1.2.4: a model is already here; an old download must not take over the card
         try:
             fetch.resume_if_wanted()
         except Exception:  # noqa: BLE001 - shown on the Settings page instead

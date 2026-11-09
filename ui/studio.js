@@ -2789,7 +2789,8 @@ async function settings() {
             const btn = ev.currentTarget; const a = await save();
             if (!a.connected) return toast("bad", "No engine to test", a.reason);
             btn.disabled = true; await testEngine(); btn.disabled = false;
-          } }, icon("sparkle"), "Test the engine")))),
+          } }, icon("sparkle"), "Test the engine"),
+          el("button", { type: "button", class: "btn", onclick: async () => { if (await locateModelFile(false)) route(); } }, icon("search"), "Locate model file…")))),
       el("div", { class: "stack" }, el("div", { class: "card side-card" }, el("h2", {}, icon("external"), "Linked apps"),
         el("p", { class: "muted small", style: "margin-top:-4px" }, "Storyboard and Visual Feedback are coming soon; when they arrive, the Studio opens them from here. Use a web address or a program path."),
         apps.map(([, i, name]) => el("label", { class: "f", style: "margin-bottom:14px" }, name, i)),
@@ -2823,6 +2824,17 @@ function jonCard() {
    restart, and checks every file before it is used. */
 const gb = n => `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)} GB`;
 const etaText = s => s == null ? "" : s < 90 ? "under 2 min left" : s < 5400 ? `about ${Math.round(s / 60)} min left` : `about ${(s / 3600).toFixed(1)} hours left`;
+/* 1.2.4: point the Studio at a Gemma .gguf anywhere on this computer, through the system's own Open dialog */
+async function locateModelFile(clear) {
+  try {
+    const r = await api.post("/api/ai/locate", clear ? { clear: true } : {});
+    if (r.cancelled) return null;
+    if (r.cleared) toast("info", "The Studio will find Gemma by itself again");
+    else toast("ok", `Using ${r.name}`, r.engine_installed ? "Writing tools use it from now on." : "Next: Settings › Gemma on this computer › Get the AI engine to run it.");
+    AI = await api.get("/api/ai/status").catch(() => AI); engineChip();
+    return r;
+  } catch (e) { toast("bad", "Couldn't use that file", e.message); return null; }
+}
 function gemmaCard() {
   const box = el("div", { class: "card gemma-card", style: "margin-top:20px" });
   let timer = null, was = null;
@@ -2845,23 +2857,14 @@ function gemmaCard() {
       el("p", { class: "muted small", style: "margin:0 0 10px;overflow-wrap:anywhere" }, L.path, L.vision ? " · vision add-on found beside it" : " · no vision add-on beside it (Look Book needs it)"),
       !d.engine_installed ? el("div", { class: "row", style: "gap:10px;margin-bottom:12px" },
         el("button", { type: "button", class: "btn primary sm", onclick: () => go("engine") }, icon("download"), `Get the AI engine to run it · ${(d.engine_bytes / 1e6).toFixed(0)} MB`)) : null] : [];
-    const locate = async clear => {
-      try {
-        const r = await api.post("/api/ai/locate", clear ? { clear: true } : {});
-        if (r.cancelled) return;
-        if (r.cleared) toast("info", "The Studio will find Gemma by itself again");
-        else toast("ok", `Using ${r.name}`, r.engine_installed ? "Writing tools use it from now on." : "Next: get the AI engine to run it (one small download).");
-        AI = await api.get("/api/ai/status").catch(() => AI); engineChip();
-      } catch (e) { toast("bad", "Couldn't use that file", e.message); }
-      draw();
-    };
+    const locate = async clear => { await locateModelFile(clear); draw(); };
     const locateRow = el("div", { class: "row", style: "gap:10px;margin-top:12px" },
       el("button", { type: "button", class: "btn sm", onclick: () => locate(false) }, icon("search"), L ? "Choose a different model file…" : "Locate a model file…"),
       L && L.chosen ? el("button", { type: "button", class: "btn quiet sm", onclick: () => locate(true) }, "Stop using this file") : null);
     let bodyEls;
     if (d.active) bodyEls = [el("div", { class: "dl-title" }, el("b", {}, `Downloading ${name}`), d.item && d.item !== name ? el("span", { class: "muted small" }, ` · ${d.item}`) : null),
       bar(), nums(), d.message ? el("p", { class: "small", style: "margin:8px 0 0;color:var(--fg-2)" }, d.message) : null,
-      el("div", { class: "row", style: "margin-top:14px" }, el("button", { type: "button", class: "btn sm", onclick: async () => { await api.post("/api/ai/download/pause", {}); draw(); } }, icon("stop"), "Pause"))];
+      el("div", { class: "row", style: "margin-top:14px" }, el("button", { type: "button", class: "btn sm", onclick: async () => { await api.post("/api/ai/download/pause", {}); draw(); } }, icon("stop"), "Pause")), locateRow];
     /* 1.2.3: a paused or failed download never hides Locate (Jon's Mac, 5 Nov: "paused at 0%" and no way to point at his file);
        once a model has been found or chosen, an old paused download steps aside */
     else if ((d.state === "paused" || d.state === "waiting") && !L) bodyEls = [el("div", { class: "dl-title" }, el("b", {}, `${name}: paused at ${pct}%`)), bar(), nums(),

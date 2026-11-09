@@ -4,6 +4,12 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.2.4 (9 Nov 2026), Gemma found where people actually put it
+Tim, 9 Nov: "it's not finding the gemma model and we can't find a button to manually click on where it is".
+- Fixed: **Locate model file…** is now also on the AI engine card, beside Test the engine, and the Gemma card shows it while a download is running too (until now a running download hid it).
+- Fixed: the Studio looks for a Gemma .gguf in Downloads and on the Desktop, up to two folders down (an unzipped folder, or the llm-off folder from the 5 Nov support steps), not only at the top of Downloads.
+- Fixed: an old download no longer resumes and takes over the card at start-up when a model is already found or chosen. (S-127)
+
 ## 1.2.3 (5 Nov 2026), Locate is always there
 - Fixed: on Jon's Mac (5 Nov, 1.2.2 opened fine) the Gemma card showed an old download "paused at 0%" and, in that state, no **Locate a model file…** button. Locate now shows in every state but a running download, and once a model has been found or chosen, an old paused or failed download steps aside for it. (S-126)
 
