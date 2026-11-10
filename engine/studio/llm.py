@@ -94,7 +94,13 @@ ANTHROPIC_VERSION = "2023-06-01"
 
 def cloud_engine(settings: dict, use: str) -> Engine | None:
     """The user's cloud engine when it is switched on for this use ("chat" or "writing") and a key is saved."""
-    from . import keys
+    from . import keys, web
+    if web.ENABLED:                                        # web mode: the company's key on the server, for chat and writing
+        a = web.ai()
+        if not use or not a["key"] or a["provider"] not in CLOUD:
+            return None
+        p = a["provider"]
+        return Engine("anthropic" if p == "anthropic" else "cloud", CLOUD[p]["url"], a["model"] or CLOUD[p]["model"], a["key"], p)
     c = settings.get("cloud_ai") or {}
     prov = c.get("provider", "anthropic")
     if not c.get("enabled") or not (c.get("use_for") or {}).get(use) or prov not in CLOUD:

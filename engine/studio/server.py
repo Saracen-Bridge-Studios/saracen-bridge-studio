@@ -15,14 +15,15 @@ import webbrowser
 from dataclasses import asdict
 from pathlib import Path
 
-from fastapi import Body, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Body, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
+from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.2.4"
+VERSION = "1.3.0"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -40,6 +41,148 @@ async def _unexpected(request, exc: Exception):
         f"Something went wrong inside the Studio ({exc.__class__.__name__}). It isn't your file, the internet or your "
         f"account: everything here runs on this computer. Try once more. If it happens again, send studio.log from "
         f"the Studio's data folder ({store.home()}) to whoever looks after your Studio.")})
+
+
+# ---------- web mode (1.3.0): team sign-in in front of everything; see engine/studio/web.py ----------
+_WEB_OPEN = ("/login", "/api/web/login", "/api/health")
+# what only makes sense on a person's own computer: a file dialog there, programs there, Gemma downloaded there, the
+# Room hosted there. On the web the AI is the company's cloud account and the Room comes in a later step.
+_WEB_DESKTOP_ONLY = ("/api/ai/locate", "/api/ai/download", "/api/open-url", "/api/external/", "/api/room", "/api/cloud")
+
+
+@app.middleware("http")
+async def _web_gate(request, call_next):
+    if not web.ENABLED:
+        return await call_next(request)
+    from fastapi.responses import JSONResponse, RedirectResponse
+    path = request.url.path
+    if request.method not in ("GET", "HEAD", "OPTIONS") and not web.same_site(request.headers):
+        return JSONResponse(status_code=403, content={"detail": "Refused: that request didn't come from the Studio's own pages."})
+    if path in _WEB_OPEN or path.startswith("/ui/"):
+        return await call_next(request)
+    user = web.session(request.cookies.get(web.COOKIE))
+    if not user:
+        if path.startswith("/api/"):
+            return JSONResponse(status_code=401, content={"detail": "Signed out. Sign in again.", "signin": True})
+        return RedirectResponse("/login", status_code=303)
+    if path.startswith(_WEB_DESKTOP_ONLY):
+        return JSONResponse(status_code=403, content={"detail": "That's part of the desktop Studio, not the web version."})
+    request.state.user = user
+    return await call_next(request)
+
+
+def _web_user(request) -> dict:
+    return getattr(request.state, "user", None) or {}
+
+
+def _web_admin(request) -> dict:
+    u = _web_user(request)
+    if u.get("role") != "admin":
+        raise HTTPException(403, "Only an admin can do that.")
+    return u
+
+
+def _web_call(fn, *a, **k):
+    try:
+        return fn(*a, **k)
+    except web.WebError as e:
+        raise HTTPException(e.status, str(e), headers={"Retry-After": str(e.retry_after)} if e.retry_after else None) from e
+
+
+@app.get("/login")
+def web_login_page():
+    return FileResponse(UI_DIR / "login.html")
+
+
+@app.post("/api/web/login")
+def web_login(request: Request, response: Response, body: dict = Body(...)):
+    if not web.ENABLED:
+        raise HTTPException(404, "Not the web version.")
+    sid, user = _web_call(web.login, str(body.get("email", "")), str(body.get("password", "")),
+                          request.client.host if request.client else "")
+    response.set_cookie(web.COOKIE, sid, httponly=True, samesite="strict", path="/", secure=request.url.scheme == "https")
+    return {"ok": True, "user": user}
+
+
+@app.post("/api/web/logout")
+def web_logout(request: Request, response: Response):
+    web.logout(request.cookies.get(web.COOKIE))
+    response.delete_cookie(web.COOKIE, path="/")
+    return {"ok": True}
+
+
+@app.get("/api/web/me")
+def web_me(request: Request):
+    if not web.ENABLED:
+        return {"web": False}
+    a = web.ai()
+    prov = llm.CLOUD.get(a["provider"], {})
+    return {"web": True, "user": _web_user(request),
+            "ai": {"provider": a["provider"], "name": prov.get("name", a["provider"]), "maker": prov.get("maker", ""),
+                   "model": a["model"] or prov.get("model", ""), "ready": bool(a["key"] and prov)}}
+
+
+@app.get("/api/web/ai-models")
+def web_ai_models(request: Request):
+    """Admin: the models the company's AI account offers, to pick STUDIO_AI_MODEL (model names change often)."""
+    _web_admin(request)
+    a = web.ai()
+    if not a["key"] or a["provider"] not in llm.CLOUD:
+        raise HTTPException(409, "The AI brain has no key on this server yet.")
+    try:
+        return {"provider": a["provider"], "in_use": a["model"] or llm.CLOUD[a["provider"]]["model"], "models": llm.cloud_models(a["provider"], a["key"])}
+    except llm.EngineError as e:
+        raise HTTPException(502, f"The AI account didn't answer: {e}") from e
+
+
+@app.post("/api/web/password")
+def web_password(request: Request, body: dict = Body(...)):
+    u = _web_user(request)
+    if not web.check_password(u.get("email", ""), str(body.get("current", ""))):
+        raise HTTPException(400, "Your current password isn't right.")
+    _web_call(web.set_password, u["email"], str(body.get("new", "")))
+    return {"ok": True, "signin": True}
+
+
+@app.get("/api/web/users")
+def web_users(request: Request):
+    _web_admin(request)
+    return {"users": [web.public(e, x) for e, x in sorted(web.users().items())]}
+
+
+@app.post("/api/web/users")
+def web_add_user(request: Request, body: dict = Body(...)):
+    _web_admin(request)
+    pw = _web_call(web.add_user, str(body.get("email", "")), str(body.get("name", "")), str(body.get("role", "member")))
+    return {"ok": True, "password": pw}
+
+
+@app.post("/api/web/users/{email}/reset")
+def web_reset_user(request: Request, email: str):
+    _web_admin(request)
+    return {"ok": True, "password": _web_call(web.set_password, email)}
+
+
+@app.delete("/api/web/users/{email}")
+def web_remove_user(request: Request, email: str):
+    u = _web_admin(request)
+    _web_call(web.remove_user, email, u["email"])
+    return {"ok": True}
+
+
+@app.post("/api/web/import")
+async def web_import(request: Request, file: UploadFile = File(...)):
+    """Admin: a desktop Studio's data folder, zipped. Saved to disk as it arrives, then read run by run."""
+    _web_admin(request)
+    import tempfile
+    tmp = Path(tempfile.mkstemp(suffix=".zip", dir=store.home())[1])
+    try:
+        with open(tmp, "wb") as out:
+            while chunk := await file.read(1 << 20):
+                out.write(chunk)
+        return await run_in_threadpool(_web_call, web.import_zip, tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
 
 
 # ---------- shell ----------
@@ -128,6 +271,15 @@ def diagnostics():
 
 @app.get("/api/ai/status")
 def ai_status():
+    if web.ENABLED:                                       # the company's cloud AI is the brain on the web
+        a = web.ai(); prov = llm.CLOUD.get(a["provider"], {})
+        ok = bool(a["key"] and prov)
+        return {"connected": ok, "engine": "cloud", "model": a["model"] or prov.get("model", ""),
+                "description": f"{a['model'] or prov.get('model', '')} ({prov.get('name', a['provider'])}, the company account)" if ok else "",
+                "reason": "" if ok else "The AI brain isn't set up on this server yet (STUDIO_AI_KEY).",
+                "cloud": {"enabled": ok, "provider": a["provider"], "model": a["model"] or prov.get("model", ""),
+                          "name": prov.get("name", a["provider"]), "has_key": ok, "active": {"chat": ok, "writing": ok}},
+                "vision": ok, "vision_reason": "", "download": {}, "web": True}
     s = store.load_settings()
     out = llm.status(s)
     c = llm.cloud_status(s)
@@ -1442,6 +1594,8 @@ app.include_router(_room_router)
 @app.on_event("startup")
 def _room_host_autostart():
     """If this computer hosts a Room (whoever starts a project hosts it), bring it up so the team can connect (1.1.0)."""
+    if web.ENABLED:
+        return                                          # the web version doesn't host Rooms yet (1.3.0)
     from .room import host as _room_host
     threading.Thread(target=_room_host.autostart, daemon=True, name="room-host-start").start()
 

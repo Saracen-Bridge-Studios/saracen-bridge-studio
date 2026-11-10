@@ -114,6 +114,14 @@ def _index() -> sqlite3.Connection:
 _TITLES_CLEANED: set[str] = set()
 
 
+def index_run(rec: dict) -> None:
+    """Add one run (its run.json) to the Library index: used when a Library is imported (web mode, 1.3.0)."""
+    con = _index()
+    con.execute("INSERT OR REPLACE INTO runs VALUES (?,?,?,?,?,?,?)", _index_row(rec))
+    con.commit()
+    con.close()
+
+
 def _clean_titles(con: sqlite3.Connection):
     """Once per start: titles saved before the title fix (13 Oct) get the cleaned form, in the index, the queue and the
     run's own record, so the Library shows "SNOWSTORM", not "S N O W S T O R M"."""

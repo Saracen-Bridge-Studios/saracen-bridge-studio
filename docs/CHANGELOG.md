@@ -4,6 +4,17 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.0 (9 Nov 2026), the web version
+Tim, 9 Nov, for Jon: "make this a webpage to start so we can start using the service", "transfer all this data over",
+"the mock up and cloud connection for the AI brain", "the engine will be through Jon's OpenAI account". Plan and Rule 1
+sources: `docs/CIPHER_SARACEN_STUDIO_WEB_20261109.md`. The desktop app is unchanged; the web version is the same Studio
+on a server with `STUDIO_WEB=1`.
+- Added: team sign-in (a login per person, admin or member; scrypt-hashed passwords; server-side sessions in an HttpOnly, SameSite=Strict, Secure cookie; a new session at each sign-in; 12 h idle, 7 days at most; a password change ends every session), sign-in throttling, and cross-site requests refused. (S-128)
+- Added: the AI brain: the company's cloud AI account on the server (Jon's OpenAI account by default: STUDIO_AI_PROVIDER, STUDIO_AI_KEY, STUDIO_AI_MODEL), for writing tools and Ask Jonny; the key never reaches a browser. Settings › AI brain: provider, model, Test, and for admins the account's models. (S-128)
+- Added: Settings › Team (add people, password shown once; reset; remove) and Settings › Import data (the desktop data folder as a zip: the Library's runs only, unsafe entries refused). (S-128)
+- Added: `packaging/web`, the server kit: Ubuntu 24.04, Caddy https on your address, the Studio on 127.0.0.1 under systemd, firewall 22/80/443, Tesseract, nightly backups, the first admin's password printed once. (S-128)
+- Changed (web only): no Room yet, no Gemma download, no opening programs or links on the server; the sidebar shows the AI brain and who's signed in, with Sign out. (S-128)
+
 ## 1.2.4 (9 Nov 2026), Gemma found where people actually put it
 Tim, 9 Nov: "it's not finding the gemma model and we can't find a button to manually click on where it is".
 - Fixed: **Locate model file…** is now also on the AI engine card, beside Test the engine, and the Gemma card shows it while a download is running too (until now a running download hid it).

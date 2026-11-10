@@ -18,13 +18,16 @@ function el(tag, attrs, ...kids) {
 const fmt = (n, d = 0) => (n === null || n === undefined || n === "") ? "—" : Number(n).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
 const plural = (n, one, many) => `${fmt(n)} ${Number(n) === 1 ? one : (many || one + "s")}`;
 const pct = n => (n === null || n === undefined) ? "—" : (n * 100).toFixed(1) + "%";
+const signedOut = r => { if (r.status === 401) { location.href = "/login"; throw new Error("Signed out"); } return r; };   /* web version (1.3.0) */
 const api = {
-  async get(p) { const r = await fetch(p); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText); return r.json(); },
-  async post(p, body) { const r = await fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
-  async put(p, body) { const r = await fetch(p, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); return r.json(); },
-  async form(p, fd) { const r = await fetch(p, { method: "POST", body: fd }); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
+  async get(p) { const r = signedOut(await fetch(p)); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText); return r.json(); },
+  async post(p, body) { const r = signedOut(await fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
+  async put(p, body) { const r = signedOut(await fetch(p, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); return r.json(); },
+  async form(p, fd) { const r = signedOut(await fetch(p, { method: "POST", body: fd })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
+  async del(p) { const r = signedOut(await fetch(p, { method: "DELETE" })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
 };
 let CAT = null, AI = { connected: false, reason: "" }, VERSION = "";
+let WEB = { web: false };          /* 1.3.0: the web version (team sign-in, the company's cloud AI brain); false in the desktop app */
 const app = () => document.getElementById("app");
 const toolById = id => CAT.tools.find(t => t.id === id);
 const keep = k => k !== null && k !== undefined && k !== false;
@@ -614,7 +617,7 @@ function buildNav(route) {
   const link = (href, label, ic, n) => el("a", { href, "aria-current": route === href ? "page" : null }, el("span", { class: "ic" }, icon(ic)), el("span", {}, label), n ? el("span", { class: "n" }, n) : null);
   put(nav, link("#/", "Home", "home"),
     CAT.groups.map(g => [el("div", { class: "grp" }, g), CAT.tools.filter(t => t.group === g && t.menu !== false).map(t => link(`#/tool/${t.id}`, t.name, ICONS[t.id] ? t.id : "file"))]),
-    el("div", { class: "grp" }, "Studio"), link("#/room", "Room", "users", typeof roomBadge === "function" ? roomBadge() : null),
+    el("div", { class: "grp" }, "Studio"), WEB.web ? null : link("#/room", "Room", "users", typeof roomBadge === "function" ? roomBadge() : null),
     link("#/library", "Library", "library"), link("#/settings", "Settings", "settings"));
   /* on a short window the rail scrolls: keep the page you're on in view (1.2.1) */
   const cur = nav.querySelector('[aria-current="page"]');
@@ -629,9 +632,22 @@ function navFade() {
 }
 const prettyModel = m => String(m || "").replace(/\.gguf$/i, "").replace(/[-_](it|instruct)([-_].*)?$/i, "").split(/[-_:\s]+/).filter(Boolean)
   .map((w, i) => /^\d+(\.\d+)?[bkm]$/i.test(w) || /^e\d+b$/i.test(w) ? w.toUpperCase() : i === 0 ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+function webFoot(foot) {
+  const a = WEB.ai || {}, u = WEB.user || {};
+  const initials = (u.name || u.email || "?").split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
+  put(foot,
+    el("a", { class: "engine-chip web-brain", href: "#/settings", title: a.ready ? `${a.model} (${a.name}, the company account)` : "The AI brain isn't set up on this server yet" },
+      el("span", { class: "dot " + (a.ready ? "ok" : "warn") }), el("span", {}, el("b", {}, "AI brain"), a.ready ? `${a.name} · company account` : "Not set up yet")),
+    el("div", { class: "web-user" }, el("span", { class: "who", title: u.email }, el("i", {}, initials), el("span", {}, u.name || u.email)),
+      el("button", { type: "button", class: "btn quiet sm", onclick: webSignOut }, "Sign out")),
+    el("div", { class: "ver" }, el("span", {}, VERSION ? `v${VERSION}` : ""),
+      el("span", { class: "privacy on", role: "status", title: "Signed in over a secure connection to your company's server." }, el("i", { class: "lamp", "aria-hidden": "true" }), "Team · secure")));
+}
+async function webSignOut() { await api.post("/api/web/logout", {}).catch(() => {}); location.href = "/login"; }
 function engineChip() {
   /* Tim, 13 Oct: no model names here. Local compute (this computer) or cloud compute (the user's own AI account), one click apart. */
   const foot = document.getElementById("side-foot");
+  if (WEB.web) return webFoot(foot);
   const c = AI.cloud || {}, cloud = !!c.enabled;
   const dl = AI.download || {};
   const pct = dl.total_bytes ? Math.floor(100 * (dl.done_bytes || 0) / dl.total_bytes) : 0;
@@ -698,7 +714,7 @@ async function route() {
     if (kind === "tool") return await tool(a);
     if (kind === "library") return await library(a);
     if (kind === "settings") return await settings();
-    if (kind === "room") return await roomRoute(a, b);
+    if (kind === "room") return WEB.web ? put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, "The Room comes to the web version in a later step. For now it runs in the desktop Studio and the iPhone app.")) : await roomRoute(a, b);
     if (kind === "run") return await runView(a, b);
     await home();
   } catch (e) { put(app(), errBox(e)); }
@@ -719,7 +735,7 @@ async function home() {
   const own = CAT.tools.filter(t => !t.external);
   const working = own.filter(t => ["ready", "partial"].includes(status(t)[0])).length;
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-  const engine = AI.connected ? "Local compute" : null;   /* Tim, 13 Oct: no model names on screen; Settings has them */
+  const engine = WEB.web ? (AI.connected ? "AI brain" : null) : AI.connected ? "Local compute" : null;   /* Tim, 13 Oct: no model names on screen; Settings has them */
   const cloudOn = !!(AI.cloud && AI.cloud.active && (AI.cloud.active.chat || AI.cloud.active.writing)), aiOn = AI.connected || cloudOn;
   const suite = el("div", { class: "suite stagger" });
   const chips = el("div", { class: "chips", role: "group", "aria-label": "Filter tools" });
@@ -735,7 +751,8 @@ async function home() {
         el("div", {},
           el("div", { class: "eyebrow" }, "Saracen Bridge Studio", el("span", { class: "opt" }, `· ${today}`)),
           el("h1", {}, "What are you working ", el("em", {}, "on?")),
-          el("p", { class: "lede" }, "Every Saracen Bridge tool in one place. Run privately on this computer for the most security, or on Cloud for the most power: whatever goes to the cloud leaves this computer, and that always carries some risk."),
+          el("p", { class: "lede" }, WEB.web ? "Every Saracen Bridge tool in one place, for your whole team, from any browser. Calculation tools run on your company's server; writing tools use the company's AI brain."
+          : "Every Saracen Bridge tool in one place. Run privately on this computer for the most security, or on Cloud for the most power: whatever goes to the cloud leaves this computer, and that always carries some risk."),
           el("div", { class: "mq-actions" },
             el("a", { class: "btn primary", href: "#/tool/coverage" }, icon("upload"), "Read a script"),
             el("button", { type: "button", class: "btn ghost", onclick: openPalette }, icon("search"), "Find anything", el("kbd", {}, navigator.platform.startsWith("Mac") ? "⌘ K" : "Ctrl K")),
@@ -2747,7 +2764,77 @@ async function library(only) {
 }
 
 /* ---------------- settings ---------------- */
+/* ---------------- Settings on the web version (1.3.0): the AI brain, my account, the team, Import data ---------------- */
+async function webSettings() {
+  topbar(["Studio", "Settings"]);
+  const a = WEB.ai || {}, u = WEB.user || {}, admin = u.role === "admin";
+  const shown = (title, pw) => el("div", { class: "notice", style: "margin-top:12px" }, el("div", { class: "ic" }, icon("check")),
+    el("div", { class: "grow" }, el("div", {}, title), el("div", { class: "sub" }, "Shown once. Send it to them privately; they can change it in Settings › My account."),
+      el("code", { class: "pw-once" }, pw)));
+  const brain = el("div", { class: "card" }, el("h2", {}, icon("sparkle"), "AI brain"),
+    el("p", { class: "muted small", style: "margin-top:-4px" }, "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
+    a.ready ? el("div", { class: "kpis", style: "margin-top:6px" },
+      el("div", { class: "kpi" }, el("div", { class: "l" }, "Provider"), el("div", { class: "v", style: "font-size:24px" }, a.name)),
+      el("div", { class: "kpi" }, el("div", { class: "l" }, "Model"), el("div", { class: "v", style: "font-size:24px" }, a.model)))
+      : el("p", { class: "note PRELIMINARY" }, "Not set up on this server yet. Whoever runs the server adds the company's key (STUDIO_AI_KEY); writing tools switch on when it's there."),
+    el("p", { class: "muted small", style: "margin:14px 0 0" }, a.provider === "anthropic"
+      ? "What you send the AI (a script, a question, a page) goes to Anthropic through the company account. Anthropic doesn't keep API prompts and answers by default, except on Fable and Mythos models (30 days), and doesn't train on them without permission. Calculation tools never use the AI."
+      : a.provider === "openai"
+      ? "What you send the AI (a script, a question, a page) goes to OpenAI through the company account. OpenAI doesn't use API data to train its models unless the account opts in, and keeps it for up to 30 days for abuse monitoring; zero data retention is available from OpenAI on approval. Calculation tools never use the AI."
+      : `What you send the AI goes to ${a.maker || a.name} under the company account's API terms. Calculation tools never use the AI.`),
+    a.ready ? el("div", { class: "row", style: "margin-top:16px" }, el("button", { type: "button", class: "btn primary", onclick: async ev => { const b = ev.currentTarget; b.disabled = true; await testEngine(); b.disabled = false; } }, icon("sparkle"), "Test the AI brain"),
+      u.role === "admin" ? el("button", { type: "button", class: "btn", onclick: async ev => {
+        const b = ev.currentTarget; b.disabled = true;
+        try { const r = await api.get("/api/web/ai-models"); toast("info", `${r.models.length} models on the account`, `In use: ${r.in_use}. To change it, set STUDIO_AI_MODEL on the server. Some: ${r.models.slice(0, 8).join(", ")}`); }
+        catch (e) { toast("bad", "Couldn't list the models", e.message); }
+        b.disabled = false; } }, "List the account's models") : null) : null);
+  const cur = el("input", { type: "password", autocomplete: "current-password" }), nw = el("input", { type: "password", autocomplete: "new-password" });
+  const mine = el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("users"), "My account"),
+    el("p", { style: "margin:0 0 14px" }, el("b", {}, u.name || u.email), el("span", { class: "muted" }, ` · ${u.email} · ${admin ? "admin" : "member"}`)),
+    el("div", { class: "row" }, el("label", { class: "f" }, "Current password", cur), el("label", { class: "f" }, "New password (10 or more characters)", nw),
+      el("button", { type: "button", class: "btn", onclick: async () => {
+        try { await api.post("/api/web/password", { current: cur.value, new: nw.value }); toast("ok", "Password changed", "Sign in again with the new one."); setTimeout(() => location.href = "/login", 1200); }
+        catch (e) { toast("bad", "Couldn't change it", e.message); } } }, "Change password"),
+      el("button", { type: "button", class: "btn quiet", onclick: webSignOut }, "Sign out")));
+  const cards = [brain, mine];
+  if (admin) {
+    const list = el("div", {}), out = el("div", {});
+    const email = el("input", { type: "text", placeholder: "name@company.com", inputmode: "email" }), name = el("input", { type: "text", placeholder: "Their name" });
+    const role = el("select", {}, el("option", { value: "member" }, "Member"), el("option", { value: "admin" }, "Admin"));
+    const drawTeam = async () => {
+      const r = await api.get("/api/web/users");
+      put(list, el("div", { class: "scroll" }, el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Name"), el("th", {}, "Email"), el("th", {}, "Role"), el("th", {}, ""))),
+        el("tbody", {}, r.users.map(x => el("tr", {}, el("td", {}, el("b", {}, x.name || "—")), el("td", {}, x.email), el("td", {}, x.role),
+          el("td", { style: "text-align:right;white-space:nowrap" },
+            el("button", { type: "button", class: "btn sm", onclick: async () => { try { const k = await api.post(`/api/web/users/${encodeURIComponent(x.email)}/reset`, {}); put(out, shown(`New password for ${x.email}`, k.password)); } catch (e) { toast("bad", "Couldn't reset it", e.message); } } }, "Reset password"),
+            x.email === u.email ? null : el("button", { type: "button", class: "btn quiet sm", onclick: async () => { if (!confirm(`Remove ${x.email}'s login?`)) return; try { await api.del(`/api/web/users/${encodeURIComponent(x.email)}`); drawTeam(); } catch (e) { toast("bad", "Couldn't remove it", e.message); } } }, "Remove"))))))));
+    };
+    cards.push(el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("users"), "Team"),
+      el("p", { class: "muted small", style: "margin-top:-4px" }, "Everyone who can sign in. Admins add people, reset passwords and import data; members use the tools."),
+      list,
+      el("div", { class: "row", style: "margin-top:16px" }, el("label", { class: "f" }, "Email", email), el("label", { class: "f" }, "Name", name), el("label", { class: "f" }, "Role", role),
+        el("button", { type: "button", class: "btn primary", onclick: async () => {
+          try { const k = await api.post("/api/web/users", { email: email.value, name: name.value, role: role.value }); put(out, shown(`Login for ${email.value.trim()}`, k.password)); email.value = name.value = ""; drawTeam(); }
+          catch (e) { toast("bad", "Couldn't add them", e.message); } } }, "Add person")),
+      out));
+    drawTeam();
+    const file = el("input", { type: "file", accept: ".zip,application/zip" }), res = el("div", {});
+    cards.push(el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("upload"), "Import data from the desktop Studio"),
+      el("p", { class: "muted small", style: "margin-top:-4px" }, "Brings a Library across: every saved script, breakdown, budget, report and workbook. On the Mac, zip ~/Library/Application Support/SaracenStudio; on Windows, %APPDATA%\\SaracenStudio. Items already here are kept as they are. Settings, saved keys and the Room stay on the computer."),
+      el("div", { class: "row" }, file, el("button", { type: "button", class: "btn primary", onclick: async ev => {
+        if (!file.files[0]) return toast("info", "Choose the zip first");
+        const b = ev.currentTarget; b.disabled = true; put(res, el("p", { class: "muted small" }, "Uploading and reading the Library…"));
+        try { const fd = new FormData(); fd.append("file", file.files[0]); const r = await api.form("/api/web/import", fd);
+          put(res, el("p", { class: "note PASS" }, `${r.imported} item${r.imported === 1 ? "" : "s"} imported` + (r.already_here ? `, ${r.already_here} already here` : "") + (r.refused ? `, ${r.refused} unsafe entr${r.refused === 1 ? "y" : "ies"} refused` : "") + "."));
+        } catch (e) { put(res, el("p", { class: "note FAIL" }, e.message)); }
+        b.disabled = false; } }, icon("upload"), "Import")),
+      res));
+  }
+  put(app(), el("h1", {}, "Settings"), el("p", { class: "lede" }, "The AI brain, your account" + (admin ? ", the team and importing a desktop Library." : ".")),
+    el("div", { class: "cols" }, el("div", { class: "stack" }, ...cards), el("div", { class: "stack" }, jonCard(), displayCard())));
+}
 async function settings() {
+  if (WEB.web) return webSettings();
   topbar(["Studio", "Settings"]);
   const s = await api.get("/api/settings");
   const e = s.ai_engine;
@@ -3016,6 +3103,8 @@ function displayCard() {
   if (mark && window.SB_MARKS) put(mark, logo3d({ sub: "STUDIO", max: 14, delay: 2 }));
   const reveal = () => { if (!boot || boot.classList.contains("done")) return; setTimeout(() => { boot.classList.add("done"); setTimeout(() => boot.remove(), 600); }, Math.max(0, 1500 - (performance.now() - t0))); };
   try {
+    WEB = await api.get("/api/web/me").catch(() => WEB);
+    if (WEB.web) document.body.classList.add("web");
     CAT = await api.get("/api/catalog");
     VERSION = (await api.get("/api/health").catch(() => ({}))).version || "";
     AI = await api.get("/api/ai/status").catch(() => AI);
