@@ -28,6 +28,7 @@ def test_web_setup_uses_its_own_folder_and_reads_the_ai_settings(tmp_path, monke
     f = folder / L.WEB_SETTINGS
     assert "STUDIO_AI_KEY=" in f.read_text()
     assert not os.environ.get("STUDIO_AI_KEY")                     # blank in the file means not set
+    assert os.environ["STUDIO_AI_PROVIDER"] == "local"             # and no key means this computer's Gemma (1.3.3)
     f.write_text("STUDIO_AI_PROVIDER=anthropic\nSTUDIO_AI_KEY= test-not-a-real-key \nSTUDIO_AI_MODEL=\n")
     L.web_setup()
     assert os.environ["STUDIO_AI_KEY"] == "test-not-a-real-key" and os.environ["STUDIO_AI_PROVIDER"] == "anthropic"
@@ -71,3 +72,29 @@ def test_web_host_serves_the_sign_in_page_and_marks_the_cookie_secure_behind_htt
     finally:
         p.terminate()
         p.wait(timeout=20)
+
+
+def test_the_web_host_can_use_the_host_computers_gemma(tmp_path, monkeypatch):
+    """1.3.3 (Tim, 22 Nov): "have it so jon or whoever can use my gemma for now"."""
+    from studio import llm, web
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("STUDIO_AI_PROVIDER", "local")
+    monkeypatch.delenv("STUDIO_AI_KEY", raising=False)
+    monkeypatch.setattr(web, "ENABLED", True)
+    monkeypatch.setattr(web, "SCRYPT", {"n": 2 ** 10, "r": 8, "p": 1, "dklen": 32})
+    web._sessions.clear(); web._fails.clear()
+    gemma = llm.Engine("openai", "http://127.0.0.1:1/v1", "gemma-test")
+    monkeypatch.setattr(llm, "_resolve", lambda settings: (gemma, ""))
+    monkeypatch.setattr(llm, "can_see", lambda eng: (False, ""))
+    assert web.local_ai()
+    eng, why = llm.resolve({}, use="writing")
+    assert eng is gemma and not why                                # no cloud engine steps in front
+    from fastapi.testclient import TestClient
+    from studio.server import app
+    c = TestClient(app)
+    web.add_user("t@example.com", "T", "admin", "correct horse battery")
+    assert c.post("/api/web/login", json={"email": "t@example.com", "password": "correct horse battery"}).status_code == 200
+    me = c.get("/api/web/me").json()
+    assert me["web"] and me["ai"]["local"] and me["ai"]["ready"] and me["ai"]["model"] == "gemma-test"
+    st = c.get("/api/ai/status").json()
+    assert st["connected"] and st["web"] and st["cloud"]["enabled"] is False

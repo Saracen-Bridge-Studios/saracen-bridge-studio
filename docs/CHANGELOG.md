@@ -4,6 +4,13 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.3 (22 Nov 2026), the web host can use its own Gemma
+Tim, 22 Nov: "temp ill host the web, have it so jon or woever can use my gemma for now and ill make sure my laptop stays
+on".
+- Added: the web host's AI can be the Gemma on the hosting computer (`STUDIO_AI_PROVIDER=local` in `web-settings.txt`, and the default whenever no cloud key is set). The team's writing tools and Ask Jonny then run there, one job at a time; nothing goes to a cloud AI. Settings and the sidebar say so. (S-135)
+- Added: while the web host is running, Windows is asked not to sleep on its own. Closing the lid or pressing the power button still sleeps it. (S-135)
+- Tests: tests/test_web_host.py (3).
+
 ## 1.3.2 (22 Nov 2026), the web version hosted from your own PC
 Tim, 20 to 22 Nov: "could i just host it here and give him a log in?", then, with Jon's Cloudflare account, "lets set it
 all up for private access".

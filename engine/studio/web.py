@@ -231,6 +231,12 @@ def ai() -> dict:
     return {"provider": prov, "key": os.environ.get("STUDIO_AI_KEY", "").strip(), "model": model}
 
 
+def local_ai() -> bool:
+    """STUDIO_AI_PROVIDER=local (1.3.3; Tim, 22 Nov: "have it so jon or whoever can use my gemma for now"): the team's AI
+    work runs on the Gemma of the computer hosting the web version. No cloud account, nothing leaves that computer."""
+    return ENABLED and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == "local"
+
+
 # ---------------------------------------------------------------- Import data
 def import_zip(path: Path) -> dict:
     """Bring a desktop Studio's Library across: the data folder zipped (SaracenStudio, or its contents). Takes the run

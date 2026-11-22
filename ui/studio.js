@@ -575,7 +575,7 @@ function askToggle(force) {
 }
 
 /* ---------------- status of a tool ---------------- */
-const runsOn = () => (AI.cloud && AI.cloud.active && AI.cloud.active.writing) ? `${AI.cloud.name}, your cloud account` : "local compute";
+const runsOn = () => (AI.cloud && AI.cloud.active && AI.cloud.active.writing) ? `${AI.cloud.name}, your cloud account` : WEB.web ? "the host computer" : "local compute";
 const aiWrites = () => AI.connected || !!(AI.cloud && AI.cloud.active && AI.cloud.active.writing);
 function status(t) {
   // needs_ai = AI parts not built yet; ai_built = built, and they run once an AI engine is connected
@@ -637,7 +637,7 @@ function webFoot(foot) {
   const initials = (u.name || u.email || "?").split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("");
   put(foot,
     el("a", { class: "engine-chip web-brain", href: "#/settings", title: a.ready ? `${a.model} (${a.name}, the company account)` : "The AI brain isn't set up on this server yet" },
-      el("span", { class: "dot " + (a.ready ? "ok" : "warn") }), el("span", {}, el("b", {}, "AI brain"), a.ready ? `${a.name} · company account` : "Not set up yet")),
+      el("span", { class: "dot " + (a.ready ? "ok" : "warn") }), el("span", {}, el("b", {}, "AI brain"), a.ready ? (a.local ? "Gemma · the host computer" : `${a.name} · company account`) : "Not set up yet")),
     el("div", { class: "web-user" }, el("span", { class: "who", title: u.email }, el("i", {}, initials), el("span", {}, u.name || u.email)),
       el("button", { type: "button", class: "btn quiet sm", onclick: webSignOut }, "Sign out")),
     el("div", { class: "ver" }, el("span", {}, VERSION ? `v${VERSION}` : ""),
@@ -2984,12 +2984,14 @@ async function webSettings() {
       el("code", { class: "pw-once" }, pw)));
   const brainModel = el("div", { class: "row", style: "gap:10px;align-items:flex-end;flex:1 1 100%" });
   const brain = el("div", { class: "card" }, el("h2", {}, icon("sparkle"), "AI brain"),
-    el("p", { class: "muted small", style: "margin-top:-4px" }, "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
+    el("p", { class: "muted small", style: "margin-top:-4px" }, a.local ? "Writing tools and Ask Jonny run on Gemma, on the computer that hosts this Studio. Nothing is sent to a cloud AI. It does one job at a time, at that computer's speed."
+      : "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
     a.ready ? el("div", { class: "kpis", style: "margin-top:6px" },
       el("div", { class: "kpi" }, el("div", { class: "l" }, "Provider"), el("div", { class: "v", style: "font-size:24px" }, a.name)),
       el("div", { class: "kpi" }, el("div", { class: "l" }, "Model"), el("div", { class: "v", style: "font-size:24px" }, a.model)))
-      : el("p", { class: "note PRELIMINARY" }, "Not set up on this server yet. Whoever runs the server adds the company's key (STUDIO_AI_KEY); writing tools switch on when it's there."),
-    el("p", { class: "muted small", style: "margin:14px 0 0" }, a.provider === "anthropic"
+      : el("p", { class: "note PRELIMINARY" }, a.local ? `Gemma isn't ready on the host computer. ${a.reason || ""}` : "Not set up on this server yet. Whoever runs the server adds the company's key (STUDIO_AI_KEY); writing tools switch on when it's there."),
+    el("p", { class: "muted small", style: "margin:14px 0 0" }, a.local ? "What you send the AI (a script, a question, a page) stays on the host computer. Calculation tools never use the AI."
+      : a.provider === "anthropic"
       ? "What you send the AI (a script, a question, a page) goes to Anthropic through the company account. Anthropic doesn't keep API prompts and answers by default, except on Fable and Mythos models (30 days), and doesn't train on them without permission. Calculation tools never use the AI."
       : a.provider === "openai"
       ? "What you send the AI (a script, a question, a page) goes to OpenAI through the company account. OpenAI doesn't use API data to train its models unless the account opts in, and keeps it for up to 30 days for abuse monitoring; zero data retention is available from OpenAI on approval. Calculation tools never use the AI."

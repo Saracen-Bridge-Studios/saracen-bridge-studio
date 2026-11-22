@@ -138,14 +138,17 @@ def web_setup() -> str:
     f = os.path.join(folder, WEB_SETTINGS)
     if not os.path.exists(f):
         with open(f, "w", encoding="utf-8") as out:
-            out.write("# Saracen Bridge Studio web host: the company's cloud AI account. Fill in the key, save, restart the web host.\n"
-                      "# Provider is openai, anthropic or gemini. Leave the model blank for the Studio's default.\n"
-                      "STUDIO_AI_PROVIDER=openai\nSTUDIO_AI_KEY=\nSTUDIO_AI_MODEL=\n")
+            out.write("# Saracen Bridge Studio web host: where the team's AI work runs. Save, then restart the web host.\n"
+                      "# Provider: local (the Gemma on this computer; no key needed), or a cloud account: openai, anthropic or gemini,\n"
+                      "# with its key below. Leave the model blank for the Studio's default.\n"
+                      "STUDIO_AI_PROVIDER=local\nSTUDIO_AI_KEY=\nSTUDIO_AI_MODEL=\n")
     with open(f, encoding="utf-8-sig") as src:
         for line in src:
             k, sep, v = line.strip().partition("=")
             if sep and k in ("STUDIO_AI_PROVIDER", "STUDIO_AI_KEY", "STUDIO_AI_MODEL") and v.strip():     # the file is what the owner edits, so it wins
                 os.environ[k] = v.strip()
+    if not os.environ.get("STUDIO_AI_KEY") and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() != "local":
+        os.environ["STUDIO_AI_PROVIDER"] = "local"        # no cloud key: the team uses this computer's Gemma (1.3.3)
     return folder
 
 
@@ -535,9 +538,16 @@ def main() -> None:
     log(f"Saracen Bridge Studio {_version()} running at {url}")
     if args.web and not args.headless and sys.platform == "win32":
         faulthandler.cancel_dump_traceback_later()
-        has_key = bool(os.environ.get("STUDIO_AI_KEY"))
+        has_key = bool(os.environ.get("STUDIO_AI_KEY")) or os.environ.get("STUDIO_AI_PROVIDER", "").lower() == "local"
+        if sys.platform == "win32":                # keep this computer awake while the team is using it (the lid and the power button still win)
+            try:
+                import ctypes
+                ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)   # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+            except Exception:  # noqa: BLE001
+                pass
         show_once(f"The Studio web host is running on this computer at {url}\n\n"
-                  + ("" if has_key else f"The cloud AI key isn't set yet: put it in {os.path.join(os.environ['STUDIO_HOME'], WEB_SETTINGS)} and start the web host again.\n\n")
+                  + ("The team's AI work runs on this computer's Gemma.\n\n" if os.environ.get("STUDIO_AI_PROVIDER") == "local"
+                     else "The team's AI work goes to the cloud account in web-settings.txt.\n\n")
                   + "Leave this box open while the team is using the Studio. Click OK to stop the web host.",
                   "Saracen Bridge Studio web host")
         shutdown(server)

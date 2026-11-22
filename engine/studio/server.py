@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.2"
+VERSION = "1.3.3"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -115,6 +115,11 @@ def web_logout(request: Request, response: Response):
 def web_me(request: Request):
     if not web.ENABLED:
         return {"web": False}
+    if web.local_ai():                                    # the host computer's own Gemma (1.3.3)
+        st = llm.status(store.load_settings())
+        return {"web": True, "user": _web_user(request),
+                "ai": {"provider": "local", "name": "Gemma", "maker": "", "local": True,
+                       "model": st.get("model", ""), "ready": bool(st.get("connected")), "reason": st.get("reason", "")}}
     a = web.ai()
     prov = llm.CLOUD.get(a["provider"], {})
     return {"web": True, "user": _web_user(request),
@@ -292,6 +297,15 @@ def diagnostics():
 
 @app.get("/api/ai/status")
 def ai_status():
+    if web.local_ai():                                    # the host computer's own Gemma is the brain (1.3.3)
+        s = store.load_settings()
+        out = llm.status(s)
+        eng, _ = llm.resolve(s, use="writing")
+        out["vision"], out["vision_reason"] = llm.can_see(eng)
+        out["cloud"] = {"enabled": False, "provider": "local", "model": out.get("model", ""), "name": "Gemma", "has_key": False,
+                        "active": {"chat": False, "writing": False}}
+        out["download"], out["web"] = {}, True
+        return out
     if web.ENABLED:                                       # the company's cloud AI is the brain on the web
         a = web.ai(); prov = llm.CLOUD.get(a["provider"], {})
         ok = bool(a["key"] and prov)

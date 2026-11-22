@@ -233,8 +233,10 @@ def _llm_dirs() -> list[Path]:
     if getattr(sys, "frozen", False):
         dirs.append(Path(sys.executable).resolve().parent / "llm")
     dirs.append(refdata.app_root() / "llm")
-    from . import store
+    from . import store, web
     dirs.append(store.home() / "llm")      # where the Studio downloads Gemma when the install folder is read-only
+    if web.ENABLED:                        # a web host on this computer uses the Gemma its desktop Studio already has
+        dirs.append(Path(store.default_home()) / "llm")
     return dirs
 
 
