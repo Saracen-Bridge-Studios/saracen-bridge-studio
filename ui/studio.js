@@ -693,17 +693,121 @@ function topbar(crumbs) {
   put(bar, el("div", { class: "crumbs" }, crumbs.map((c, i) => [i ? el("span", { class: "sep" }, "/") : null, i === crumbs.length - 1 ? el("b", {}, c) : el("span", {}, c)])),
     el("button", { type: "button", class: "search-trigger", onclick: openPalette, "aria-label": `Search (${navigator.platform.startsWith("Mac") ? "Command K" : "Ctrl K"})` }, icon("search"), el("span", {}, "Search tools, scripts, actions"), el("kbd", {}, navigator.platform.startsWith("Mac") ? "⌘ K" : "Ctrl K")),
     el("div", { class: "top-actions" },
-      el("a", { class: "icon-btn", href: "#/tool/coverage", title: JOBS_ACTIVE ? `${plural(JOBS_ACTIVE, "job")} in the queue` : "Coverage queue", "aria-label": "Coverage queue" }, icon("reel"), JOBS_ACTIVE ? el("span", { class: "badge" }, JOBS_ACTIVE) : null),
+      el("a", { class: "icon-btn", href: "#/work", title: JOBS_ACTIVE ? `${plural(JOBS_ACTIVE, "AI job")} running or waiting. Open to see or stop them.` : "AI work", "aria-label": "AI work" }, icon("reel"), JOBS_ACTIVE ? el("span", { class: "badge" }, JOBS_ACTIVE) : null),
       el("a", { class: "icon-btn", href: "#/library", title: "Library", "aria-label": "Library" }, icon("library")),
       el("a", { class: "icon-btn", href: "#/settings", title: "Settings", "aria-label": "Settings" }, icon("settings"))));
 }
+/* 1.3.1: one count for every kind of AI job (it used to count coverage only, so tagging, casting and the rest could
+   hold the queue without showing anywhere: Jon's Mac, 18 Nov). WORK is the latest picture, for the home strip. */
+let WORK = { jobs: [], finishing: null };
 async function pollJobs() {
-  try { const r = await api.get("/api/jobs?kind=coverage&limit=1"); const n = (r.counts.queued || 0) + (r.counts.running || 0); if (n !== JOBS_ACTIVE) { JOBS_ACTIVE = n; const b = document.querySelector('.icon-btn[aria-label="Coverage queue"]'); if (b) { b.querySelector(".badge")?.remove(); if (n) b.append(el("span", { class: "badge" }, n)); } } } catch (e) { /* engine busy */ }
+  try {
+    const r = await api.get("/api/jobs/active"); WORK = r;
+    const n = r.jobs.length + (r.finishing ? 1 : 0);
+    if (n !== JOBS_ACTIVE) {
+      JOBS_ACTIVE = n;
+      const b = document.querySelector('.icon-btn[aria-label="AI work"]');
+      if (b) { b.querySelector(".badge")?.remove(); if (n) b.append(el("span", { class: "badge" }, n)); b.title = n ? `${plural(n, "AI job")} running or waiting. Open to see or stop them.` : "AI work"; }
+    }
+    document.querySelectorAll(".work-strip").forEach(x => x.draw && x.draw());
+  } catch (e) { /* engine busy */ }
+}
+/* what each kind of AI job is called, and how long is left */
+const JOB_KIND = { coverage: "Script coverage", lookbook: "Look book analysis", brandspot: "Brand opportunities", elements: "Tagging elements", bfiread: "BFI cultural test", casting: "Reading roles", schedreason: "Shooting order" };
+const jobKind = j => JOB_KIND[j.kind] || j.kind;
+function jobEta(j) {
+  if (!j || j.status !== "running") return "";
+  const s = j.eta_seconds;
+  if (s === null || s === undefined) return j.eta_basis === "over" ? "taking longer than usual" : "working out the time left";
+  if (s < 60) return "under a minute left";
+  const m = Math.round(s / 60);
+  return m < 90 ? `about ${m} min left` : `about ${(s / 3600).toFixed(1).replace(/\.0$/, "")} hours left`;
+}
+const etaNote = j => j && j.eta_basis === "history" ? "Going by how long this took before on this computer." : j && j.eta_basis === "steps" ? "Going by the steps done so far." : "";
+async function stopAll(after) {
+  const n = (WORK.jobs || []).length;
+  const ok = await modal({ icon: "alert", title: "Stop all AI work?", body: [n ? `${plural(n, "job")} ${n === 1 ? "stops" : "stop"} now: the one running and any waiting. What's done so far on the running one is discarded.` : "Anything running or waiting stops now.",
+    "Your scripts and everything already finished stay in the Library. You can start any of it again."], actions: [["Keep going", false], ["Stop all", true, true]] });
+  if (!ok) return false;
+  try { const r = await api.post("/api/jobs/stop-all", {}); toast("ok", r.stopped ? `Stopped ${plural(r.stopped, "job")}` : "Nothing was running", r.finishing ? `“${r.finishing.title}” ends when the step in hand does.` : null); }
+  catch (e) { toast("bad", "Couldn't stop", e.message); }
+  await pollJobs(); if (after) after();
+  return true;
+}
+/* the strip on Home: what the AI is doing now, time left, Stop all. Hidden when the AI is free. */
+function workStrip() {
+  const box = el("div", { class: "work-strip" });
+  box.draw = () => {
+    const jobs = WORK.jobs || [], run = jobs.find(j => j.status === "running"), waiting = jobs.filter(j => j.status === "queued");
+    if (!jobs.length && !WORK.finishing) return put(box);
+    put(box, el("div", { class: "notice", style: "align-items:center" }, el("div", { class: "ic" }, icon("reel")),
+      el("div", { class: "grow" },
+        run ? el("div", {}, el("b", {}, run.title), ` · ${jobKind(run)} · ${run.progress || "starting"}`, el("span", { class: "pill AI", style: "margin-left:8px", title: etaNote(run) }, jobEta(run)))
+          : WORK.finishing ? el("div", {}, el("b", {}, WORK.finishing.title), " · stopping: the step in hand is finishing")
+          : el("div", {}, "AI work is waiting to start"),
+        el("div", { class: "sub" }, waiting.length ? `${plural(waiting.length, "job")} waiting: ${waiting.slice(0, 3).map(j => `${j.title} (${jobKind(j).toLowerCase()})`).join(", ")}${waiting.length > 3 ? "…" : ""}` : "Nothing else is waiting.")),
+      el("a", { class: "btn sm quiet", href: "#/work" }, "See all"),
+      jobs.length ? el("button", { type: "button", class: "btn sm", onclick: () => stopAll() }, icon("stop"), "Stop all") : null));
+  };
+  box.draw();
+  return box;
+}
+
+/* ---------------- AI work (1.3.1): every job of every kind, with time left; stop one, stop all, clear the history ----------------
+   Tim, 18 Nov: "need to be able to cancel old work so it doesn't affect AI queue", "a stop all button on main page". */
+async function workPage() {
+  topbar(["Studio", "AI work"]);
+  const box = el("div", {});
+  let timer = null;
+  const draw = async () => {
+    let a, all;
+    try { a = await api.get("/api/jobs/active"); all = await api.get("/api/jobs?limit=60"); } catch (e) { return put(box, errBox(e)); }
+    WORK = a;
+    const run = a.jobs.find(j => j.status === "running"), waiting = a.jobs.filter(j => j.status === "queued");
+    const finished = all.jobs.filter(j => ["done", "error", "cancelled"].includes(j.status)).slice(0, 25);
+    const cancel = j => el("button", { type: "button", class: "btn sm", onclick: async e => {
+      e.preventDefault(); e.stopPropagation();
+      if (j.status === "running" && !(await modal({ icon: "alert", title: "Stop this job?", body: [`“${j.title}” (${jobKind(j).toLowerCase()}) stops now. What's done so far is discarded; you can start it again later.`], actions: [["Keep going", false], ["Stop", true, true]] }))) return;
+      await api.post(`/api/jobs/${j.id}/cancel`, {}); toast("info", "Stopped", j.title); await pollJobs(); draw(); } }, j.status === "running" ? "Stop" : "Cancel");
+    put(box,
+      el("div", { class: "kpis" }, kpi("Running", run ? 1 : 0), kpi("Waiting", waiting.length), kpi("Finished, on this list", finished.length)),
+      el("div", { class: "card", style: "margin-top:18px" },
+        el("div", { class: "row", style: "justify-content:space-between;align-items:center" },
+          el("h2", { style: "margin:0" }, icon("reel"), "Now"),
+          a.jobs.length ? el("button", { type: "button", class: "btn", onclick: () => stopAll(draw) }, icon("stop"), "Stop all") : null),
+        run ? el("div", { style: "margin-top:14px" },
+          el("div", { class: "row", style: "align-items:center;justify-content:space-between;gap:12px" },
+            el("div", {}, el("b", {}, run.title), el("span", { class: "muted small" }, ` · ${jobKind(run)} · ${jobOpts(run).mode || "quick"} reasoning`),
+              el("div", { class: "small", style: "margin-top:4px" }, run.progress || "Starting", " · ", el("b", { title: etaNote(run) }, jobEta(run)),
+                run.elapsed_seconds ? el("span", { class: "muted" }, ` · running for ${Math.max(1, Math.round(run.elapsed_seconds / 60))} min`) : null)),
+            cancel(run)), el("div", { class: "clapper", style: "margin-top:10px" }))
+          : a.finishing ? el("p", { class: "note PRELIMINARY", style: "margin-top:14px" }, `“${a.finishing.title}” was stopped and is finishing the step in hand. The next job starts as soon as it ends.`)
+          : el("p", { class: "muted", style: "margin:14px 0 0" }, waiting.length ? "Waiting to start." : "Nothing is running. The AI is free."),
+        waiting.length ? el("div", { class: "list", style: "margin-top:16px;border-top:1px solid var(--line)" }, waiting.map((j, i) => el("a", { href: `#/run/${j.tool}/${j.run_id}`, style: "padding:12px 4px" },
+          el("span", {}, el("span", { class: "ttl" }, j.title), el("span", { class: "meta" }, `${jobKind(j)} · ${jobOpts(j).mode || "quick"} reasoning · ${i + (run ? 1 : 0) ? `${plural(i + (run ? 1 : 0), "job")} ahead of it` : "next"}`)),
+          el("span", { class: "row-end" }, cancel(j))))) : null),
+      el("div", { class: "card", style: "margin-top:18px" },
+        el("div", { class: "row", style: "justify-content:space-between;align-items:center" },
+          el("h2", { style: "margin:0" }, icon("clock"), "Finished"),
+          finished.length ? el("button", { type: "button", class: "btn quiet", title: "Takes finished jobs off this list. Nothing in the Library changes.", onclick: async () => {
+            if (!(await modal({ icon: "trash", title: "Clear the job history?", body: ["Every finished job (done, failed or stopped) comes off these lists. Your scripts and their results stay in the Library."], actions: [["Keep it", false], ["Clear history", true, true]] }))) return;
+            const r = await api.post("/api/jobs/clear-history", {}); toast("ok", `Cleared ${plural(r.cleared, "finished job")}`); draw(); } }, icon("x"), "Clear history") : null),
+        finished.length ? el("div", { class: "list", style: "margin-top:12px;border-top:1px solid var(--line)" }, finished.map(j => el("a", { href: `#/run/${j.tool}/${j.run_id}`, style: "padding:12px 4px" },
+          el("span", {}, el("span", { class: "ttl" }, j.title), " ", el("span", { class: "pill st " + ({ done: "PASS", error: "FAIL", cancelled: "PRELIMINARY" })[j.status], style: "margin-left:8px" }, j.status === "cancelled" ? "stopped" : j.status),
+            el("span", { class: "meta" }, jobKind(j)), j.error ? errorLine(j.error) : null),
+          el("span", { class: "when" }, (j.finished || "").slice(5, 16)))))
+          : el("p", { class: "muted", style: "margin:12px 0 0" }, "Nothing finished on this list.")));
+    clearTimeout(timer);
+    timer = setTimeout(() => document.body.contains(box) && location.hash.startsWith("#/work") && draw(), a.jobs.length || a.finishing ? 3000 : 10000);
+  };
+  put(app(), el("h1", {}, "What the AI is ", el("em", {}, "working on")),
+    el("p", { class: "lede" }, "The AI does one job at a time, so a long one makes the others wait. Everything running or waiting is here, whatever tool started it."), box);
+  await draw();
 }
 
 async function route() {
   const h = location.hash || "#/";
-  buildNav(h.startsWith("#/run/") || h.startsWith("#/library") ? "#/library" : h.startsWith("#/room") ? "#/room" : h);
+  buildNav(h.startsWith("#/run/") || h.startsWith("#/library") || h.startsWith("#/work") || h.startsWith("#/removed") ? "#/library" : h.startsWith("#/room") ? "#/room" : h);
   engineChip();
   const [, kind, a, b] = h.split("/");
   const page = app(); page.classList.remove("page-enter"); void page.offsetWidth; page.classList.add("page-enter");
@@ -713,6 +817,8 @@ async function route() {
     if (!kind) return await home();
     if (kind === "tool") return await tool(a);
     if (kind === "library") return await library(a);
+    if (kind === "work") return await workPage();
+    if (kind === "removed") return await removedPage();
     if (kind === "settings") return await settings();
     if (kind === "room") return WEB.web ? put(app(), el("h1", {}, "The Room"), el("p", { class: "lede" }, "The Room comes to the web version in a later step. For now it runs in the desktop Studio and the iPhone app.")) : await roomRoute(a, b);
     if (kind === "run") return await runView(a, b);
@@ -731,6 +837,7 @@ const stagger = (nodes) => nodes.map((n, i) => (n.style.setProperty("--i", i), n
 let SUITE_FILTER = "All";
 async function home() {
   topbar(["Studio", "Home"]);
+  await pollJobs();
   const { runs: recent, total } = await api.get("/api/runs?limit=8").catch(() => ({ runs: [], total: 0 }));
   const own = CAT.tools.filter(t => !t.external);
   const working = own.filter(t => ["ready", "partial"].includes(status(t)[0])).length;
@@ -762,6 +869,7 @@ async function home() {
           el("a", { href: "#/library" }, el("span", { class: "v" }, fmt(total || 0)), el("span", { class: "l" }, "Saved in the library"), el("span", { class: "r" }, icon("arrow"))),
           el("a", { href: "#/settings" }, el("span", { class: "v" }, aiOn ? "On" : "Off"), el("span", { class: "l" }, AI.connected ? engine : cloudOn ? `${AI.cloud.name} · cloud` : "AI writing"),
             el("span", { class: "r" }, el("span", { class: "dot " + (aiOn ? "ok" : "warn") }), aiOn ? "" : "Set it up"))))),
+    workStrip(),
     recent.length ? [el("div", { class: "section-title" }, "Continue", el("small", {}, "recent work")),
       el("div", { class: "continue stagger" }, stagger(recent.slice(0, 4).map(recentCard)))] : null,
     el("div", { class: "suite-head" }, el("div", { class: "section-title" }, "The Suite", el("small", {}, `${CAT.tools.length} tools`)), chips),
@@ -791,14 +899,25 @@ function recentCard(r) {
     el("div", { class: "t" }, r.title), el("div", { class: "f" }, el("b", {}, ago(r.created)), ` · ${facts}`));
 }
 const VERDICT_PILL = { Recommend: "PASS", Consider: "PRELIMINARY", Pass: "FAIL", Strong: "PASS", "Good with Revisions": "PRELIMINARY", "Needs Work": "WARN", "Not Yet Sales-Ready": "FAIL" };
-function runList(runs) {
+/* Remove from the Library (1.3.1). Tim, 18 Nov: "delete history and projects option". Remove moves the item to Removed
+   items (it can be put back); only Removed items deletes for good. */
+async function removeRun(r, after) {
+  const ok = await modal({ icon: "trash", title: `Remove “${r.title}”?`, body: ["It leaves the Library and every list, and any AI work on it stops.",
+    "It goes to Removed items, where you can put it back or delete it for good."], actions: [["Keep it", false], ["Remove", true, true]] });
+  if (!ok) return false;
+  try { await api.del(`/api/runs/${r.tool}/${encodeURIComponent(r.id)}`); toast("ok", "Removed", el("span", {}, `${r.title}. `, el("a", { href: "#/removed" }, "Removed items"))); pollJobs(); if (after) await after(); return true; }
+  catch (e) { toast("bad", "Couldn't remove it", e.message); return false; }
+}
+function runList(runs, opts = {}) {
   return el("div", { class: "card flush list" }, runs.map(r => {
     const s = r.summary || {};
     const facts = s.scene_count !== undefined ? `${s.format} · ${s.pages_estimated ? "~" : ""}${fmt(s.pages)} pp · ${s.scene_count} scenes · ${s.speaking_roles} roles` : s.pages !== undefined ? `${s.pages}-page look book` : "";
     const v = s.verdict ? el("span", { class: "pill " + (VERDICT_PILL[s.verdict] || ""), style: "margin-left:10px" }, s.score !== undefined ? `${s.verdict} ${s.score}` : `${s.verdict} ${Number(s.composite).toFixed(1)}`) : null;
     return el("a", { href: `#/run/${r.tool}/${r.id}` },
       el("span", {}, el("span", { class: "ttl" }, r.title), v, el("span", { class: "meta" }, `${(toolById(r.tool) || { name: r.tool }).name}${facts ? " · " + facts : ""}`)),
-      el("span", { class: "when" }, String(r.created).replace("T", " ").slice(0, 16)));
+      el("span", { class: "row-end" }, el("span", { class: "when" }, String(r.created).replace("T", " ").slice(0, 16)),
+        opts.remove ? el("button", { type: "button", class: "row-x", title: "Remove from the Library", "aria-label": `Remove ${r.title} from the Library`, onclick: e => {
+          e.preventDefault(); e.stopPropagation(); removeRun(r, opts.remove); } }, icon("trash")) : null));
   }));
 }
 
@@ -825,7 +944,7 @@ async function tool(id) {
   await (PANELS[id] || PANELS.ai_only)(panel, t);
   if (!t.external) {
     const { runs, total } = await api.get(`/api/runs?tool=${id}&limit=20`).catch(() => ({ runs: [], total: 0 }));
-    if (runs.length) put(history, el("div", { class: "section-title" }, "History", el("small", {}, `${fmt(total)} saved`)), runList(runs),
+    if (runs.length) put(history, el("div", { class: "section-title" }, "History", el("small", {}, `${fmt(total)} saved`)), runList(runs, { remove: () => route() }),
       total > runs.length ? el("p", {}, el("a", { href: `#/library/${id}` }, `See all ${fmt(total)} in the Library`)) : null);
   }
 }
@@ -988,9 +1107,17 @@ function jobWatch(kind, tool, runId, onDone) {
     if (!j || j.status === "done") { put(line); if (j && line.dataset.seen) onDone(); return; }
     line.dataset.seen = "1";
     if (j.status === "error") return put(line, el("p", { class: "note FAIL" }, "The last attempt failed: ", errorLine(j.error)));
+    let ahead = null, fin = null;
+    if (j.status === "queued") { try { const w = await api.get("/api/jobs/active"); ahead = w.jobs.find(x => x.status === "running") || w.jobs.find(x => x.id < j.id); fin = w.finishing; } catch (e) { /* the line still says Waiting */ } }
     put(line, el("div", { class: "row", style: "align-items:center;gap:12px" }, el("span", { class: "pill AI" }, j.status === "running" ? "Working" : "Waiting"),
-      el("span", { class: "small" }, j.status === "running" ? (j.progress || "Starting") : "In the queue behind other AI work"),
-      el("button", { type: "button", class: "btn sm quiet", onclick: async () => { await api.post(`/api/jobs/${j.id}/cancel`, {}); toast("info", "Stopped", j.title); tick(); } }, "Cancel")),
+      el("span", { class: "small" }, j.status === "running" ? [j.progress || "Starting", " · ", el("b", { title: etaNote(j) }, jobEta(j))]
+        : ahead ? ["Waiting for ", el("b", {}, ahead.title), ` (${jobKind(ahead).toLowerCase()}${ahead.status === "running" ? `, ${jobEta(ahead)}` : ", also waiting"})`]
+        : fin ? ["Waiting for ", el("b", {}, fin.title), " to finish the step in hand: it was stopped"] : "Starting shortly"),
+      el("button", { type: "button", class: "btn sm quiet", onclick: async () => { await api.post(`/api/jobs/${j.id}/cancel`, {}); toast("info", "Stopped", j.title); pollJobs(); tick(); } }, "Cancel"),
+      ahead ? el("button", { type: "button", class: "btn sm quiet", title: `Stops “${ahead.title}” so this can start`, onclick: async () => {
+        if (!(await modal({ icon: "alert", title: `Stop “${ahead.title}”?`, body: [`It's ${ahead.status === "running" ? "running" : "waiting"} ahead of this (${jobKind(ahead).toLowerCase()}). Stopping it discards what it has done so far; you can start it again later.`], actions: [["Leave it", false], ["Stop it", true, true]] }))) return;
+        await api.post(`/api/jobs/${ahead.id}/cancel`, {}); toast("info", "Stopped", ahead.title); pollJobs(); tick(); } }, "Stop what's ahead") : null,
+      j.status === "queued" ? el("a", { class: "small", href: "#/work" }, "See all AI work") : null),
       el("div", { class: "clapper", style: "margin-top:10px" }));
     clearTimeout(timer); timer = setTimeout(() => document.body.contains(line) && tick(), 3000);
   };
@@ -1972,6 +2099,9 @@ async function castingPanel(box) {
     `${r.title} · ${(toolById(r.tool) || {}).name || r.tool} · ${plural(r.summary.scene_count, "scene")}`)));
   const genre = el("select", { "aria-label": "Genre" }, ["", ...GN].map(g => el("option", { value: g }, g || "Any genre")));
   const budget = el("input", { type: "number", min: 0, step: "any", placeholder: "e.g. 5000000", "aria-label": "Budget in US dollars", style: "width:170px" });
+  /* 1.3.1 (Tim, 18 Nov): the tier level to pair from, the Search button back, and a search of the database by name */
+  const tierSel = label => el("select", { "aria-label": label }, [["auto", "Best fit for the budget"], ["A", "A level (A+, A, A-)"], ["B", "B level (B+, B, B-)"], ["C", "C level (C+, C, emerging)"]].map(([v, l]) => el("option", { value: v }, l)));
+  const tierLead = tierSel("Tier level for leads"), tierSupport = tierSel("Tier level for supporting parts");
   const out = el("div", { style: "margin-top:18px" });
   let data = null;
   const load = async () => {
@@ -1984,6 +2114,14 @@ async function castingPanel(box) {
   pick.addEventListener("change", load);
   genre.addEventListener("change", () => save({ genre: genre.value || null }));
   budget.addEventListener("change", () => save({ budget_usd: budget.value === "" ? null : Number(budget.value) }));
+  tierLead.addEventListener("change", () => save({ tier_lead: tierLead.value }));
+  tierSupport.addEventListener("change", () => save({ tier_support: tierSupport.value }));
+  const searchNow = async ev => {                    /* saves what's typed, then pairs again from the database */
+    const b = ev.currentTarget; b.disabled = true;
+    await save({ genre: genre.value || null, budget_usd: budget.value === "" ? null : Number(budget.value), tier_lead: tierLead.value, tier_support: tierSupport.value });
+    b.disabled = false;
+    if (data) toast("ok", "Searched the database", `${fmt(data.actors)} actors, paired to ${plural(data.roles.length, "principal role")}.`);
+  };
   const sizeSel = r => { const n = el("select", { "aria-label": `Size of part for ${r.name}` }, ["Lead", "Supporting", "Featured"].map(x => el("option", { selected: x === r.size }, x)));
     n.addEventListener("change", () => save({ edits: { [r.name]: { size: n.value } } })); return n; };
   const ageText = r => (r.age_low || r.age_high) && r.age_low !== null && r.age_low !== undefined ? (r.age_low === r.age_high ? `${r.age_low}` : `${r.age_low}–${r.age_high}`) : "age not known";
@@ -1991,7 +2129,10 @@ async function castingPanel(box) {
     : el("button", { type: "button", class: "btn sm", onclick: () => { pkgAttach("actors", a.actor, "Wish list", { role: r.name }); toast("ok", `${a.actor} added as Wish list`, `For ${r.name}. Value the package in Sales Estimates when it's ready.`); render(); } }, icon("plus"), "Add to package");
   const roleCard = r => {
     const rd = r.read || {};
-    const said = rd.edited ? " (corrected)" : rd.source === "model" ? (rd.stated ? " (as the script says)" : " (the AI's reading)") : rd.source === "script" ? " (age printed in the script)" : "";
+    const fromScript = [rd.gender_from ? (rd.gender_from === "name" ? "gender from the part's name" : rd.gender_from === "pronoun" ? "gender from the script's he or she" : rd.gender_from === "words" ? "gender from the script's wording" : `gender: ${rd.gender_from}`) : null,
+      rd.age_from === "script" ? "age printed in the script" : null].filter(Boolean).join(", ");
+    const said = rd.edited ? " (corrected)" : rd.source === "model" ? (rd.stated ? " (as the script says)" : " (the AI's reading)") + (fromScript ? `; ${fromScript}` : "")
+      : rd.source === "script" ? ` (${fromScript || "from the script"})` : "";
     const g = el("select", { "aria-label": "Gender" }, [["Female", "Female"], ["Male", "Male"], ["Non-binary", "Non-binary"], ["Any", "Open to any gender"]].map(([v, l]) => el("option", { value: v, selected: v === r.gender }, l)));
     const lo = el("input", { type: "number", min: 0, max: 100, value: r.age_low ?? "", "aria-label": "Youngest playing age", style: "width:80px" });
     const hi = el("input", { type: "number", min: 0, max: 100, value: r.age_high ?? "", "aria-label": "Oldest playing age", style: "width:80px" });
@@ -2001,11 +2142,31 @@ async function castingPanel(box) {
       el("label", { class: "f", style: "flex:1 1 260px" }, "Description", desc), el("label", { class: "f", style: "flex:0 1 150px" }, "Size of part", sizeSel(r)),
       el("button", { type: "button", class: "btn sm primary", onclick: () => save({ edits: { [r.name]: { gender: g.value, age_low: lo.value, age_high: hi.value, description: desc.value } } }) }, "Save"),
       rd.edited ? el("button", { type: "button", class: "btn sm quiet", onclick: () => save({ edits: { [r.name]: { reset: true } } }) }, "Undo my changes") : null);
-    const rows = r.shortlist.map(a => el("tr", {}, el("td", {}, el("b", {}, a.actor), el("div", { class: "small muted" }, a.sales_role || "")),
-      el("td", {}, a.tier || "—"), el("td", { class: "num", title: a.value_basis }, fmt(a.value, 1)), el("td", { class: "small" }, `${usd(a.fee_low)}–${usd(a.fee_high)}`),
+    const tierFit = { within: ["PASS", "within budget"], stretch: ["PRELIMINARY", "a stretch"], over: ["FAIL", "over budget"] };
+    const actorRow = (a, extra) => el("tr", {}, el("td", {}, el("b", {}, a.actor), el("div", { class: "small muted" }, a.sales_role || "")),
+      el("td", {}, a.tier || "—", a.tier_fit ? el("div", {}, el("span", { class: "pill " + tierFit[a.tier_fit][0] }, tierFit[a.tier_fit][1])) : null),
+      el("td", { class: "num", title: a.value_basis }, fmt(a.value, 1)), el("td", { class: "small" }, `${usd(a.fee_low)}–${usd(a.fee_high)}`),
       el("td", { class: "small" }, `from ${usd(a.min_budget)}`, el("div", { class: "muted" }, `optimal ${usd(a.optimal_floor)}+`)),
       el("td", { class: "small" }, a.genres || "—", a.genre_match ? el("div", {}, el("span", { class: "pill PASS" }, "genre match")) : null),
-      el("td", { class: "small muted" }, a.why.join("; "), el("div", {}, `Confidence ${a.confidence}, reviewed ${a.reviewed || "—"}`)), el("td", {}, addBtn(a, r))));
+      el("td", { class: "small muted" }, a.why.join("; "), el("div", {}, `Confidence ${a.confidence}, reviewed ${a.reviewed || "—"}`), extra || null), el("td", {}, addBtn(a, r)));
+    const rows = r.shortlist.map(a => actorRow(a));
+    /* search the database by name for this part: anyone in it, whatever the shortlist's filters, with how they fit */
+    const sIn = el("input", { type: "search", placeholder: "Search the database by name, e.g. Chris", "aria-label": `Search the actor database for ${r.name}`, autocomplete: "off", spellcheck: "false", style: "flex:1 1 260px" });
+    const sOut = el("div", {});
+    let sSeq = 0, sTimer = null;
+    const doSearch = async () => {
+      const q = sIn.value.trim(), my = ++sSeq;
+      if (q.length < 2) return put(sOut, q ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Type at least two letters.") : null);
+      put(sOut, el("div", { class: "clapper sm", style: "margin-top:10px" }));
+      let res; try { res = await api.get(`/api/casting/${pick.value}/search?q=${encodeURIComponent(q)}&role=${encodeURIComponent(r.name)}`); } catch (e) { return my === sSeq && put(sOut, errBox(e)); }
+      if (my !== sSeq) return;
+      const fit = a => { const no = [a.fits.gender ? null : `${a.gender}, the part is read as ${r.gender}`, a.fits.age ? null : `plays ${a.playing_age}, outside the part's age`, a.fits.budget ? null : "needs a bigger budget"].filter(Boolean);
+        return el("div", { class: "small", style: "margin-top:4px" }, no.length ? el("span", { style: "color:var(--warn)" }, `Outside the reading: ${no.join("; ")}`) : el("span", { class: "pill PASS" }, "Fits the reading")); };
+      put(sOut, res.actors.length ? el("div", { class: "card flush", style: "margin-top:10px" }, table(["Actor", "Tier", "#Value", "Fee range", "Budget", "Genres", "Why", ""], res.actors.map(a => actorRow(a, fit(a)))))
+        : el("p", { class: "note PRELIMINARY", style: "margin-top:10px" }, `No one matching “${q}” in the Saracen Bridge database.`));
+    };
+    sIn.addEventListener("input", () => { clearTimeout(sTimer); sTimer = setTimeout(doSearch, 250); });
+    sIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); clearTimeout(sTimer); doSearch(); } });
     return el("div", { class: "card", style: "margin-top:16px" },
       el("div", { class: "row", style: "justify-content:space-between;align-items:baseline;gap:10px" },
         el("h2", { style: "margin:0" }, r.name, " ", el("span", { class: "pill " + (r.size === "Lead" ? "AI" : "") }, r.size)),
@@ -2017,10 +2178,14 @@ async function castingPanel(box) {
       r.shortlist.length ? el("div", { class: "card flush", style: "margin-top:14px" }, table(["Actor", "Tier", "#Value", "Fee range", "Budget", "Genres", "Why", ""], rows))
         : el("p", { class: "note PRELIMINARY" }, r.over_budget ? `${plural(r.over_budget, "actor")} in the database fit${r.over_budget === 1 ? "s" : ""} the part but need a bigger budget.` : "No one in the database fits this reading. Check the gender and age, or widen the age."),
       el("p", { class: "small muted", style: "margin:10px 0 0" }, `${plural(r.considered, "actor")} in the database fit ${[r.filters.gender, r.filters.bands.length < 5 ? `playing age ${r.filters.bands.join(" or ")}` : null].filter(Boolean).join(", ") || "any gender and age"}`,
-        r.over_budget ? `; ${fmt(r.over_budget)} of them need a bigger budget.` : ".", r.size === "Lead" ? " Ranked by composite cast value." : " Ranked by supporting value.", data.genre ? ` ${data.genre} matches first.` : ""));
+        r.over_budget ? `; ${fmt(r.over_budget)} of them need a bigger budget.` : ".", ` Paired from ${r.filters.tier_basis}.`, r.size === "Lead" ? " Ranked by composite cast value." : " Ranked by supporting value.", data.genre ? ` ${data.genre} matches first.` : ""),
+      el("div", { class: "row", style: "margin-top:14px;gap:10px;align-items:center" }, sIn,
+        el("button", { type: "button", class: "btn sm", onclick: () => { clearTimeout(sTimer); doSearch(); } }, icon("search"), "Search")),
+      sOut);
   };
   const render = () => {
     genre.value = data.genre || ""; budget.value = data.budget_usd ?? "";
+    tierLead.value = data.tier_lead || "auto"; tierSupport.value = data.tier_support || "auto";
     const [tool, id] = pick.value.split("/");
     const watch = jobWatch("casting", tool, id, () => load());
     const read = async ev => {
@@ -2031,22 +2196,26 @@ async function castingPanel(box) {
     };
     put(out,
       el("div", { class: "notice", style: "align-items:flex-start" }, el("div", { class: "ic" }, icon("sparkle")),
-        el("div", { class: "grow" }, el("div", {}, data.read ? `Roles read by ${data.read.engine}, ${data.read.mode} reasoning (${data.read.date || ""})` : "The AI hasn't read the roles yet: gender and age come only from what the script prints beside a name."),
+        el("div", { class: "grow" }, el("div", {}, data.read ? `Roles read by ${data.read.engine}, ${data.read.mode} reasoning (${data.read.date || ""})` : "The AI hasn't read the roles yet. Gender and age so far come from the script's own wording: an age printed where a character comes in, and the gender its name or description gives."),
           el("div", { class: "small muted" }, "It reads each principal role where the script brings it in. Check each reading and correct any you disagree with: the shortlist follows."), watch),
         el("button", { type: "button", class: "btn sm primary", onclick: read }, icon("sparkle"), data.read ? "Read again" : "Read the roles")),
       el("div", { class: "kpis", style: "margin-top:16px" }, kpi("Principal roles", data.roles.length), kpi("Featured parts", data.featured.length),
         kpi("Budget", data.budget_usd ? usd(data.budget_usd) : "Not set"), kpi("Actors in the database", fmt(data.actors))),
       data.prefill_from ? el("p", { class: "muted small", style: "margin:8px 0 0" }, `Genre and budget from the Sales Estimates valuation “${data.prefill_from}”.`) : null,
-      data.budget_usd ? null : el("p", { class: "muted small", style: "margin:8px 0 0" }, "Add the budget to leave out actors whose minimum sensible budget is above it."),
+      data.budget_usd ? el("p", { class: "muted small", style: "margin:8px 0 0" }, data.top_tier ? `This budget carries tier ${data.top_tier} at the top. On “Best fit for the budget”, leads are paired from tier ${data.top_tier} down and supporting parts from one tier below.` : "No tier in the database fits this budget.")
+        : el("p", { class: "muted small", style: "margin:8px 0 0" }, "Add the budget to pair by tier: without it every tier is open, and the biggest names come first."),
       data.roles.map(roleCard),
       data.featured.length ? el("details", { class: "lb-more", style: "margin-top:16px" }, el("summary", {}, `Featured parts (${data.featured.length})`, el("span", { class: "muted small" }, " make one supporting or lead to shortlist it")),
-        el("div", { class: "card flush", style: "margin-top:12px" }, table(["Role", "#Scenes", "#Speeches", "#Days", "Size"], data.featured.map(f => el("tr", {},
-          el("td", {}, el("b", {}, f.name)), el("td", { class: "num" }, f.scenes), el("td", { class: "num" }, f.dialogue), el("td", { class: "num" }, f.days), el("td", {}, sizeSel(f))))))) : null,
-      el("p", { class: "muted small", style: "margin-top:18px" }, "Suggestions come only from the Saracen Bridge Actor Value Database, matched on gender and playing-age band, with the film's genre first. Fees, values and budget floors are the database's indicative figures; availability and interest are not known. Nobody is attached: a suggestion goes to the package as Wish list, which counts for nothing in the estimate until the deal moves. Size of part is read from the script (lead: one of the two largest parts in a quarter or more of the scenes; supporting: 8% or more, or 15 speeches)."));
+        el("div", { class: "card flush", style: "margin-top:12px" }, table(["Role", "Gender", "Age", "#Scenes", "#Speeches", "#Days", "Size"], data.featured.map(f => el("tr", {},
+          el("td", {}, el("b", {}, f.name)), el("td", { class: "small" }, f.gender && f.gender !== "Any" ? f.gender : "—"), el("td", { class: "small" }, f.age_low != null ? ageText(f) : "—"),
+          el("td", { class: "num" }, f.scenes), el("td", { class: "num" }, f.dialogue), el("td", { class: "num" }, f.days), el("td", {}, sizeSel(f))))))) : null,
+      el("p", { class: "muted small", style: "margin-top:18px" }, "Suggestions come only from the Saracen Bridge Actor Value Database, matched on gender and playing-age band, then paired by tier level (from the budget, or the level you choose), with the film's genre first. Search by name under any part to put your own choice forward. Fees, values and budget floors are the database's indicative figures; availability and interest are not known. Nobody is attached: a suggestion goes to the package as Wish list, which counts for nothing in the estimate until the deal moves. Size of part is read from the script (lead: one of the two largest parts in a quarter or more of the scenes; supporting: 8% or more, or 15 speeches)."));
   };
   box.append(el("div", { class: "row", style: "align-items:flex-end" },
     el("label", { class: "f", style: "flex:1 1 320px" }, "Script", pick), el("label", { class: "f", style: "flex:0 1 220px" }, "Genre", genre),
-    el("label", { class: "f", style: "flex:0 1 auto" }, "Budget (USD)", budget)), out);
+    el("label", { class: "f", style: "flex:0 1 auto" }, "Budget (USD)", budget),
+    el("label", { class: "f", style: "flex:0 1 220px" }, "Leads: tier level", tierLead), el("label", { class: "f", style: "flex:0 1 220px" }, "Supporting: tier level", tierSupport),
+    el("button", { type: "button", class: "btn primary", onclick: searchNow }, icon("search"), "Search")), out);
   await load();
 }
 
@@ -2564,7 +2733,7 @@ function queuePanel(kind) {
       el("div", { class: "kpis" }, [["Waiting", c.queued], [word.doing, c.running], ["Done", c.done], ["Failed", c.error]]
         .map(([l, v]) => el("div", { class: "kpi" + (l === word.doing && v ? " edge" : "") }, el("div", { class: "l" }, l), el("div", { class: "v" }, fmt(v || 0))))),
       running ? el("div", { style: "margin-top:16px" }, el("div", { class: "row", style: "align-items:center;justify-content:space-between;margin-bottom:10px" },
-          el("div", {}, el("b", {}, running.title), el("span", { class: "muted small" }, ` · ${jobOpts(running).mode || "quick"} reasoning · ${running.progress || "starting"}`)),
+          el("div", {}, el("b", {}, running.title), el("span", { class: "muted small" }, ` · ${jobOpts(running).mode || "quick"} reasoning · ${running.progress || "starting"} · `, el("b", { title: etaNote(running) }, jobEta(running)))),
           el("button", { type: "button", class: "btn sm", onclick: async () => {
             const ok = await modal({ icon: "alert", title: word.stop, body: [`“${running.title}” stops now. What's done so far is discarded; you can queue it again later.`], actions: [["Keep going", false], ["Stop", true, true]] });
             if (ok) { await api.post(`/api/jobs/${running.id}/cancel`, {}); toast("info", word.stopped, running.title); draw(); }
@@ -2698,7 +2867,8 @@ async function runView(toolId, id) {
   const t = toolById(r.tool) || { name: r.tool, group: "Library" };
   topbar(["Library", t.name, r.title]);
   const fileIcon = f => /\.docx$/i.test(f) ? "doc" : "file";
-  const head = [el("h1", {}, r.title), el("div", { class: "run-meta" }, "Saved " + savedAt(r.created)),
+  const head = [el("h1", {}, r.title), el("div", { class: "run-meta" }, "Saved " + savedAt(r.created), " · ",
+      el("button", { type: "button", class: "linkish", onclick: () => removeRun({ tool: toolId, id, title: r.title }, () => { location.hash = "#/library"; }) }, "Remove from the Library")),
     r.files.length ? el("div", { class: "files" }, r.files.map(f => el("a", { class: "file", href: `/api/runs/${toolId}/${id}/files/${encodeURIComponent(f)}` }, el("span", { class: "ic" }, icon(fileIcon(f))), f))) : null];
   if (r.tool === "lookbook") return put(app(), ...head, lookbookRun(r));
   const b = r.outputs.breakdown;
@@ -2751,16 +2921,57 @@ async function library(only) {
     const r = await api.get(`/api/runs?tool=${tsel.value}&q=${encodeURIComponent(q.value)}&limit=100&offset=${offset}`);
     offset += r.runs.length;
     head.textContent = r.total ? `${fmt(r.total)} saved ${r.total === 1 ? "item" : "items"}, all stored on this computer.` : (q.value || tsel.value ? "Nothing matches." : "Nothing saved yet. Everything stays on this computer.");
-    if (r.runs.length) list.append(runList(r.runs));
+    if (r.runs.length) list.append(runList(r.runs, { remove: () => load(true) }));
     else if (reset) put(list, el("div", { class: "drop", style: "border-style:solid" }, el("div", { class: "art" }, icon("library")), el("div", { class: "big" }, "Nothing here yet"), el("p", {}, "Everything you run in any tool is saved here. Open a tool from Home to start.")));
+    shown = r.total;
+    put(tools, r.total ? el("button", { type: "button", class: "btn quiet", title: "Removes everything this list shows. It all goes to Removed items.", onclick: removeShown }, icon("trash"), q.value || tsel.value ? `Remove these ${fmt(r.total)}` : "Remove everything") : null,
+      el("a", { class: "btn quiet", href: "#/removed" }, "Removed items"), el("a", { class: "btn quiet", href: "#/work" }, "AI work and its history"));
     put(more, offset < r.total ? el("button", { type: "button", class: "btn", onclick: () => load(false) }, `Show more (${fmt(r.total - offset)} left)`) : null);
   };
-  let timer;
+  let timer, shown = 0;
+  const tools = el("div", { class: "row", style: "margin-top:16px;gap:10px" });
+  const removeShown = async () => {
+    const what = q.value || tsel.value ? `the ${fmt(shown)} ${shown === 1 ? "item" : "items"} this list shows` : `everything in the Library (${fmt(shown)} ${shown === 1 ? "item" : "items"})`;
+    const ok = await modal({ icon: "trash", title: "Remove from the Library?", body: [`This removes ${what}. Any AI work on them stops.`,
+      "They go to Removed items, where you can put them back or delete them for good."], actions: [["Keep them", false], [`Remove ${fmt(shown)}`, true, true]] });
+    if (!ok) return;
+    try { const r = await api.post("/api/runs/remove", { all: true, tool: tsel.value || null, q: q.value }); toast("ok", `Removed ${plural(r.removed, "item")}`, el("a", { href: "#/removed" }, "Removed items")); pollJobs(); load(true); }
+    catch (e) { toast("bad", "Couldn't remove them", e.message); }
+  };
   q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => load(true), 180); });
   q.addEventListener("keydown", e => { if (e.key === "Enter") { clearTimeout(timer); load(true); } }); tsel.addEventListener("change", () => load(true));
   put(app(), el("h1", {}, "Everything you've ", el("em", {}, "run")), head,
-    el("div", { class: "row", style: "margin:22px 0 18px" }, q, tsel), list, more);
+    el("div", { class: "row", style: "margin:22px 0 18px" }, q, tsel), list, more, tools);
   await load(true);
+}
+/* Removed items: put one back, or delete for good (the only place the Studio erases saved work) */
+async function removedPage() {
+  topbar(["Studio", "Library", "Removed items"]);
+  const box = el("div", {});
+  const canDelete = !WEB.web || (WEB.user || {}).role === "admin";
+  const draw = async () => {
+    let r; try { r = await api.get("/api/removed"); } catch (e) { return put(box, errBox(e)); }
+    const items = r.removed;
+    if (!items.length) return put(box, el("div", { class: "drop", style: "border-style:solid" }, el("div", { class: "art" }, icon("trash")), el("div", { class: "big" }, "Nothing has been removed"),
+      el("p", {}, "Anything you remove from the Library waits here until you put it back or delete it for good."), el("div", { class: "row" }, el("a", { class: "btn", href: "#/library" }, "Back to the Library"))));
+    put(box,
+      el("div", { class: "card flush list" }, items.map(it => el("a", { href: "#/removed", onclick: e => e.preventDefault(), style: "cursor:default" },
+        el("span", {}, el("span", { class: "ttl" }, it.title), el("span", { class: "meta" }, `${(toolById(it.tool) || { name: it.tool }).name} · saved ${String(it.created || "").slice(0, 16)} · removed ${String(it.removed || "").slice(0, 16)}`)),
+        el("span", { class: "row-end", style: "gap:8px" },
+          el("button", { type: "button", class: "btn sm", onclick: async () => {
+            try { const b = await api.post("/api/removed/restore", { key: it.key }); toast("ok", "Back in the Library", el("a", { href: `#/run/${b.tool}/${b.id}` }, it.title)); draw(); }
+            catch (e) { toast("bad", "Couldn't put it back", e.message); } } }, "Put back"),
+          canDelete ? el("button", { type: "button", class: "btn sm quiet", onclick: async () => {
+            if (!(await modal({ icon: "alert", title: `Delete “${it.title}” for good?`, body: ["The script, its results and its files are erased from this computer. This can't be undone."], actions: [["Keep it", false], ["Delete for good", true, true]] }))) return;
+            try { await api.post("/api/removed/delete", { key: it.key }); toast("ok", "Deleted", it.title); draw(); } catch (e) { toast("bad", "Couldn't delete it", e.message); } } }, icon("trash"), "Delete for good") : null)))),
+      el("div", { class: "row", style: "margin-top:16px;gap:10px" }, el("a", { class: "btn quiet", href: "#/library" }, "Back to the Library"),
+        canDelete ? el("button", { type: "button", class: "btn quiet", onclick: async () => {
+          if (!(await modal({ icon: "alert", title: `Delete all ${fmt(items.length)} for good?`, body: [`Every removed item (${fmt(items.length)}) is erased from this computer, with its results and files. This can't be undone.`], actions: [["Keep them", false], ["Delete all for good", true, true]] }))) return;
+          try { const d = await api.post("/api/removed/delete", { all: true }); toast("ok", `Deleted ${plural(d.deleted, "item")}`); draw(); } catch (e) { toast("bad", "Couldn't delete them", e.message); } } }, icon("trash"), "Delete all for good")
+          : el("span", { class: "muted small" }, "Only an admin can delete for good.")));
+  };
+  put(app(), el("h1", {}, "Removed ", el("em", {}, "items")), el("p", { class: "lede" }, "Removed from the Library, still on this computer. Put one back, or delete it for good."), box);
+  await draw();
 }
 
 /* ---------------- settings ---------------- */
@@ -2771,6 +2982,7 @@ async function webSettings() {
   const shown = (title, pw) => el("div", { class: "notice", style: "margin-top:12px" }, el("div", { class: "ic" }, icon("check")),
     el("div", { class: "grow" }, el("div", {}, title), el("div", { class: "sub" }, "Shown once. Send it to them privately; they can change it in Settings › My account."),
       el("code", { class: "pw-once" }, pw)));
+  const brainModel = el("div", { class: "row", style: "gap:10px;align-items:flex-end;flex:1 1 100%" });
   const brain = el("div", { class: "card" }, el("h2", {}, icon("sparkle"), "AI brain"),
     el("p", { class: "muted small", style: "margin-top:-4px" }, "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
     a.ready ? el("div", { class: "kpis", style: "margin-top:6px" },
@@ -2783,11 +2995,18 @@ async function webSettings() {
       ? "What you send the AI (a script, a question, a page) goes to OpenAI through the company account. OpenAI doesn't use API data to train its models unless the account opts in, and keeps it for up to 30 days for abuse monitoring; zero data retention is available from OpenAI on approval. Calculation tools never use the AI."
       : `What you send the AI goes to ${a.maker || a.name} under the company account's API terms. Calculation tools never use the AI.`),
     a.ready ? el("div", { class: "row", style: "margin-top:16px" }, el("button", { type: "button", class: "btn primary", onclick: async ev => { const b = ev.currentTarget; b.disabled = true; await testEngine(); b.disabled = false; } }, icon("sparkle"), "Test the AI brain"),
-      u.role === "admin" ? el("button", { type: "button", class: "btn", onclick: async ev => {
-        const b = ev.currentTarget; b.disabled = true;
-        try { const r = await api.get("/api/web/ai-models"); toast("info", `${r.models.length} models on the account`, `In use: ${r.in_use}. To change it, set STUDIO_AI_MODEL on the server. Some: ${r.models.slice(0, 8).join(", ")}`); }
-        catch (e) { toast("bad", "Couldn't list the models", e.message); }
-        b.disabled = false; } }, "List the account's models") : null) : null);
+      u.role === "admin" ? brainModel : null) : null);
+  if (a.ready && u.role === "admin") (async () => {       /* 1.3.1: the model is chosen here, from what the account offers today */
+    let r; try { r = await api.get("/api/web/ai-models"); } catch (e) { return put(brainModel, el("span", { class: "muted small" }, `Couldn't list the account's models: ${e.message}`)); }
+    const sel = el("select", { "aria-label": "Model for the AI brain" },
+      el("option", { value: "" }, "The server's own setting"), r.models.map(m => el("option", { value: m, selected: m === r.chosen }, m)),
+      r.chosen && !r.models.includes(r.chosen) ? el("option", { value: r.chosen, selected: true }, `${r.chosen} · not on the account's list`) : null);
+    put(brainModel, el("label", { class: "f", style: "flex:0 1 320px" }, "Model", sel),
+      el("button", { type: "button", class: "btn", onclick: async () => {
+        try { const x = await api.put("/api/web/ai-model", { model: sel.value }); toast("ok", "AI brain model saved", `In use: ${x.in_use}`); WEB = await api.get("/api/web/me"); route(); }
+        catch (e) { toast("bad", "Not saved", e.message); } } }, "Use this model"),
+      r.listed ? null : el("p", { class: "note FAIL", style: "flex:1 1 100%;margin:8px 0 0" }, icon("alert"), ` The account no longer lists “${r.in_use}”: it has been retired or renamed. Pick another model and press Use this model.`));
+  })();
   const cur = el("input", { type: "password", autocomplete: "current-password" }), nw = el("input", { type: "password", autocomplete: "new-password" });
   const mine = el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("users"), "My account"),
     el("p", { style: "margin:0 0 14px" }, el("b", {}, u.name || u.email), el("span", { class: "muted" }, ` · ${u.email} · ${admin ? "admin" : "member"}`)),
@@ -2991,8 +3210,35 @@ async function cloudCard() {
   let c = await api.get("/api/cloud");
   const card = el("div", { class: "card cloud-card", style: "margin-top:20px" });
   const keyIn = el("input", { type: "password", autocomplete: "off", spellcheck: "false", "aria-label": "API key" });
-  const model = el("input", { type: "text", "aria-label": "Model", list: "cloud-models" });
-  const models = el("datalist", { id: "cloud-models" });
+  /* 1.3.1 (Tim, 18 Nov: "option to choose api models as they become discontinued"): the Model box is a list of what the
+     account offers today, fetched when a key is saved, with the Studio's default first and "Another model" to type one.
+     A model the provider has dropped is named, with what to do. */
+  const model = el("input", { type: "text", "aria-label": "Model name", placeholder: "Type the model's exact name", style: "margin-top:8px", hidden: true });
+  const modelSel = el("select", { "aria-label": "Model" });
+  const gone = el("div", {});
+  const LISTS = {};                                   /* provider -> the account's models, once fetched */
+  const chosen = () => modelSel.value === "__other" ? model.value.trim() : modelSel.value;
+  const fillModels = () => {
+    const P = c.providers[prov], list = LISTS[prov], cur = c.provider === prov && c.model && c.model !== P.model ? c.model : "";
+    const known = new Set(list || []);
+    const opts = [el("option", { value: "" }, `The Studio's default (${P.model})${list && !known.has(P.model) ? " · not on your account's list" : ""}`)];
+    if (cur && !known.has(cur)) opts.push(el("option", { value: cur }, `${cur}${list ? " · not on your account's list" : ""}`));
+    (list || []).filter(m => m !== P.model).forEach(m => opts.push(el("option", { value: m }, m)));
+    opts.push(el("option", { value: "__other" }, "Another model: type its name"));
+    put(modelSel, opts); modelSel.value = cur; model.hidden = true; model.value = "";
+    const using = cur || P.model;
+    put(gone, list && !known.has(using) ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` ${P.name} no longer lists “${using}” on your account: it has been retired or renamed. Pick another model above and press Save.`)
+      : !list && c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Fetching the models on your account…")
+      : !c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Save a key to see the models on your account.") : null);
+  };
+  const loadModels = async loud => {
+    const at = prov;
+    if (!c.keys[at]) { fillModels(); return; }
+    try { const r = await api.get(`/api/cloud/models?provider=${at}`); LISTS[at] = r.models; if (loud) toast("ok", `${r.models.length} models on your account`, "Pick one in the Model box."); }
+    catch (e) { if (loud) toast("bad", "Couldn't list models", e.message); }
+    if (at === prov) fillModels();
+  };
+  modelSel.addEventListener("change", () => { model.hidden = modelSel.value !== "__other"; if (!model.hidden) model.focus(); });
   const chat = el("input", { type: "checkbox" }), writing = el("input", { type: "checkbox" });
   let prov = c.provider;
   const sw = el("button", { type: "button", class: "switch", role: "switch", "aria-label": "Use my cloud AI" }, el("i"));
@@ -3000,9 +3246,9 @@ async function cloudCard() {
     const P = c.providers[prov];
     sw.setAttribute("aria-checked", String(c.enabled));
     keyIn.value = ""; keyIn.placeholder = c.keys[prov] ? `Saved (${c.keys[prov]}). Paste a new key to replace it.` : `Paste your ${P.name} API key`;
-    model.placeholder = P.model; model.value = c.provider === prov ? (c.model === P.model ? "" : c.model) : "";
+    fillModels(); if (c.keys[prov] && !LISTS[prov]) loadModels(false);
     chat.checked = !!c.use_for.chat; writing.checked = !!c.use_for.writing;
-    put(segs, Object.entries(c.providers).map(([id, x]) => el("button", { type: "button", "aria-pressed": String(id === prov), onclick: () => { prov = id; put(models); draw(); } },
+    put(segs, Object.entries(c.providers).map(([id, x]) => el("button", { type: "button", "aria-pressed": String(id === prov), onclick: () => { prov = id; draw(); } },
       el("b", {}, x.name), el("small", {}, x.maker))));
     put(keyLink, el("a", { href: P.keys_at, target: "_blank", rel: "noopener" }, `Get a ${P.name} key`, icon("external")));
     put(state, c.enabled ? el("span", { class: "pill AI" }, `On · ${c.providers[c.provider].name}`) : el("span", { class: "pill" }, "Off"));
@@ -3010,7 +3256,7 @@ async function cloudCard() {
   };
   const segs = el("div", { class: "tabs provs", role: "group", "aria-label": "Provider" });
   const keyLink = el("span", { class: "small" }), state = el("span", {}), warnName = el("b", {});
-  const body = () => ({ provider: prov, model: model.value.trim(), use_for: { chat: chat.checked, writing: writing.checked }, ...(keyIn.value.trim() ? { key: keyIn.value.trim() } : {}) });
+  const body = () => ({ provider: prov, model: chosen(), use_for: { chat: chat.checked, writing: writing.checked }, ...(keyIn.value.trim() ? { key: keyIn.value.trim() } : {}) });
   const save = async extra => {
     try { c = await api.put("/api/cloud", { ...body(), ...extra }); AI = await api.get("/api/ai/status"); engineChip(); if (ASK.node) ASK.node.draw(); draw(); return true; }
     catch (e) { toast("bad", "Not saved", e.message); c = await api.get("/api/cloud"); draw(); return false; }
@@ -3027,12 +3273,12 @@ async function cloudCard() {
     segs,
     el("div", { class: "row", style: "margin-top:16px" },
       el("label", { class: "f", style: "flex:2 1 300px" }, el("span", { class: "row", style: "justify-content:space-between;gap:10px" }, "API key", keyLink), keyIn),
-      el("label", { class: "f", style: "flex:1 1 200px" }, "Model", model, models),
-      el("button", { type: "button", class: "btn", onclick: async () => {
+      el("label", { class: "f", style: "flex:1 1 260px" }, "Model", modelSel, model),
+      el("button", { type: "button", class: "btn", title: "Fetch the list of models on your account again", onclick: async () => {
         if (keyIn.value.trim() && !(await save())) return;
-        try { const r = await api.get(`/api/cloud/models?provider=${prov}`); put(models, r.models.map(m => el("option", { value: m }))); toast("ok", `${r.models.length} models on your account`, "Pick one in the Model box, or leave it blank for the default."); }
-        catch (e) { toast("bad", "Couldn't list models", e.message); }
-      } }, "List models")),
+        delete LISTS[prov]; await loadModels(true);
+      } }, "Refresh the list")),
+    gone,
     el("div", { class: "uses" },
       el("label", {}, chat, el("span", {}, el("b", {}, "Ask Jonny chat"), el("small", {}, "Questions and the page you're on"))),
       el("label", {}, writing, el("span", {}, el("b", {}, "Writing tools"), el("small", {}, "Coverage. The whole script is sent")))),

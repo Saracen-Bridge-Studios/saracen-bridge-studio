@@ -15,6 +15,14 @@ _thread: threading.Thread | None = None
 _stop = threading.Event()
 _wake = threading.Event()
 POLL = 2.0
+_current: dict | None = None            # the job the worker is on right now, whatever its row says (1.3.1)
+
+
+def busy() -> dict | None:
+    """The job the worker is actually on. A cancelled job stays here until the step in hand ends, which is how new work
+    could wait "behind other AI work" with nothing shown as running (Jon's Mac, 18 Nov)."""
+    j = _current
+    return {k: j.get(k) for k in ("id", "kind", "tool", "run_id", "title")} if j else None
 
 
 def ensure_worker(delay: float = 0) -> None:
@@ -48,15 +56,23 @@ def _loop(delay: float = 0) -> None:
         if not job:
             _stop.wait(POLL)
             continue
+        global _current
+        _current = job
         try:
             HANDLERS[job["kind"]](job)
             if store.get_job(job["id"])["status"] == "running":
                 store.set_job(job["id"], status="done", progress="Done")
         except InterruptedError:
             store.set_job(job["id"], status="cancelled", progress="Cancelled")
+        except FileNotFoundError as e:    # the script was removed from the Library while its job waited or ran
+            if store.get_job(job["id"])["status"] == "running":
+                store.set_job(job["id"], status="error", error=f"That script is no longer in the Library ({e.__class__.__name__}).")
         except Exception as e:  # noqa: BLE001 - one bad script must not stop the queue
-            store.set_job(job["id"], status="error", error=f"{e.__class__.__name__}: {e}"[:500])
+            if store.get_job(job["id"])["status"] == "running":     # a job stopped meanwhile stays "cancelled", not "failed"
+                store.set_job(job["id"], status="error", error=f"{e.__class__.__name__}: {e}"[:500])
             traceback.print_exc()
+        finally:
+            _current = None
 
 
 def run_coverage(job: dict) -> None:

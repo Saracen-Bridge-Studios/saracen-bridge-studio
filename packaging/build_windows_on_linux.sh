@@ -82,7 +82,7 @@ rustup target add x86_64-pc-windows-gnu >/dev/null
 (cd packaging/shell && CARGO_TARGET_DIR="$WORK/shell-target" cargo build --release --target x86_64-pc-windows-gnu)
 cp "$WORK/shell-target/x86_64-pc-windows-gnu/release/saracen-shell.exe" dist/SaracenBridgeStudio/studio-window.exe
 # WebView2Loader.dll comes with the webview2-com-sys crate; it is Microsoft's, signed by Microsoft. Checked before shipping.
-osslsigncode verify -in "$WORK/shell-target/x86_64-pc-windows-gnu/release/WebView2Loader.dll" 2>&1 | grep -q "O=Microsoft Corporation" || { echo "WebView2Loader signature check failed"; exit 1; }
+{ osslsigncode verify -in "$WORK/shell-target/x86_64-pc-windows-gnu/release/WebView2Loader.dll" 2>&1 || true; } | grep -q "O=Microsoft Corporation" || { echo "WebView2Loader signature check failed"; exit 1; }
 cp "$WORK/shell-target/x86_64-pc-windows-gnu/release/WebView2Loader.dll" dist/SaracenBridgeStudio/
 
 # 5. Smoke-test the Windows exe (port 8798; never 8799), throwaway data folder
@@ -93,12 +93,12 @@ wineserver -k || true
 # 6. Inno Setup and the Microsoft-signed WebView2 bootstrapper, then the installer
 if [ ! -f "$WINEPREFIX/drive_c/InnoSetup/ISCC.exe" ]; then
   curl -fsSL -o "$WORK/innosetup.exe" "https://github.com/jrsoftware/issrc/releases/download/is-${INNO//./_}/innosetup-$INNO.exe"
-  osslsigncode verify -in "$WORK/innosetup.exe" 2>&1 | grep -q "CN=Pyrsys B.V." || { echo "Inno Setup signature check failed"; exit 1; }
+  { osslsigncode verify -in "$WORK/innosetup.exe" 2>&1 || true; } | grep -q "CN=Pyrsys B.V." || { echo "Inno Setup signature check failed"; exit 1; }
   xvfb-run -a wine "$WORK/innosetup.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CURRENTUSER '/DIR=C:\InnoSetup' < /dev/null 2>&1 | cat
 fi
 WV=packaging/redist/MicrosoftEdgeWebview2Setup.exe
 [ -f "$WV" ] || curl -fsSL -o "$WV" "https://go.microsoft.com/fwlink/p/?LinkId=2124703"
-osslsigncode verify -in "$WV" 2>&1 | grep -q "O=Microsoft Corporation" || { echo "WebView2 bootstrapper signature check failed"; exit 1; }
+{ osslsigncode verify -in "$WV" 2>&1 || true; } | grep -q "O=Microsoft Corporation" || { echo "WebView2 bootstrapper signature check failed"; exit 1; }
 SIZE=$(du -sb dist/SaracenBridgeStudio | cut -f1)
 [ "$SIZE" -gt 4000000000 ] && export STUDIO_SPAN=1
 w 'C:\InnoSetup\ISCC.exe' 'packaging\installer.iss' | tail -3

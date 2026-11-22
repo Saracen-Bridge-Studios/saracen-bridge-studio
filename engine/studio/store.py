@@ -285,7 +285,99 @@ def list_jobs(kind: str | None = None, limit: int = 200) -> dict:
     counts = {r["status"]: r["n"] for r in _jobs(f"SELECT status, COUNT(*) n FROM jobs {where} GROUP BY status", args)}
     jobs = _jobs(f"""SELECT * FROM jobs {where} ORDER BY CASE status WHEN 'running' THEN 0 WHEN 'queued' THEN 1 ELSE 2 END,
                      CASE WHEN status IN ('queued') THEN id END ASC, id DESC LIMIT ?""", args + (limit,))
+    for j in jobs:
+        if j["status"] == "running":
+            j.update(eta(j))
     return {"counts": counts, "jobs": jobs}
+
+
+# ---------------------------------------------------------------- time left (1.3.1)
+# Tim, 18 Nov: "eta on completion for tagging elements and schedule budget". Two honest bases, never a made-up figure:
+#   steps    the job says "scenes 72-84 of 134": the time the finished steps took, carried over the steps left
+#   history  how long this kind of job, at this reasoning mode, took the last few times on this computer
+# Jobs that are all steps (tagging, reading roles) use steps; the others use history, then steps for the part in hand.
+STEP_KINDS = ("elements", "casting")
+_STEP = re.compile(r"(\d+)(?:\s*[\u2013-]\s*(\d+))?\s+of\s+(\d+)")
+
+
+def _secs(stamp: str | None) -> float | None:
+    try:
+        return time.mktime(time.strptime(stamp, "%Y-%m-%d %H:%M:%S")) if stamp else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _mode(job: dict) -> str:
+    o = job.get("options")
+    try:
+        o = json.loads(o or "{}") if isinstance(o, str) else (o or {})
+    except ValueError:
+        o = {}
+    return o.get("mode") or ""
+
+
+def usual_seconds(kind: str, mode: str = "") -> float | None:
+    """The middle duration of the last few finished jobs of this kind (same reasoning mode when there are any)."""
+    rows = _jobs("SELECT started, finished, options FROM jobs WHERE kind=? AND status='done' AND started IS NOT NULL "
+                 "AND finished IS NOT NULL ORDER BY id DESC LIMIT 24", (kind,))
+    took = [(_mode(r), (_secs(r["finished"]) or 0) - (_secs(r["started"]) or 0)) for r in rows]
+    took = [(m, t) for m, t in took if t > 0]
+    same = [t for m, t in took if m == mode][:8] or [t for _, t in took][:8]
+    if not same:
+        return None
+    same.sort()
+    return same[len(same) // 2]
+
+
+def eta(job: dict, now: float | None = None) -> dict:
+    """Time left for a running job: {"elapsed_seconds", "eta_seconds" (None when it can't be said), "eta_basis"}."""
+    start = _secs(job.get("started"))
+    if start is None:
+        return {"elapsed_seconds": None, "eta_seconds": None, "eta_basis": None}
+    elapsed = max(0.0, (now if now is not None else time.time()) - start)
+    steps = None
+    m = _STEP.search(job.get("progress") or "")
+    if m:
+        first, total = int(m.group(1)), int(m.group(3))
+        done = first - 1                                   # "72-84 of 134": 71 are finished, 72 to 84 are in hand
+        if total > 0 and 0 < done < total and elapsed > 0:
+            steps = elapsed / done * (total - done)
+    usual = usual_seconds(job.get("kind") or "", _mode(job))
+    left, basis = None, None
+    if job.get("kind") in STEP_KINDS:
+        if steps is not None:
+            left, basis = steps, "steps"
+        elif usual and usual > elapsed:
+            left, basis = usual - elapsed, "history"
+    elif usual:
+        left, basis = (usual - elapsed, "history") if usual > elapsed else (None, "over")
+    elif steps is not None:
+        left, basis = steps, "steps"
+    return {"elapsed_seconds": round(elapsed), "eta_seconds": None if left is None else max(5, round(left)), "eta_basis": basis}
+
+
+def active_jobs() -> dict:
+    """Every job that is running or waiting, of every kind, oldest first: what the AI is busy with (1.3.1)."""
+    jobs = _jobs("SELECT * FROM jobs WHERE status IN ('queued','running') ORDER BY CASE status WHEN 'running' THEN 0 ELSE 1 END, id")
+    for j in jobs:
+        if j["status"] == "running":
+            j.update(eta(j))
+    return {"jobs": jobs, "running": sum(1 for j in jobs if j["status"] == "running"),
+            "queued": sum(1 for j in jobs if j["status"] == "queued")}
+
+
+def cancel_all() -> int:
+    """Stop all: every running and waiting job, of every kind, is cancelled. Scripts and finished work are untouched."""
+    n = len(_jobs("SELECT id FROM jobs WHERE status IN ('queued','running')"))
+    _jobs("UPDATE jobs SET status='cancelled', finished=? WHERE status IN ('queued','running')", (_NOW(),), write=True)
+    return n
+
+
+def clear_history() -> int:
+    """Take every finished job (done, failed, cancelled, replaced) off the lists. Running and waiting ones stay."""
+    n = len(_jobs("SELECT id FROM jobs WHERE status IN ('done','error','cancelled','retried')"))
+    _jobs("UPDATE jobs SET status='cleared' WHERE status IN ('done','error','cancelled','retried')", write=True)
+    return n
 
 
 def claim_job() -> dict | None:
@@ -347,3 +439,95 @@ def requeue_interrupted() -> int:
     n = len(_jobs("SELECT id FROM jobs WHERE status='running'"))
     _jobs("UPDATE jobs SET status='queued', progress='Resumed after restart' WHERE status='running'", write=True)
     return n
+
+
+# ---------------------------------------------------------------- removing from the Library (1.3.1)
+# Tim, 18 Nov: "delete history and projects option". Removing is two steps, so a slip can be put right: Remove moves
+# the item's folder out of the Library into removed/ (it leaves every list, and any AI work on it stops); the Removed
+# list can put it back, or delete it for good.
+
+def _removed_root() -> Path:
+    return home() / "removed"
+
+
+def remove_run(tool: str, run_id: str) -> dict:
+    """Move one Library item to removed/. Its waiting or running jobs are cancelled; its finished ones leave the lists."""
+    src = home() / "runs" / _slug(tool) / _id(run_id)
+    rec = json.loads((src / "run.json").read_text(encoding="utf-8"))        # FileNotFoundError when it isn't there
+    parent = _removed_root() / _slug(tool)
+    parent.mkdir(parents=True, exist_ok=True)
+    with _LOCK:
+        dst, n = parent / src.name, 1
+        while dst.exists():
+            n += 1
+            dst = parent / f"{src.name}-{n}"
+        src.rename(dst)
+        (dst / "removed.json").write_text(json.dumps({"removed": _NOW(), "tool": tool, "id": run_id}), encoding="utf-8")
+        con = _index()
+        con.execute("DELETE FROM runs WHERE tool = ? AND id = ?", (tool, run_id))
+        # finished jobs leave the lists; a waiting or running one is cancelled (the worker stops at "cancelled")
+        con.execute("UPDATE jobs SET status='cleared' WHERE tool=? AND run_id=? AND status NOT IN ('queued','running')", (tool, run_id))
+        con.execute("UPDATE jobs SET status='cancelled', finished=? WHERE tool=? AND run_id=? AND status IN ('queued','running')",
+                    (_NOW(), tool, run_id))
+        con.commit()
+        con.close()
+    return {"tool": tool, "id": run_id, "title": rec.get("title"), "key": f"{_slug(tool)}/{dst.name}"}
+
+
+def list_removed() -> list[dict]:
+    out = []
+    root = _removed_root()
+    for f in sorted(root.glob("*/*/run.json")) if root.exists() else []:
+        try:
+            rec = json.loads(f.read_text(encoding="utf-8"))
+            meta = json.loads((f.parent / "removed.json").read_text(encoding="utf-8")) if (f.parent / "removed.json").exists() else {}
+        except (OSError, ValueError):
+            continue
+        out.append({"key": f"{f.parent.parent.name}/{f.parent.name}", "tool": rec.get("tool"), "id": rec.get("id"),
+                    "title": rec.get("title"), "created": rec.get("created"), "removed": meta.get("removed"),
+                    "files": len(rec.get("files") or [])})
+    out.sort(key=lambda r: r.get("removed") or "", reverse=True)
+    return out
+
+
+def _removed_dir(key: str) -> Path:
+    tool, _, name = str(key).partition("/")
+    d = _removed_root() / _slug(tool) / _id(name)
+    if not (d / "run.json").is_file():
+        raise FileNotFoundError(key)
+    return d
+
+
+def restore_run(key: str) -> dict:
+    """Put a removed item back in the Library, under its own id (or with a number added if that id has been taken)."""
+    d = _removed_dir(key)
+    rec = json.loads((d / "run.json").read_text(encoding="utf-8"))
+    parent = home() / "runs" / _slug(rec["tool"])
+    parent.mkdir(parents=True, exist_ok=True)
+    with _LOCK:
+        dst, n = parent / _id(rec["id"]), 1
+        while dst.exists():
+            n += 1
+            dst = parent / f"{_id(rec['id'])}-{n}"
+        d.rename(dst)
+        try:
+            (dst / "removed.json").unlink()
+        except OSError:
+            pass
+        if dst.name != rec["id"]:
+            rec["id"] = dst.name
+            (dst / "run.json").write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
+        con = _index()
+        con.execute("INSERT OR REPLACE INTO runs VALUES (?,?,?,?,?,?,?)", _index_row(rec))
+        con.commit()
+        con.close()
+    return {"tool": rec["tool"], "id": rec["id"], "title": rec.get("title")}
+
+
+def delete_removed(key: str | None = None) -> int:
+    """Delete removed items for good: one (key) or all of them. This is the only place the Studio erases saved work."""
+    import shutil
+    dirs = [_removed_dir(key)] if key else [f.parent for f in _removed_root().glob("*/*/run.json")] if _removed_root().exists() else []
+    for d in dirs:
+        shutil.rmtree(d)
+    return len(dirs)

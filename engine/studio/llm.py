@@ -30,6 +30,7 @@ import atexit
 import json
 import platform
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -49,6 +50,10 @@ FORBIDDEN_PORTS = {8799}
 
 class EngineError(RuntimeError):
     pass
+
+
+class ModelRetired(EngineError):
+    """The cloud provider no longer offers the chosen model: retired, renamed, or not on this account (1.3.1)."""
 
 
 class OutputError(EngineError):
@@ -117,11 +122,41 @@ def _auth(engine: Engine) -> dict:
     return {"Authorization": f"Bearer {engine.api_key}"} if engine.api_key else {}
 
 
+# Tim, 18 Nov: "option to choose api models as they become discontinued". Providers retire model names a few times a
+# year; the reply is a 404 (OpenAI model_not_found, Anthropic not_found_error, Gemini "is not found") or a 400/410
+# naming the model. That is said in plain words, with where to choose another, instead of the provider's raw error.
+_RETIRED = re.compile(r"model_not_found|not_found_error|unknown model|decommission|deprecat|retired|"
+                      r"models?\W.{0,80}?(does not exist|not found|is not found|not available|no longer)|"
+                      r"(does not exist|not found|is not found|no longer available).{0,80}?model", re.I | re.S)
+
+
+def retired(engine: Engine, err: Exception) -> Exception:
+    """The same error, or a ModelRetired in plain words when the provider says it no longer has this model."""
+    msg = str(err)
+    if engine.is_cloud and msg[:3] in ("404", "400", "410") and _RETIRED.search(msg):
+        name = CLOUD.get(engine.provider, {}).get("name", "The cloud AI")
+        return ModelRetired(f"{name} no longer offers the model \u201c{engine.model}\u201d on this account: it has been retired, "
+                            "renamed, or was never switched on for the account. Choose another model in Settings.")
+    return err
+
+
 def cloud_models(provider: str, key: str) -> list[str]:
     e = Engine("anthropic" if provider == "anthropic" else "cloud", CLOUD[provider]["url"], "", key, provider)
     data = _http(e.url + "/models", timeout=12, headers=_auth(e)).get("data", [])
-    ids = [m.get("id", "") for m in data]
-    return [i.split("/", 1)[-1] for i in ids if i]
+    ids = [m.get("id", "").split("/", 1)[-1] for m in data]
+    return sorted({i for i in ids if i and not _NOT_CHAT.search(i)}, key=_model_order)
+
+
+# An account's model list also carries models that can't write: speech, images, embeddings, moderation. They are left
+# out of the chooser (1.3.1); anything else the account offers is listed, newest names first.
+_NOT_CHAT = re.compile(r"embed|whisper|tts|audio|speech|transcri|dall-?e|image|imagen|veo|sora|video|moderation|realtime|"
+                       r"babbage|davinci|aqa|guard|rerank|search-|similarity|computer-use", re.I)
+
+
+def _model_order(name: str):
+    """Newest first within a family: higher version numbers before lower, then by name."""
+    nums = [-float(n) for n in re.findall(r"\d+(?:\.\d+)?", name)[:3]]
+    return (re.split(r"[\d]", name, maxsplit=1)[0], nums, name)
 
 
 # ---------------------------------------------------------------- HTTP
@@ -687,7 +722,10 @@ def _cloud_once(engine: Engine, system: str, messages: list[dict], *, schema: di
                 temperature: float, timeout: float) -> tuple[str, str]:
     body = _cloud_body(engine, system, messages, max_tokens, temperature, stream=False)
     if engine.kind == "anthropic":
-        res = _http(engine.url + "/messages", body, timeout=timeout, headers=_auth(engine))
+        try:
+            res = _http(engine.url + "/messages", body, timeout=timeout, headers=_auth(engine))
+        except EngineError as e:
+            raise retired(engine, e) from e
         text = "".join(b.get("text", "") for b in res.get("content", []) if b.get("type") == "text")
         return text, {"max_tokens": "length"}.get(res.get("stop_reason", ""), res.get("stop_reason", ""))
     if schema:
@@ -695,10 +733,16 @@ def _cloud_once(engine: Engine, system: str, messages: list[dict], *, schema: di
     try:
         res = _http(engine.url + "/chat/completions", body, timeout=timeout, headers=_auth(engine))
     except EngineError as e:
+        gone = retired(engine, e)
+        if gone is not e:
+            raise gone from e
         if not schema or not str(e).startswith("400"):
             raise
         body.pop("response_format")                  # a provider without JSON mode: the prompt still asks for JSON
-        res = _http(engine.url + "/chat/completions", body, timeout=timeout, headers=_auth(engine))
+        try:
+            res = _http(engine.url + "/chat/completions", body, timeout=timeout, headers=_auth(engine))
+        except EngineError as e2:
+            raise retired(engine, e2) from e2
     choice = res["choices"][0]
     return choice["message"].get("content") or "", choice.get("finish_reason", "")
 
@@ -726,7 +770,7 @@ def stream(engine: Engine, system: str, messages: list[dict], *, settings: dict 
     try:
         resp = _open(req, timeout)
     except urllib.error.HTTPError as e:
-        raise EngineError(f"{e.code} from {url}: {e.read()[:300].decode('utf-8', 'replace')}") from e
+        raise retired(engine, EngineError(f"{e.code} from {url}: {e.read()[:300].decode('utf-8', 'replace')}")) from e
     except OSError as e:
         if engine.kind == "bundled" and BUNDLED.exited():
             raise EngineError(BUNDLED.stopped_message()) from None

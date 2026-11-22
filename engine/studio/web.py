@@ -220,7 +220,15 @@ def ai() -> dict:
     """The company's cloud AI, set on the server: STUDIO_AI_PROVIDER (openai, the default; anthropic or gemini),
     STUDIO_AI_KEY, STUDIO_AI_MODEL (optional: blank uses the Studio's default for that provider)."""
     prov = os.environ.get("STUDIO_AI_PROVIDER", "openai").strip().lower()      # Tim, 9 Nov: through Jon's OpenAI account
-    return {"provider": prov, "key": os.environ.get("STUDIO_AI_KEY", "").strip(), "model": os.environ.get("STUDIO_AI_MODEL", "").strip()}
+    model = os.environ.get("STUDIO_AI_MODEL", "").strip()
+    try:                                   # an admin's choice in Settings (1.3.1) comes before the server's own setting
+        from . import store
+        picked = (store.load_settings().get("web_ai") or {})
+        if picked.get("provider") == prov and str(picked.get("model") or "").strip():
+            model = str(picked["model"]).strip()
+    except Exception:  # noqa: BLE001 - settings unreadable: the server's setting stands
+        pass
+    return {"provider": prov, "key": os.environ.get("STUDIO_AI_KEY", "").strip(), "model": model}
 
 
 # ---------------------------------------------------------------- Import data

@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.0"
+VERSION = "1.3.2"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -122,6 +122,22 @@ def web_me(request: Request):
                    "model": a["model"] or prov.get("model", ""), "ready": bool(a["key"] and prov)}}
 
 
+@app.put("/api/web/ai-model")
+def web_ai_model(request: Request, body: dict = Body(...)):
+    """Admin: choose the model the AI brain uses (1.3.1), from Settings, without touching the server. A blank model goes
+    back to the server's own setting (STUDIO_AI_MODEL, or the Studio's default for the provider)."""
+    _web_admin(request)
+    a = web.ai()
+    model = str(body.get("model") or "").strip()[:120]
+    if model and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/\-]*", model):
+        raise HTTPException(400, "That doesn't look like a model name.")
+    s = store.load_settings()
+    s["web_ai"] = {"provider": a["provider"], "model": model}
+    store.save_settings(s)
+    a = web.ai()
+    return {"provider": a["provider"], "in_use": a["model"] or llm.CLOUD.get(a["provider"], {}).get("model", ""), "chosen": model}
+
+
 @app.get("/api/web/ai-models")
 def web_ai_models(request: Request):
     """Admin: the models the company's AI account offers, to pick STUDIO_AI_MODEL (model names change often)."""
@@ -130,7 +146,10 @@ def web_ai_models(request: Request):
     if not a["key"] or a["provider"] not in llm.CLOUD:
         raise HTTPException(409, "The AI brain has no key on this server yet.")
     try:
-        return {"provider": a["provider"], "in_use": a["model"] or llm.CLOUD[a["provider"]]["model"], "models": llm.cloud_models(a["provider"], a["key"])}
+        models = llm.cloud_models(a["provider"], a["key"])
+        in_use = a["model"] or llm.CLOUD[a["provider"]]["model"]
+        return {"provider": a["provider"], "in_use": in_use, "listed": in_use in models, "models": models,
+                "chosen": ((store.load_settings().get("web_ai") or {}).get("model") or "")}
     except llm.EngineError as e:
         raise HTTPException(502, f"The AI account didn't answer: {e}") from e
 
@@ -175,7 +194,9 @@ async def web_import(request: Request, file: UploadFile = File(...)):
     """Admin: a desktop Studio's data folder, zipped. Saved to disk as it arrives, then read run by run."""
     _web_admin(request)
     import tempfile
-    tmp = Path(tempfile.mkstemp(suffix=".zip", dir=store.home())[1])
+    fd, name = tempfile.mkstemp(suffix=".zip", dir=store.home())
+    os.close(fd)                                          # left open, Windows refuses to delete the file afterwards
+    tmp = Path(name)
     try:
         with open(tmp, "wb") as out:
             while chunk := await file.read(1 << 20):
@@ -417,9 +438,13 @@ def cloud_models(provider: str):
     if not key:
         raise HTTPException(409, f"Paste your {llm.CLOUD[provider]['name']} API key first.")
     try:
-        return {"models": llm.cloud_models(provider, key)}
+        models = llm.cloud_models(provider, key)
     except llm.EngineError as e:
         raise HTTPException(502, f"{llm.CLOUD[provider]['name']} did not list models: {e}") from e
+    c = store.load_settings().get("cloud_ai") or {}
+    in_use = (c.get("model") if c.get("provider") == provider else "") or llm.CLOUD[provider]["model"]
+    # listed: False means the provider no longer offers the model in use (retired or renamed): choose another
+    return {"models": models, "in_use": in_use, "listed": in_use in models, "default": llm.CLOUD[provider]["model"]}
 
 
 @app.post("/api/cloud/test")
@@ -597,9 +622,67 @@ def refresh_library_once():
     threading.Thread(target=work, name="studio-reread", daemon=True).start()
 
 
+# ---------- removing from the Library (1.3.1) ----------
+@app.get("/api/removed")
+def removed_list():
+    return {"removed": store.list_removed()}
+
+
+@app.post("/api/removed/restore")
+def removed_restore(body: dict = Body(...)):
+    try:
+        return store.restore_run(str(body.get("key") or ""))
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That item is no longer in the Removed list.") from e
+
+
+@app.post("/api/removed/delete")
+def removed_delete(request: Request, body: dict = Body(default={})):
+    """Delete removed items for good: one (key) or, with all=true, every one. On the web version, admins only."""
+    if web.ENABLED:
+        _web_admin(request)
+    key = body.get("key")
+    if not key and not body.get("all"):
+        raise HTTPException(400, "Say which item, or all.")
+    try:
+        return {"deleted": store.delete_removed(str(key) if key else None)}
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That item is no longer in the Removed list.") from e
+
+
+@app.post("/api/runs/remove")
+def runs_remove(body: dict = Body(...)):
+    """Remove Library items: a list of {tool, id}, or all=true (optionally one tool, and a title search) for everything
+    shown. They move to the Removed list, from which they can be put back."""
+    items = body.get("items")
+    if body.get("all"):
+        items = [{"tool": r["tool"], "id": r["id"]} for r in
+                 store.list_runs(body.get("tool") or None, str(body.get("q") or ""), limit=100000)["runs"]]
+    if not items:
+        raise HTTPException(400, "Nothing to remove.")
+    done = []
+    for it in items:
+        try:
+            done.append(store.remove_run(str(it.get("tool") or ""), str(it.get("id") or "")))
+        except FileNotFoundError:
+            continue                                  # already gone: nothing to do
+    return {"removed": len(done), "items": done}
+
+
+@app.delete("/api/runs/{tool}/{run_id}")
+def run_remove(tool: str, run_id: str):
+    try:
+        return store.remove_run(tool, run_id)
+    except FileNotFoundError as e:
+        raise HTTPException(404, "That item is no longer in the Library.") from e
+
+
 @app.get("/api/runs/{tool}/{run_id}")
 def run_detail(tool: str, run_id: str):
-    return fresh_breakdown(tool, run_id)
+    try:
+        return fresh_breakdown(tool, run_id)
+    except FileNotFoundError as e:                     # removed, or never there: said plainly, not "Internal Server Error"
+        raise HTTPException(404, "That item is no longer in the Library.") from e
 
 
 # ---------- schedule & budget (1.0.4) ----------
@@ -900,21 +983,46 @@ def _casting_prefill(rec: dict) -> dict:
 def casting_get(tool: str, run_id: str):
     """The script's roles, each with its reading and a shortlist from the Saracen Bridge actor database."""
     rec, folder = _casting_run(tool, run_id)
+    return _casting_view(rec, folder, tool, run_id)
+
+
+def _casting_script(rec: dict, folder: Path, tool: str, run_id: str) -> dict:
+    """What the script's own wording says about each part (gender, age), read once and kept with the run (1.3.1)."""
+    out = rec["outputs"]
+    kept = out.get("casting_script")
+    stamp = [casting.SCRIPT_READ_VERSION, (out.get("breakdown") or {}).get("parser")]
+    if isinstance(kept, dict) and kept.get("stamp") == stamp:
+        return kept.get("roles") or {}
+    try:
+        roles = casting.script_reading(rec["inputs"]["file"], (folder / rec["inputs"]["file"]).read_bytes(), out["breakdown"])
+    except Exception:  # noqa: BLE001 - a script that can't be re-read still gets its roles
+        return {}
+    store.update_run(tool, run_id, outputs={"casting_script": {"stamp": stamp, "roles": roles}})
+    return roles
+
+
+def _casting_view(rec: dict, folder: Path, tool: str, run_id: str) -> dict:
     out = rec["outputs"]
     read = out.get("casting_read") or {}
-    reading = read.get("roles")
-    if reading is None:                       # before the model has read the roles: the ages the script prints
-        try:
-            reading = casting.script_ages(rec["inputs"]["file"], (folder / rec["inputs"]["file"]).read_bytes(), out["breakdown"])
-        except Exception:  # noqa: BLE001 - a script that can't be re-read still gets its roles
-            reading = {}
+    reading = casting.merge_readings(_casting_script(rec, folder, tool, run_id), read.get("roles"))
     saved = out.get("casting") or {}
     pre = _casting_prefill(rec) if not saved else {}
     genre = saved.get("genre", pre.get("genre"))
     budget_usd = saved.get("budget_usd", pre.get("budget_usd"))
-    res = casting.suggest(out["breakdown"], reading, genre=genre or None, budget_usd=budget_usd or None, edits=saved.get("edits"))
+    res = casting.suggest(out["breakdown"], reading, genre=genre or None, budget_usd=budget_usd or None, edits=saved.get("edits"),
+                          tier_lead=saved.get("tier_lead") or "auto", tier_support=saved.get("tier_support") or "auto")
     res.update(title=rec["title"], prefill_from=pre.get("from"), read={k: read.get(k) for k in ("mode", "engine", "date", "seconds")} if read else None)
     return res
+
+
+@app.get("/api/casting/{tool}/{run_id}/search")
+def casting_search(tool: str, run_id: str, q: str = "", role: str = "", limit: int = 12):
+    """Manual search of the actor database by name, each match shown with how it fits the named role (1.3.1)."""
+    rec, folder = _casting_run(tool, run_id)
+    view = _casting_view(rec, folder, tool, run_id)
+    r = next((x for x in view["roles"] + view["featured"] if x["name"] == role), None)
+    return {"q": q, "role": role if r else None,
+            "actors": casting.search(q, r, genre=view.get("genre"), budget_usd=view.get("budget_usd"), limit=limit)}
 
 
 @app.put("/api/casting/{tool}/{run_id}")
@@ -927,6 +1035,9 @@ def casting_put(tool: str, run_id: str, body: dict = Body(...)):
     if "budget_usd" in body:
         b = sales._num(body["budget_usd"])
         saved["budget_usd"] = b if b and b > 0 else None
+    for k in ("tier_lead", "tier_support"):               # the tier level to pair from: auto (from the budget), A, B or C
+        if k in body:
+            saved[k] = body[k] if body[k] in casting.TIER_CHOICES else "auto"
     edits = dict(saved.get("edits") or {})
     for name, e in (body.get("edits") or {}).items():
         clean = {}
@@ -1012,10 +1123,40 @@ def brand_spot_xlsx(run_id: str):
                     headers={"Content-Disposition": f'attachment; filename="{name} - Brand Opportunities.xlsx"'})
 
 
+# what each kind of AI job is called on screen
+JOB_KINDS = {"coverage": "Script coverage", "lookbook": "Look book analysis", "brandspot": "Brand opportunities",
+             "elements": "Tagging elements", "bfiread": "BFI cultural test", "casting": "Reading roles",
+             "schedreason": "Shooting order"}
+
+
 @app.get("/api/jobs")
 def jobs_list(kind: str | None = None, limit: int = 200):
     jobs.ensure_worker()
     return store.list_jobs(kind, min(max(limit, 1), 2000))
+
+
+@app.get("/api/jobs/active")
+def jobs_active():
+    """Everything the AI is busy with, of every kind: the running job with its time left, then the waiting ones in
+    order (1.3.1). "finishing" is a stopped job whose step in hand hasn't ended yet: the next job starts when it does."""
+    jobs.ensure_worker()
+    out = store.active_jobs()
+    b = jobs.busy()
+    out["finishing"] = b if b and not any(j["id"] == b["id"] for j in out["jobs"]) else None
+    out["kinds"] = JOB_KINDS
+    return out
+
+
+@app.post("/api/jobs/stop-all")
+def jobs_stop_all():
+    """Stop all (Tim, 18 Nov): every running and waiting job is cancelled. Scripts and finished work stay."""
+    return {"stopped": store.cancel_all(), "finishing": jobs.busy()}
+
+
+@app.post("/api/jobs/clear-history")
+def jobs_clear_history():
+    """Take every finished job off the lists (done, failed, stopped). Nothing in the Library changes."""
+    return {"cleared": store.clear_history()}
 
 
 @app.post("/api/jobs/{job_id}/cancel")

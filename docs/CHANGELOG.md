@@ -4,6 +4,32 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.2 (22 Nov 2026), the web version hosted from your own PC
+Tim, 20 to 22 Nov: "could i just host it here and give him a log in?", then, with Jon's Cloudflare account, "lets set it
+all up for private access".
+- Added: web host mode in the desktop app (`--web`): the web version served from this computer on 127.0.0.1:8787, for a tunnel to carry. It keeps its own data folder (SaracenStudioWeb), so the team never sees this computer's own Library, and reads the company's cloud AI settings from `web-settings.txt` in that folder. A box stays open while it runs; OK stops it. (S-134)
+- Added: `--web-user EMAIL "Name" [--web-admin]` and `--web-reset EMAIL`: a login's password is shown once in a box on screen and written nowhere. (S-134)
+- Fixed: behind an https tunnel or proxy the sign-in cookie is now marked Secure (the forwarded scheme from 127.0.0.1 is honoured). (S-134)
+- Fixed: Import data left its temporary file open, so Windows could not delete it afterwards. (S-134)
+- Tests: tests/test_web_host.py (2).
+
+## 1.3.1 (18 Nov 2026), AI work you can see and stop
+Tim, 18 Nov, from Jon's Mac in London: "saracen bridge is stuck in an ai que and we can escape it", "we cant fid the
+origninal job thats running". Then the list: "eta on completion for taggin elements and schedule budget", "option to
+choose api models as they become discontinued for cloud compute", "cancel old work so it doesn't affect AI que",
+"delete history and projects option", "a stop all button on main page", "the search button back in casting ... not
+picking up the gender and age from the orignial and no option to manually searrch for cast ... using the data base to
+pair best castr to the role and tier level".
+- Fixed: the queue screens and the top-bar count showed script coverage only, so element tagging, a role reading, a look book, a BFI read or a shooting-order job could hold the one AI lane with nothing on screen to stop. Every kind now shows everywhere. (S-129)
+- Added: **AI work** (the reel in the top bar, and a strip on Home while anything runs): what is running, what waits behind it and in what order, **Stop**, **Cancel**, **Stop all**, the finished list and **Clear history**. A waiting job's own page says what is ahead of it, with **Stop what's ahead**. A stopped job that is still ending its step shows as stopping. (S-129)
+- Added: time left on running AI work. Element tagging and role reading count the scenes done; other jobs use how long earlier ones of the same kind took on this computer, and say so when there is nothing to go on yet. Never a made-up figure. (S-130)
+- Added: Cloud AI model chooser: the model list comes from your own account, with "Another model" for a name typed by hand. A retired model gives a plain message pointing at the chooser in place of the provider's raw error. Web version: an admin picks the model in Settings. (S-131)
+- Added: **Remove** on anything in the Library (one, the ones showing, or everything), which also stops its AI work. Removed items wait in **Removed items**, where each can be put back or deleted for good (admins only on the web version). (S-132)
+- Fixed: Casting Director read gender and age only once the AI had read the roles. It now takes them from the script's own wording first (an age printed or written out where the character comes in; gender from the part's name, its description, or its own he or she), marks where each came from, and lists them for featured parts too. (S-133)
+- Added: Casting Director: the **Search** button; tier pairing from the Actor Value Database (from the budget: leads from the top tier the budget carries, supporting parts one tier below; or a level you choose, A, B or C) with each actor marked within budget, a stretch or over; and a name search of the whole database under every part, showing how each person fits the reading. (S-133)
+- Known: Stop ends a job at the end of the step in hand; the AI call already under way is not cut short.
+- Tests: tests/test_work_and_library.py (36). Suite 344 passed, 1 skipped.
+
 ## 1.3.0 (9 Nov 2026), the web version
 Tim, 9 Nov, for Jon: "make this a webpage to start so we can start using the service", "transfer all this data over",
 "the mock up and cloud connection for the AI brain", "the engine will be through Jon's OpenAI account". Plan and Rule 1

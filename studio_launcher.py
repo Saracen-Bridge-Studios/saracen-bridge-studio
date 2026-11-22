@@ -115,10 +115,78 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
+WEB_PORT = 8787                   # the web host's own port (never 8799: that one is A.I.D.E.N.'s)
+WEB_SETTINGS = "web-settings.txt"
+
+
+def web_setup() -> str:
+    """Web host mode (1.3.2; Tim, 22 Nov: "host it here and give him a log in"): the web version on this computer.
+    Its own data folder (SaracenStudioWeb beside the desktop one), so the team never sees this computer's own Library,
+    and the company's cloud AI settings from web-settings.txt in that folder, which the owner fills in. Must run
+    before anything from `studio` is imported. Returns the data folder."""
+    os.environ["STUDIO_WEB"] = "1"
+    if not os.environ.get("STUDIO_HOME"):
+        if sys.platform == "win32":
+            base = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "SaracenStudioWeb")
+        elif sys.platform == "darwin":
+            base = os.path.join(os.path.expanduser("~"), "Library", "Application Support", "SaracenStudioWeb")
+        else:
+            base = os.path.join(os.path.expanduser("~"), ".saracen-studio-web")
+        os.environ["STUDIO_HOME"] = base
+    folder = os.environ["STUDIO_HOME"]
+    os.makedirs(folder, exist_ok=True)
+    f = os.path.join(folder, WEB_SETTINGS)
+    if not os.path.exists(f):
+        with open(f, "w", encoding="utf-8") as out:
+            out.write("# Saracen Bridge Studio web host: the company's cloud AI account. Fill in the key, save, restart the web host.\n"
+                      "# Provider is openai, anthropic or gemini. Leave the model blank for the Studio's default.\n"
+                      "STUDIO_AI_PROVIDER=openai\nSTUDIO_AI_KEY=\nSTUDIO_AI_MODEL=\n")
+    with open(f, encoding="utf-8-sig") as src:
+        for line in src:
+            k, sep, v = line.strip().partition("=")
+            if sep and k in ("STUDIO_AI_PROVIDER", "STUDIO_AI_KEY", "STUDIO_AI_MODEL") and v.strip():     # the file is what the owner edits, so it wins
+                os.environ[k] = v.strip()
+    return folder
+
+
+def show_once(msg: str, wait_title: str = "Saracen Bridge Studio") -> None:
+    """A message box that is never written to the log: for a password shown once, and for the web host's own box."""
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(None, msg, wait_title, 0x40 | 0x40000)
+            return
+        except Exception:  # noqa: BLE001
+            pass
+    try:
+        sys.__stdout__.write(msg + "\n")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def web_login(args) -> int:
+    """--web-user EMAIL NAME [--web-admin] and --web-reset EMAIL: the password goes to the screen once, nowhere else."""
+    web_setup()
+    from studio import web
+    try:
+        if args.web_user:
+            email, name = args.web_user
+            pw = web.add_user(email, name, "admin" if args.web_admin else "member")
+            show_once(f"Login made for {email} ({'admin' if args.web_admin else 'member'}).\n\nPassword, shown this once. Write it down now:\n\n{pw}")
+        else:
+            pw = web.set_password(args.web_reset)
+            show_once(f"New password for {args.web_reset}, shown this once. Write it down now:\n\n{pw}")
+    except web.WebError as e:
+        show_once(str(e))
+        return 1
+    return 0
+
+
 def serve(port: int):
     import uvicorn
     from studio.server import app
-    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
+    extra = {"proxy_headers": True, "forwarded_allow_ips": "127.0.0.1"} if os.environ.get("STUDIO_WEB") == "1" else {}
+    server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", **extra))
     threading.Thread(target=server.run, daemon=True).start()
     for _ in range(300):
         try:
@@ -445,8 +513,19 @@ def main() -> None:
     ap.add_argument("--native", action="store_true", help="try the embedded WebView2 window (before 0.3.4, the default)")
     ap.add_argument("--no-shell", action="store_true",
                     help="skip the Studio window and use an Edge app window (Windows) or the browser (Mac)")
+    ap.add_argument("--web", action="store_true", help="host the web version on this computer for a team (1.3.2)")
+    ap.add_argument("--web-user", nargs=2, metavar=("EMAIL", "NAME"), help="make a web login; the password is shown once")
+    ap.add_argument("--web-admin", action="store_true", help="with --web-user: an admin login")
+    ap.add_argument("--web-reset", metavar="EMAIL", help="a new password for a web login, shown once")
     args = ap.parse_args()
-    log(f"Starting Saracen Bridge Studio (process {os.getpid()}, {' '.join(sys.argv[1:]) or 'no options'})")
+    if args.web_user or args.web_reset:
+        log("Web login requested")                 # never the address's password
+        sys.exit(web_login(args))
+    log(f"Starting Saracen Bridge Studio (process {os.getpid()}, {' '.join(a for a in sys.argv[1:]) or 'no options'})")
+    if args.web:
+        folder = web_setup()
+        args.port = args.port or WEB_PORT
+        log(f"Web host mode: data in {folder}")
     port = args.port or free_port()
     log("Loading the engine")
     server = serve(port)
@@ -454,7 +533,17 @@ def main() -> None:
     jobs.ensure_worker(delay=20)  # resume any queue left from the last session, once the window is up (1.2.2)
     url = f"http://127.0.0.1:{port}/"
     log(f"Saracen Bridge Studio {_version()} running at {url}")
-    if args.headless:
+    if args.web and not args.headless and sys.platform == "win32":
+        faulthandler.cancel_dump_traceback_later()
+        has_key = bool(os.environ.get("STUDIO_AI_KEY"))
+        show_once(f"The Studio web host is running on this computer at {url}\n\n"
+                  + ("" if has_key else f"The cloud AI key isn't set yet: put it in {os.path.join(os.environ['STUDIO_HOME'], WEB_SETTINGS)} and start the web host again.\n\n")
+                  + "Leave this box open while the team is using the Studio. Click OK to stop the web host.",
+                  "Saracen Bridge Studio web host")
+        shutdown(server)
+        log("Web host stopped")
+        return
+    if args.headless or args.web:
         faulthandler.cancel_dump_traceback_later()
         try:
             while True:
