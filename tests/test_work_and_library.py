@@ -224,9 +224,10 @@ def test_web_admin_chooses_the_ai_brain_model(tmp_path, monkeypatch):
     s["web_ai"] = {"provider": "openai", "model": "gpt-new"}
     store.save_settings(s)
     assert web.ai()["model"] == "gpt-new"                                 # the admin's choice comes before the server's
-    s["web_ai"] = {"provider": "anthropic", "model": "claude-x"}          # chosen for another provider: not carried over
+    s["web_ai"] = {"provider": "anthropic", "model": "claude-x"}          # 1.3.4: the admin's provider choice wins outright
     store.save_settings(s)
-    assert web.ai()["model"] == "gpt-old"
+    a = web.ai()
+    assert a["provider"] == "anthropic" and a["model"] == "claude-x" and a["key"] == ""   # the server's OpenAI key isn't Claude's
     s["web_ai"] = {"provider": "openai", "model": ""}                     # blank: back to the server's own setting
     store.save_settings(s)
     assert web.ai()["model"] == "gpt-old"
