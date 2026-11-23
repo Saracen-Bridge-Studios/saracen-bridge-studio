@@ -8,6 +8,8 @@ Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 Tim, 22 Nov: "stop using gpt 5.5 it's discontinued", "fix the model 5.5 to actual mini model".
 - Changed: the Studio's ChatGPT model is now gpt-6.1-terra, OpenAI's current mini model (named on OpenAI's deprecations page as the replacement for the mini line), and it's used only if the account lists it. With no model chosen, the Studio uses the first model the account itself lists, so a retired name is never sent. (S-140)
 - Changed: the desktop Model box lists only the account's own models (no "Studio's default" entry); when nothing is saved, or the saved model is gone, it picks from the list and saves it. Each provider's main family is listed first. (S-140)
+- Fixed: on the web version, outside links (such as Open the ChatGPT key page) did nothing: they were sent to the desktop's link opener, which the web version switches off. The browser now opens them. (S-140)
+- Fixed: a failed step showed a warning with no words when the host sent no reason (a bad gateway, for one). Every failed call now says what happened in plain words. If the account can't list its models, step 3 says why, with Try again and a box to type the model's name. (S-140)
 - Tests: tests/test_web_host.py (8).
 
 ## 1.3.7 (22 Nov 2026), the desktop model list fills as soon as a key is pasted

@@ -19,12 +19,16 @@ const fmt = (n, d = 0) => (n === null || n === undefined || n === "") ? "—" : 
 const plural = (n, one, many) => `${fmt(n)} ${Number(n) === 1 ? one : (many || one + "s")}`;
 const pct = n => (n === null || n === undefined) ? "—" : (n * 100).toFixed(1) + "%";
 const signedOut = r => { if (r.status === 401) { location.href = "/login"; throw new Error("Signed out"); } return r; };   /* web version (1.3.0) */
+/* 1.3.8 (Tim, 22 Nov: a blank warning in the AI brain): a failed call always says what happened, in plain words */
+const apiErr = (r, j) => (j && j.detail) || ({ 502: "The computer hosting the Studio isn't answering (bad gateway). Check the web host is running on it, then try again.",
+  503: "The Studio is busy or starting up. Try again in a moment.", 504: "The Studio took too long to answer. Try again.", 401: "You're signed out. Sign in again.",
+  403: "Only an admin can do that.", 404: "That isn't there any more." }[r.status]) || `Something went wrong (${r.status}${r.statusText ? " " + r.statusText : ""}).`;
 const api = {
-  async get(p) { const r = signedOut(await fetch(p)); if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText); return r.json(); },
-  async post(p, body) { const r = signedOut(await fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
+  async get(p) { const r = signedOut(await fetch(p)); if (!r.ok) throw new Error(apiErr(r, await r.json().catch(() => ({})))); return r.json(); },
+  async post(p, body) { const r = signedOut(await fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
   async put(p, body) { const r = signedOut(await fetch(p, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); return r.json(); },
-  async form(p, fd) { const r = signedOut(await fetch(p, { method: "POST", body: fd })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
-  async del(p) { const r = signedOut(await fetch(p, { method: "DELETE" })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.detail || r.statusText); return j; },
+  async form(p, fd) { const r = signedOut(await fetch(p, { method: "POST", body: fd })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
+  async del(p) { const r = signedOut(await fetch(p, { method: "DELETE" })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
 };
 let CAT = null, AI = { connected: false, reason: "" }, VERSION = "";
 let WEB = { web: false };          /* 1.3.0: the web version (team sign-in, the company's cloud AI brain); false in the desktop app */
@@ -551,7 +555,7 @@ function askBuild() {
     try {
       const r = await fetch("/api/assist/chat", { method: "POST", headers: { "Content-Type": "application/json" }, signal: ctrl.signal,
         body: JSON.stringify({ messages: ASK.msgs.filter(m => m !== reply && !m.error).map(({ role, content }) => ({ role, content })), page }) });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || r.statusText);
+      if (!r.ok) throw new Error(apiErr(r, await r.json().catch(() => ({}))));
       reply.cloud = r.headers.get("X-Cloud") === "1";
       try { reply.sources = JSON.parse(decodeURIComponent(r.headers.get("X-Sources") || "[]")); } catch (e) { reply.sources = []; }
       jonMood("talk");
@@ -3020,8 +3024,12 @@ async function webBrainPicker(card) {
       P.needs_key && !P.has_key ? el("span", { class: "muted" }, "Choose a model: the list comes from your account once the key is added.") : el("span", { class: "muted" }, "Asking your account which models it offers…"));
     const loadModels = async PP => {
       let r; try { r = await api.get(`/api/web/ai-models?provider=${PP.id}`); }
-      catch (e) { return put(models, el("span", { class: "note FAIL", style: "margin:0" }, icon("alert"), ` ${e.message}`),
-        el("button", { type: "button", class: "btn sm", onclick: () => { put(models, el("span", { class: "muted" }, "Asking again…")); loadModels(PP); } }, "Try again")); }
+      catch (e) {                                   /* never stuck: the reason in words, Try again, or type the model's name */
+        modelSel = el("input", { type: "text", placeholder: "Or type the model's exact name", spellcheck: "false", autocomplete: "off", style: "flex:1 1 240px" });
+        return put(models, el("div", { style: "display:grid;gap:8px;flex:1 1 100%" },
+          el("span", { class: "note FAIL", style: "margin:0" }, icon("alert"), ` ${e.message}`),
+          el("div", { class: "row", style: "gap:10px;align-items:center" }, modelSel,
+            el("button", { type: "button", class: "btn sm", onclick: () => { put(models, el("span", { class: "muted" }, "Asking again…")); loadModels(PP); } }, "Try again")))); }
       if (tab !== PP.id) return;
       if (!r.models.length) return put(models, el("span", { class: "note PRELIMINARY", style: "margin:0" }, `Your ${PP.name} account didn't list any writing models. Check the account has API access.`));
       modelSel = el("select", { "aria-label": `${PP.name} model`, style: "width:100%" }, r.models.map(m => el("option", { value: m, selected: m === r.suggested }, m)));
@@ -3422,6 +3430,7 @@ async function cloudCard() {
 document.addEventListener("click", e => {
   const a = e.target.closest && e.target.closest("a[href^='http']");
   if (!a || e.defaultPrevented || location.host === a.host) return;
+  if (WEB.web) { if (!a.target) { e.preventDefault(); window.open(a.href, "_blank", "noopener"); } return; }   /* 1.3.8: on the web, the browser opens links itself */
   e.preventDefault();
   api.post("/api/open-url", { url: a.href }).then(() => toast("info", "Opened in your browser", a.host)).catch(err => toast("bad", "Couldn't open the link", err.message));
 });
