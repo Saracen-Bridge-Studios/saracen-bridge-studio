@@ -546,8 +546,7 @@ def main() -> None:
             except Exception:  # noqa: BLE001
                 pass
         show_once(f"The Studio web host is running on this computer at {url}\n\n"
-                  + ("The team's AI work runs on this computer's Gemma.\n\n" if os.environ.get("STUDIO_AI_PROVIDER") == "local"
-                     else "The team's AI work goes to the cloud account in web-settings.txt.\n\n")
+                  + "An admin chooses where the AI work runs in Settings › AI brain: Gemma on this computer, or Claude, ChatGPT or Gemini.\n\n"
                   + "Leave this box open while the team is using the Studio. Click OK to stop the web host.",
                   "Saracen Bridge Studio web host")
         shutdown(server)

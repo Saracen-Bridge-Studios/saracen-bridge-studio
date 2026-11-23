@@ -2975,6 +2975,54 @@ async function removedPage() {
 }
 
 /* ---------------- settings ---------------- */
+/* ---------------- 1.3.4 (Tim, 22 Nov): "the three main ones with a button then an add button with clear tabs and an ok so it's
+   easy for ten year olds". One tab each for Gemma (the host computer), Claude, ChatGPT and Gemini; a box to paste a key; Add;
+   then OK to use it. Admins only; the key goes to the server, sealed, and never comes back to a browser. ---------------- */
+async function webBrainPicker(card) {
+  const box = el("div", { class: "brain-pick" });
+  card.insertBefore(box, card.children[2] || null);
+  let v; try { v = await api.get("/api/web/ai"); } catch (e) { return put(box, errBox(e)); }
+  let tab = v.provider;
+  const refresh = async () => { WEB = await api.get("/api/web/me").catch(() => WEB); AI = await api.get("/api/ai/status").catch(() => AI); route(); };
+  const send = async (body, ok) => {
+    try { v = await api.put("/api/web/ai", body); if (ok) toast("ok", ok[0], ok[1]); return true; }
+    catch (e) { toast("bad", "Not saved", e.message); return false; }
+  };
+  const draw = () => {
+    const P = v.providers.find(p => p.id === tab), inUse = v.provider === tab;
+    const tabs = el("div", { class: "tabs provs", role: "group", "aria-label": "Where the AI work runs" }, v.providers.map(p =>
+      el("button", { type: "button", "aria-pressed": String(p.id === tab), onclick: () => { tab = p.id; draw(); } },
+        el("b", {}, p.name), el("small", {}, p.id === v.provider ? "In use now" : p.needs_key ? (p.has_key ? "Key added" : "No key yet") : "Free · no key"))));
+    let panel;
+    if (!P.needs_key) {
+      panel = el("div", { class: "brain-panel" },
+        el("p", {}, "Gemma runs on the computer that hosts this Studio. It's free and nothing leaves that computer, but it's slower and does one job at a time."),
+        inUse ? el("p", { class: "note PASS" }, icon("check"), " Gemma is in use now.")
+          : el("button", { type: "button", class: "btn primary", onclick: async () => { if (await send({ provider: "local", use: true }, ["AI brain: Gemma", "AI work now runs on the host computer."])) refresh(); } }, icon("check"), "OK, use Gemma"));
+    } else {
+      const keyIn = el("input", { type: "password", autocomplete: "off", spellcheck: "false", placeholder: `Paste your ${P.name} key here`, "aria-label": `${P.name} key`, style: "flex:1 1 320px" });
+      const add = async () => {
+        if (!keyIn.value.trim()) { keyIn.focus(); return toast("info", "Paste the key first", `Copy it from your ${P.maker} account, then paste it in the box.`); }
+        if (await send({ provider: P.id, key: keyIn.value.trim() }, ["Key added", `${P.name} is ready. Press OK to use it.`])) { keyIn.value = ""; draw(); }
+      };
+      keyIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); add(); } });
+      panel = el("div", { class: "brain-panel" },
+        el("p", { class: "brain-step" }, el("span", { class: "n" }, "1"), "Get a key from your ", el("b", {}, P.maker), " account. ",
+          el("a", { href: P.keys_at, target: "_blank", rel: "noopener" }, `Open the ${P.name} key page`, icon("external"))),
+        el("div", { class: "brain-step" }, el("span", { class: "n" }, "2"),
+          P.has_key ? el("span", {}, icon("check"), ` Key added${P.hint ? ` (${P.hint})` : ""}. `,
+              el("button", { type: "button", class: "btn sm quiet", onclick: async () => { if (await send({ provider: P.id, remove_key: true }, ["Key removed", `The ${P.name} key is gone from this computer.`])) { if (inUse) refresh(); else draw(); } } }, "Remove key"))
+            : el("div", { class: "row", style: "gap:10px;flex:1 1 auto" }, keyIn, el("button", { type: "button", class: "btn", onclick: add }, icon("plus"), "Add"))),
+        el("div", { class: "brain-step" }, el("span", { class: "n" }, "3"),
+          inUse ? el("span", {}, icon("check"), ` ${P.name} is in use now.`)
+            : el("button", { type: "button", class: "btn primary", disabled: !P.has_key, title: P.has_key ? "" : "Add a key first",
+                onclick: async () => { if (await send({ provider: P.id, use: true }, [`AI brain: ${P.name}`, `AI work now goes to ${P.maker} through this account.`])) refresh(); } }, icon("check"), `OK, use ${P.name}`)));
+    }
+    put(box, tabs, panel);
+  };
+  draw();
+}
+
 /* ---------------- Settings on the web version (1.3.0): the AI brain, my account, the team, Import data ---------------- */
 async function webSettings() {
   topbar(["Studio", "Settings"]);
@@ -2984,12 +3032,13 @@ async function webSettings() {
       el("code", { class: "pw-once" }, pw)));
   const brainModel = el("div", { class: "row", style: "gap:10px;align-items:flex-end;flex:1 1 100%" });
   const brain = el("div", { class: "card" }, el("h2", {}, icon("sparkle"), "AI brain"),
-    el("p", { class: "muted small", style: "margin-top:-4px" }, a.local ? "Writing tools and Ask Jonny run on Gemma, on the computer that hosts this Studio. Nothing is sent to a cloud AI. It does one job at a time, at that computer's speed."
+    el("p", { class: "muted small", style: "margin-top:-4px" }, admin ? "Choose where the Studio's AI work runs for everyone. Nobody else needs a key of their own."
+      : a.local ? "Writing tools and Ask Jonny run on Gemma, on the computer that hosts this Studio. Nothing is sent to a cloud AI. It does one job at a time, at that computer's speed."
       : "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
     a.ready ? el("div", { class: "kpis", style: "margin-top:6px" },
-      el("div", { class: "kpi" }, el("div", { class: "l" }, "Provider"), el("div", { class: "v", style: "font-size:24px" }, a.name)),
+      el("div", { class: "kpi" }, el("div", { class: "l" }, "In use now"), el("div", { class: "v", style: "font-size:24px" }, a.name)),
       el("div", { class: "kpi" }, el("div", { class: "l" }, "Model"), el("div", { class: "v", style: "font-size:24px" }, a.model)))
-      : el("p", { class: "note PRELIMINARY" }, a.local ? `Gemma isn't ready on the host computer. ${a.reason || ""}` : "Not set up on this server yet. Whoever runs the server adds the company's key (STUDIO_AI_KEY); writing tools switch on when it's there."),
+      : el("p", { class: "note PRELIMINARY" }, a.local ? `Gemma isn't ready on the host computer. ${a.reason || ""}` : admin ? "Not set up yet: pick one below, add its key and press OK." : "Not set up yet. An admin chooses the AI brain in Settings."),
     el("p", { class: "muted small", style: "margin:14px 0 0" }, a.local ? "What you send the AI (a script, a question, a page) stays on the host computer. Calculation tools never use the AI."
       : a.provider === "anthropic"
       ? "What you send the AI (a script, a question, a page) goes to Anthropic through the company account. Anthropic doesn't keep API prompts and answers by default, except on Fable and Mythos models (30 days), and doesn't train on them without permission. Calculation tools never use the AI."
@@ -2998,7 +3047,8 @@ async function webSettings() {
       : `What you send the AI goes to ${a.maker || a.name} under the company account's API terms. Calculation tools never use the AI.`),
     a.ready ? el("div", { class: "row", style: "margin-top:16px" }, el("button", { type: "button", class: "btn primary", onclick: async ev => { const b = ev.currentTarget; b.disabled = true; await testEngine(); b.disabled = false; } }, icon("sparkle"), "Test the AI brain"),
       u.role === "admin" ? brainModel : null) : null);
-  if (a.ready && u.role === "admin") (async () => {       /* 1.3.1: the model is chosen here, from what the account offers today */
+  if (admin) webBrainPicker(brain);                         /* 1.3.4: the admin picks where the AI runs, and adds keys, right here */
+  if (a.ready && u.role === "admin" && !a.local) (async () => {       /* 1.3.1: the model is chosen here, from what the account offers today */
     let r; try { r = await api.get("/api/web/ai-models"); } catch (e) { return put(brainModel, el("span", { class: "muted small" }, `Couldn't list the account's models: ${e.message}`)); }
     const sel = el("select", { "aria-label": "Model for the AI brain" },
       el("option", { value: "" }, "The server's own setting"), r.models.map(m => el("option", { value: m, selected: m === r.chosen }, m)),

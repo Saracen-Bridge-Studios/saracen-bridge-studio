@@ -98,3 +98,42 @@ def test_the_web_host_can_use_the_host_computers_gemma(tmp_path, monkeypatch):
     assert me["web"] and me["ai"]["local"] and me["ai"]["ready"] and me["ai"]["model"] == "gemma-test"
     st = c.get("/api/ai/status").json()
     assert st["connected"] and st["web"] and st["cloud"]["enabled"] is False
+
+
+def test_an_admin_picks_the_ai_and_adds_a_key_in_settings(tmp_path, monkeypatch):
+    """1.3.4 (Tim, 22 Nov): the three cloud accounts and Gemma as tabs, a key added with Add, then OK to use it."""
+    from studio import llm, web, keys
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("STUDIO_AI_PROVIDER", "local")
+    monkeypatch.delenv("STUDIO_AI_KEY", raising=False)
+    monkeypatch.setattr(web, "ENABLED", True)
+    monkeypatch.setattr(web, "SCRYPT", {"n": 2 ** 10, "r": 8, "p": 1, "dklen": 32})
+    web._sessions.clear(); web._fails.clear()
+    monkeypatch.setattr(llm, "_resolve", lambda settings: (llm.Engine("openai", "http://127.0.0.1:1/v1", "gemma-test"), ""))
+    monkeypatch.setattr(llm, "can_see", lambda eng: (False, ""))
+    from fastapi.testclient import TestClient
+    from studio.server import app
+    c = TestClient(app)
+    web.add_user("boss@example.com", "Boss", "admin", "correct horse battery")
+    web.add_user("crew@example.com", "Crew", "member", "correct horse battery")
+    assert c.post("/api/web/login", json={"email": "crew@example.com", "password": "correct horse battery"}).status_code == 200
+    assert c.get("/api/web/ai").status_code == 403                       # members can't change it
+    assert c.put("/api/web/ai", json={"provider": "openai", "key": "x" * 40}).status_code == 403
+    c.post("/api/web/logout")
+    assert c.post("/api/web/login", json={"email": "boss@example.com", "password": "correct horse battery"}).status_code == 200
+    v = c.get("/api/web/ai").json()
+    assert v["provider"] == "local" and [p["id"] for p in v["providers"]] == ["local", "anthropic", "openai", "gemini"]
+    assert c.put("/api/web/ai", json={"provider": "openai", "use": True}).status_code == 409   # no key yet
+    assert c.put("/api/web/ai", json={"provider": "openai", "key": "too short"}).status_code == 400
+    key = "sk-test-" + "a" * 40
+    v = c.put("/api/web/ai", json={"provider": "openai", "key": key}).json()
+    ch = next(p for p in v["providers"] if p["id"] == "openai")
+    assert ch["has_key"] and ch["hint"] and key not in str(v) and v["provider"] == "local"   # added, not yet in use; never echoed
+    v = c.put("/api/web/ai", json={"provider": "openai", "use": True}).json()
+    assert v["provider"] == "openai" and web.ai()["key"] == key and not web.local_ai()
+    me = c.get("/api/web/me").json()
+    assert me["ai"]["provider"] == "openai" and me["ai"]["ready"]
+    c.put("/api/web/ai", json={"provider": "openai", "remove_key": True})
+    assert keys.get("openai") == "" and not c.get("/api/web/me").json()["ai"]["ready"]
+    v = c.put("/api/web/ai", json={"provider": "local", "use": True}).json()
+    assert v["provider"] == "local" and web.local_ai()

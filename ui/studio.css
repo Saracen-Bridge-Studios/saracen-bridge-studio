@@ -1139,3 +1139,10 @@ input[type=file] { color: var(--fg-2); font-size: 13px; max-width: 100%; }
 input[type=file]::file-selector-button { height: 38px; margin-right: 12px; padding: 0 16px; border-radius: 10px; border: 1px solid rgba(222, 200, 255, .12);
   background: rgba(255, 246, 230, .035); color: var(--fg); font: 550 13.5px var(--sans); cursor: pointer; }
 @media (hover: hover) { input[type=file]::file-selector-button:hover { background: rgba(255, 246, 230, .065); border-color: rgba(239, 198, 95, .35); } }
+
+/* 1.3.4: the web AI brain picker */
+.brain-pick { margin: 14px 0 4px; display: grid; gap: 14px; }
+.brain-panel { display: grid; gap: 12px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--ink-1); }
+.brain-panel p { margin: 0; }
+.brain-step { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0; }
+.brain-step .n { flex: 0 0 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 600 13px var(--mono); color: var(--gold-tab-ink, #1d1608); background: var(--gold, #dba534); }

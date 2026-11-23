@@ -216,25 +216,46 @@ def same_site(headers) -> bool:
 
 
 # ---------------------------------------------------------------- the AI brain
+AI_CHOICES = ("local", "anthropic", "openai", "gemini")
+
+
 def ai() -> dict:
-    """The company's cloud AI, set on the server: STUDIO_AI_PROVIDER (openai, the default; anthropic or gemini),
-    STUDIO_AI_KEY, STUDIO_AI_MODEL (optional: blank uses the Studio's default for that provider)."""
-    prov = os.environ.get("STUDIO_AI_PROVIDER", "openai").strip().lower()      # Tim, 9 Nov: through Jon's OpenAI account
-    model = os.environ.get("STUDIO_AI_MODEL", "").strip()
-    try:                                   # an admin's choice in Settings (1.3.1) comes before the server's own setting
+    """Where the team's AI work runs. An admin's choice in Settings comes first (1.3.4: Gemma on the host computer, or
+    Claude, ChatGPT or Gemini with a key added there); otherwise the server's own setting: STUDIO_AI_PROVIDER (local,
+    openai, anthropic or gemini), STUDIO_AI_KEY and STUDIO_AI_MODEL (blank uses the Studio's default)."""
+    env_prov = os.environ.get("STUDIO_AI_PROVIDER", "openai").strip().lower()
+    prov, model = env_prov, os.environ.get("STUDIO_AI_MODEL", "").strip()
+    try:
         from . import store
-        picked = (store.load_settings().get("web_ai") or {})
-        if picked.get("provider") == prov and str(picked.get("model") or "").strip():
-            model = str(picked["model"]).strip()
+        picked = store.load_settings().get("web_ai") or {}
     except Exception:  # noqa: BLE001 - settings unreadable: the server's setting stands
-        pass
-    return {"provider": prov, "key": os.environ.get("STUDIO_AI_KEY", "").strip(), "model": model}
+        picked = {}
+    if picked.get("provider") in AI_CHOICES:
+        if picked["provider"] != env_prov:
+            model = ""
+        prov = picked["provider"]
+        if str(picked.get("model") or "").strip():
+            model = str(picked["model"]).strip()
+    key = ""
+    if prov != "local":
+        from . import keys
+        key = keys.get(prov) or (os.environ.get("STUDIO_AI_KEY", "").strip() if prov == env_prov else "")
+    return {"provider": prov, "key": key, "model": "" if prov == "local" else model}
+
+
+def ai_key_for(prov: str) -> str:
+    """The key the Studio would use for this cloud account: one added in Settings, else the server's own."""
+    from . import keys
+    if prov not in AI_CHOICES or prov == "local":
+        return ""
+    return keys.get(prov) or (os.environ.get("STUDIO_AI_KEY", "").strip()
+                              if os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == prov else "")
 
 
 def local_ai() -> bool:
     """STUDIO_AI_PROVIDER=local (1.3.3; Tim, 22 Nov: "have it so jon or whoever can use my gemma for now"): the team's AI
     work runs on the Gemma of the computer hosting the web version. No cloud account, nothing leaves that computer."""
-    return ENABLED and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == "local"
+    return ENABLED and ai()["provider"] == "local"
 
 
 # ---------------------------------------------------------------- Import data

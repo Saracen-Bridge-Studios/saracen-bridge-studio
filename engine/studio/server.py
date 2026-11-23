@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.3"
+VERSION = "1.3.4"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -125,6 +125,51 @@ def web_me(request: Request):
     return {"web": True, "user": _web_user(request),
             "ai": {"provider": a["provider"], "name": prov.get("name", a["provider"]), "maker": prov.get("maker", ""),
                    "model": a["model"] or prov.get("model", ""), "ready": bool(a["key"] and prov)}}
+
+
+def _web_ai_view() -> dict:
+    a = web.ai()
+    return {"provider": a["provider"], "ready": bool(a["key"]) if a["provider"] != "local" else bool(llm.status(store.load_settings()).get("connected")),
+            "providers": [{"id": "local", "name": "Gemma", "maker": "The host computer", "needs_key": False}]
+            + [{"id": p, "name": v["name"], "maker": v["maker"], "needs_key": True, "keys_at": v["keys_at"],
+                "has_key": bool(keys.get(p) or (os.environ.get("STUDIO_AI_KEY", "").strip() and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == p)),
+                "hint": keys.hint(p)} for p, v in llm.CLOUD.items()]}
+
+
+@app.get("/api/web/ai")
+def web_ai_get(request: Request):
+    """Admin: where the AI work runs now, and which cloud accounts have a key (1.3.4). Keys never come back."""
+    _web_admin(request)
+    return _web_ai_view()
+
+
+@app.put("/api/web/ai")
+def web_ai_put(request: Request, body: dict = Body(...)):
+    """Admin (1.3.4; Tim, 22 Nov: "the three main ones with a button then an add button ... and an ok"): add or remove a
+    cloud account's key, and choose where the team's AI work runs. The key is kept on this computer, sealed, and never
+    sent back to a browser."""
+    _web_admin(request)
+    prov = str(body.get("provider") or "")
+    if prov not in web.AI_CHOICES:
+        raise HTTPException(400, "Choose Gemma, Claude, ChatGPT or Gemini.")
+    key = body.get("key")
+    if isinstance(key, str) and key.strip():
+        if prov == "local":
+            raise HTTPException(400, "Gemma doesn't need a key.")
+        k = key.strip()
+        if len(k) < 20 or len(k) > 400 or any(c.isspace() for c in k):
+            raise HTTPException(400, f"That doesn't look like a {llm.CLOUD[prov]['name']} key. Copy the whole key and paste it again.")
+        keys.put(prov, k)
+    if body.get("remove_key") and prov != "local":
+        keys.put(prov, "")
+    if body.get("use"):
+        if prov != "local" and not web.ai_key_for(prov):
+            raise HTTPException(409, f"Add a {llm.CLOUD[prov]['name']} key first.")
+        s = store.load_settings()
+        old = s.get("web_ai") or {}
+        s["web_ai"] = {"provider": prov, "model": old.get("model", "") if old.get("provider") == prov else ""}
+        store.save_settings(s)
+    return _web_ai_view()
 
 
 @app.put("/api/web/ai-model")
