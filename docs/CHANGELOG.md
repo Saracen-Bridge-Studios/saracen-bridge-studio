@@ -4,6 +4,12 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.5 (22 Nov 2026), a reload always gets the newest Studio
+Tim, 22 Nov: "make sure the reload button kills cache so they get the latest updates when using the web version".
+- Fixed: pages now name the Studio's files with the release stamp, and pages and files are sent as "check with the server first", so a reload gets the newest version through the browser and through Cloudflare. (S-138)
+- Added: when a newer Studio is put on the server, open pages show "A new version of the Studio is ready" with Reload now (checked once a minute). (S-138)
+- Tests: tests/test_web_host.py (6).
+
 ## 1.3.4 (22 Nov 2026), pick the AI brain in Settings
 Tim, 22 Nov: "we need a better way to add our cloud compute like before, the three main ones with a button then an add
 button with clear tabs and an ok so it's easy for ten year olds".

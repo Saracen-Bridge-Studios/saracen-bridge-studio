@@ -158,3 +158,18 @@ def test_an_admin_can_choose_a_persons_password(tmp_path, monkeypatch):
     r = c.post("/api/web/users/jon@example.com/reset", json={}).json()          # blank: the Studio makes one
     assert len(r["password"]) >= 10 and web.check_password("jon@example.com", r["password"])
     assert c.post("/api/web/users/jon@example.com/reset", json={"password": "short"}).status_code == 400
+
+
+def test_reload_always_gets_the_newest_studio(tmp_path, monkeypatch):
+    """1.3.5 (Tim, 22 Nov): pages name their files with the release stamp and nothing is kept stale."""
+    from studio import web
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
+    from fastapi.testclient import TestClient
+    from studio import server
+    c = TestClient(server.app)
+    for path in ("/login",) + (() if web.ENABLED else ("/",)):
+        r = c.get(path)
+        assert r.status_code == 200 and "no-store" in r.headers["cache-control"]
+        assert f"/ui/studio.css?v={server.VERSION}-" in r.text
+    r = c.get("/ui/studio.js")
+    assert r.status_code == 200 and "no-cache" in r.headers["cache-control"]

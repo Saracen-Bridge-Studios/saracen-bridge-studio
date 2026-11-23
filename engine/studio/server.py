@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.4"
+VERSION = "1.3.5"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -89,9 +89,39 @@ def _web_call(fn, *a, **k):
         raise HTTPException(e.status, str(e), headers={"Retry-After": str(e.retry_after)} if e.retry_after else None) from e
 
 
+# 1.3.5 (Tim, 22 Nov: "make sure the reload button kills cache so they get the latest updates"): every page names its
+# files with this release's stamp, and pages and files are sent "check with the server first", so a reload always gets
+# the newest Studio, through the browser and through Cloudflare alike.
+NO_CACHE = {"Cache-Control": "no-cache, must-revalidate"}
+
+
+def _asset_stamp() -> str:
+    try:
+        m = max(int((UI_DIR / f).stat().st_mtime) for f in ("studio.js", "studio.css"))
+    except OSError:
+        m = 0
+    return f"{VERSION}-{m}"
+
+
+def _page(name: str) -> Response:
+    html = (UI_DIR / name).read_text(encoding="utf-8")
+    v = _asset_stamp()
+    for f in ("/ui/studio.js", "/ui/studio.css"):
+        html = html.replace(f'"{f}"', f'"{f}?v={v}"')
+    return Response(html, media_type="text/html; charset=utf-8", headers={**NO_CACHE, "Cache-Control": "no-store"})
+
+
+@app.middleware("http")
+async def _no_stale_files(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/ui/"):
+        response.headers["Cache-Control"] = NO_CACHE["Cache-Control"]
+    return response
+
+
 @app.get("/login")
 def web_login_page():
-    return FileResponse(UI_DIR / "login.html")
+    return _page("login.html")
 
 
 @app.post("/api/web/login")
@@ -1804,7 +1834,7 @@ def _room_host_autostart():
 
 @app.get("/")
 def index():
-    return FileResponse(UI_DIR / "index.html")
+    return _page("index.html")
 
 
 app.mount("/ui", StaticFiles(directory=UI_DIR), name="ui")

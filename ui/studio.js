@@ -699,6 +699,16 @@ async function setCompute(on) {
     toast(on ? "ai" : "ok", on ? `Cloud compute on: ${AI.cloud.name}` : "Local compute", on ? "Answers are marked Cloud." : "Everything runs on this computer again.");
   } catch (e) { toast("bad", "Couldn't switch", e.message); }
 }
+let NEW_VERSION_SHOWN = false;
+async function checkNewVersion() {
+  if (NEW_VERSION_SHOWN || !VERSION) return;
+  let h; try { h = await api.get("/api/health"); } catch { return; }
+  if (!h.version || h.version === VERSION) return;
+  NEW_VERSION_SHOWN = true;
+  document.body.append(el("div", { class: "new-version", role: "status" }, icon("sparkle"),
+    el("span", {}, `A new version of the Studio is ready (${h.version}).`),
+    el("button", { type: "button", class: "btn sm primary", onclick: () => location.reload() }, "Reload now")));
+}
 let JOBS_ACTIVE = 0;
 function topbar(crumbs) {
   const bar = document.getElementById("topbar");
@@ -3441,6 +3451,7 @@ function displayCard() {
     const beat = () => fetch("/api/heartbeat", { method: "POST" }).catch(() => {});
     beat(); setInterval(beat, 30000);
     setInterval(pollJobs, 8000); pollJobs();
+    setInterval(checkNewVersion, 60000);       /* 1.3.5: a newer Studio on the server: offer a reload that gets it */
     setInterval(dlWatch, 3000);
     COACH.started = true; coachStart();
     await route();
