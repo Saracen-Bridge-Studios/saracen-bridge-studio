@@ -26,7 +26,7 @@ const apiErr = (r, j) => (j && j.detail) || ({ 502: "The computer hosting the St
 const api = {
   async get(p) { const r = signedOut(await fetch(p)); if (!r.ok) throw new Error(apiErr(r, await r.json().catch(() => ({})))); return r.json(); },
   async post(p, body) { const r = signedOut(await fetch(p, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
-  async put(p, body) { const r = signedOut(await fetch(p, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); return r.json(); },
+  async put(p, body) { const r = signedOut(await fetch(p, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },   /* 1.3.10: a refused save was being treated as saved */
   async form(p, fd) { const r = signedOut(await fetch(p, { method: "POST", body: fd })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
   async del(p) { const r = signedOut(await fetch(p, { method: "DELETE" })); const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(apiErr(r, j)); return j; },
 };
@@ -3045,7 +3045,9 @@ async function webBrainPicker(card) {
       const keyIn = el("input", { type: "password", autocomplete: "off", spellcheck: "false", placeholder: `Paste your ${P.name} key here`, "aria-label": `${P.name} key`, style: "flex:1 1 320px" });
       const add = async () => {
         if (!keyIn.value.trim()) { keyIn.focus(); return toast("info", "Paste the key first", `Copy it from your ${P.maker} account, then paste it in the box.`); }
-        if (await send({ provider: P.id, key: keyIn.value.trim() }, ["Key added", `${P.name} is ready. Press OK to use it.`])) { keyIn.value = ""; draw(); }
+        const b = box.querySelector(".brain-panel .btn:not(.primary)"); if (b) { b.disabled = true; b.textContent = "Checking…"; }
+        if (await send({ provider: P.id, key: keyIn.value.trim() }, ["Key checked and added", `${P.maker} accepted it. Choose a model, then press OK.`])) { keyIn.value = ""; draw(); }
+        else if (b) { b.disabled = false; b.textContent = "Add"; }
       };
       keyIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); add(); } });
       panel = el("div", { class: "brain-panel" },
@@ -3053,7 +3055,7 @@ async function webBrainPicker(card) {
           el("a", { href: P.keys_at, target: "_blank", rel: "noopener" }, `Open the ${P.name} key page`, icon("external"))),
         el("div", { class: "brain-step" }, el("span", { class: "n" }, "2"),
           P.has_key ? el("span", {}, icon("check"), ` Key added${P.hint ? ` (${P.hint})` : ""}. `,
-              el("button", { type: "button", class: "btn sm quiet", onclick: async () => { if (await send({ provider: P.id, remove_key: true }, ["Key removed", `The ${P.name} key is gone from this computer.`])) { if (inUse) refresh(); else draw(); } } }, "Remove key"))
+              el("button", { type: "button", class: "btn sm quiet", onclick: async () => { if (!confirm(`Remove the ${P.name} key from the Studio?${inUse ? " The AI brain stops working until a key is added again." : ""}`)) return; if (await send({ provider: P.id, remove_key: true }, ["Key removed", `The ${P.name} key is gone from this computer.`])) { if (inUse) refresh(); else draw(); } } }, "Remove key"))
             : el("div", { class: "row", style: "gap:10px;flex:1 1 auto" }, keyIn, el("button", { type: "button", class: "btn", onclick: add }, icon("plus"), "Add"))),
         el("div", { class: "brain-step" }, el("span", { class: "n" }, "3"), models),
         el("div", { class: "brain-step" }, el("span", { class: "n" }, "4"),
@@ -3194,7 +3196,7 @@ async function settings() {
   const showStatus = a => put(now, el("div", { class: "engine-chip", style: "background:var(--ink-1)" }, el("span", { class: "dot " + (a.connected ? "ok live" : "warn") }),
     el("span", {}, el("b", {}, a.connected ? "In use: " + a.description : "Not connected"), a.connected ? (a.note || "Running on this computer.") : a.reason)));
   const save = async () => { Object.assign(s.ai_engine, { provider: prov.value, url: url.value.trim(), model: model.value.trim(), api_key: key.value,
-      default_mode: defMode.value, modes: { quick: { model: quickModel.value.trim(), think: false }, deep: { model: deepModel.value.trim(), think: true } } }); MODE = defMode.value; apps.forEach(([id, i]) => s.external_apps[id].target = i.value); await api.put("/api/settings", s); AI = await api.get("/api/ai/status"); showStatus(AI); engineChip(); return AI; };
+      default_mode: defMode.value, modes: { quick: { model: quickModel.value.trim(), think: false }, deep: { model: deepModel.value.trim(), think: true } } }); MODE = defMode.value; apps.forEach(([id, i]) => s.external_apps[id].target = i.value); try { await api.put("/api/settings", s); } catch (e) { toast("bad", "Not saved", e.message); throw e; } AI = await api.get("/api/ai/status"); showStatus(AI); engineChip(); return AI; };
   put(app(), el("h1", {}, "Settings"), el("p", { class: "lede" }, "The AI engine, cloud AI and the apps the Studio opens. These settings, and any cloud key, are kept on this computer."),
     el("div", { class: "cols" },
       el("div", { class: "stack" }, el("div", { class: "card ai-card" }, el("h2", {}, icon("sparkle"), "AI engine"),

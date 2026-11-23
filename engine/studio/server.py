@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.9"
+VERSION = "1.3.10"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -161,6 +161,24 @@ def web_me(request: Request):
                    "model": a["model"] or prov.get("model", ""), "ready": bool(a["key"] and prov)}}
 
 
+_KEY_LOOKS = {"openai": ("sk-", "the long secret key that starts with sk-"), "anthropic": ("sk-ant-", "the key that starts with sk-ant-"),
+              "gemini": ("AIza", "the key that starts with AIza")}
+
+
+def _check_key(prov: str, key: str) -> list[str]:
+    """1.3.10 (Tim, 22 Nov: a key ID was pasted, "Key added" showed, and nothing worked): ask the account before keeping
+    a key. Refused: nothing is saved and the reason is said in plain words."""
+    start, what = _KEY_LOOKS.get(prov, ("", "the key"))
+    try:
+        return llm.cloud_models(prov, key)
+    except llm.EngineError as e:
+        hint = (f" What was pasted doesn't start with {start}: it may be the key's name or ID. On the key page, make a new key and copy {what}."
+                if start and not key.startswith(start) else "")
+        bad = re.search(r"\b(401|403)\b", str(e))
+        raise HTTPException(UPSTREAM, (f"{llm.CLOUD[prov]['maker']} refused this key, so it wasn't added.{hint}" if bad
+                                       else f"{llm.CLOUD[prov]['name']} couldn't be reached to check the key: {e}")) from e
+
+
 def _web_ai_view() -> dict:
     a = web.ai()
     return {"provider": a["provider"], "ready": bool(a["key"]) if a["provider"] != "local" else bool(llm.status(store.load_settings()).get("connected")),
@@ -193,6 +211,7 @@ def web_ai_put(request: Request, body: dict = Body(...)):
         k = key.strip()
         if len(k) < 20 or len(k) > 400 or any(c.isspace() for c in k):
             raise HTTPException(400, f"That doesn't look like a {llm.CLOUD[prov]['name']} key. Copy the whole key and paste it again.")
+        _check_key(prov, k)                                   # 1.3.10: kept only if the account accepts it
         keys.put(prov, k)
     if body.get("remove_key") and prov != "local":
         keys.put(prov, "")
@@ -514,6 +533,7 @@ def cloud_put(body: dict = Body(...)):
     if prov not in llm.CLOUD:
         raise HTTPException(400, "Unknown cloud provider.")
     if isinstance(body.get("key"), str) and body["key"].strip():
+        _check_key(prov, body["key"].strip())                 # 1.3.10: the desktop checks too
         keys.put(prov, body["key"])
     if body.get("clear_key"):
         keys.put(prov, "")

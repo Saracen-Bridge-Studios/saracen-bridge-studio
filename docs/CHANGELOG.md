@@ -4,6 +4,12 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.10 (22 Nov 2026), a key is checked before it's kept
+Tim, 22 Nov, after a key's ID was pasted, "Key added" showed and nothing worked: "build a working piece of software".
+- Fixed: Add now asks the provider's account before keeping a key, on the web version and the desktop. A refused key isn't saved, and the message says why; when it doesn't start the way that provider's keys do (sk- for OpenAI, sk-ant- for Anthropic, AIza for Google), it says it may be the key's name or ID and to copy the secret. "Key checked and added" means the account accepted it. (S-142)
+- Changed: Remove key asks first. (S-142)
+- Fixed: every save on the page (the AI brain, the cloud card, casting, agents, settings) treated a refused save as a success, because the page's save call never checked the answer. A refused save now shows "Not saved" with the reason. This is how a rejected key could show as added. (S-142)
+
 ## 1.3.9 (22 Nov 2026), the provider's real reason gets through Cloudflare
 Tim, 22 Nov: step 3 said "bad gateway" while the Studio itself was running.
 - Fixed: when a cloud AI account or an AI engine fails, the Studio now answers 424 with the reason (a wrong key, no API access) in place of 502. Cloudflare swaps a 502 from the Studio for its own "bad gateway" page, which hid the real reason. (S-141)

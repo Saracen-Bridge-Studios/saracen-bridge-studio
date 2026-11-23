@@ -111,6 +111,11 @@ def test_an_admin_picks_the_ai_and_adds_a_key_in_settings(tmp_path, monkeypatch)
     web._sessions.clear(); web._fails.clear()
     monkeypatch.setattr(llm, "_resolve", lambda settings: (llm.Engine("openai", "http://127.0.0.1:1/v1", "gemma-test"), ""))
     monkeypatch.setattr(llm, "can_see", lambda eng: (False, ""))
+    def account(p, k):                                    # 1.3.10: a stand-in account that refuses key IDs
+        if not k.startswith("sk-"):
+            raise llm.EngineError('401 from https://api.openai.com/v1/models: {"error": {"code": "invalid_api_key"}}')
+        return ["gpt-6.1-terra"]
+    monkeypatch.setattr(llm, "cloud_models", account)
     from fastapi.testclient import TestClient
     from studio.server import app
     c = TestClient(app)
@@ -125,6 +130,9 @@ def test_an_admin_picks_the_ai_and_adds_a_key_in_settings(tmp_path, monkeypatch)
     assert v["provider"] == "local" and [p["id"] for p in v["providers"]] == ["local", "anthropic", "openai", "gemini"]
     assert c.put("/api/web/ai", json={"provider": "openai", "use": True}).status_code == 409   # no key yet
     assert c.put("/api/web/ai", json={"provider": "openai", "key": "too short"}).status_code == 400
+    r = c.put("/api/web/ai", json={"provider": "openai", "key": "key_TlOZ" + "x" * 30 + "Un7A"})   # a key ID, not the secret
+    assert r.status_code == 424 and "refused" in r.json()["detail"] and "sk-" in r.json()["detail"]
+    assert not keys.get("openai")                                                                  # nothing kept
     key = "sk-test-" + "a" * 40
     v = c.put("/api/web/ai", json={"provider": "openai", "key": key}).json()
     ch = next(p for p in v["providers"] if p["id"] == "openai")
