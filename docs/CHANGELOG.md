@@ -4,6 +4,10 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.7 (22 Nov 2026), the desktop model list fills as soon as a key is pasted
+Tim, 22 Nov, on the desktop Cloud AI card: "still won't show the api".
+- Fixed: the desktop Cloud AI card waited for Save before asking the account for its models. A pasted key is now saved at once and the list fills by itself; if the account doesn't answer, the reason shows on the card; Refresh the list with no key says to paste one. (S-139)
+
 ## 1.3.6 (22 Nov 2026), choose the model from the account's own list
 Tim, 22 Nov: "i need the models listed from the api for the cloud ai, we don't know what models to put and it's not
 working, so ping the api, api tells us what models are available and we choose it".

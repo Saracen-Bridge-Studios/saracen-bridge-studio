@@ -3324,7 +3324,7 @@ async function cloudCard() {
   const model = el("input", { type: "text", "aria-label": "Model name", placeholder: "Type the model's exact name", style: "margin-top:8px", hidden: true });
   const modelSel = el("select", { "aria-label": "Model" });
   const gone = el("div", {});
-  const LISTS = {};                                   /* provider -> the account's models, once fetched */
+  const LISTS = {}, LIST_ERR = {};                    /* provider -> the account's models, once fetched; or why not */
   const chosen = () => modelSel.value === "__other" ? model.value.trim() : modelSel.value;
   const fillModels = () => {
     const P = c.providers[prov], list = LISTS[prov], cur = c.provider === prov && c.model && c.model !== P.model ? c.model : "";
@@ -3336,17 +3336,24 @@ async function cloudCard() {
     put(modelSel, opts); modelSel.value = cur; model.hidden = true; model.value = "";
     const using = cur || P.model;
     put(gone, list && !known.has(using) ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` ${P.name} no longer lists “${using}” on your account: it has been retired or renamed. Pick another model above and press Save.`)
-      : !list && c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Fetching the models on your account…")
-      : !c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Save a key to see the models on your account.") : null);
+      : !list && LIST_ERR[prov] ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` Couldn't get the model list: ${LIST_ERR[prov]} Check the key, then press Refresh the list.`)
+      : !list && c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Asking your account which models it offers…")
+      : !c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Paste your key: the models on your account then fill this list by themselves.") : null);
   };
   const loadModels = async loud => {
     const at = prov;
     if (!c.keys[at]) { fillModels(); return; }
-    try { const r = await api.get(`/api/cloud/models?provider=${at}`); LISTS[at] = r.models; if (loud) toast("ok", `${r.models.length} models on your account`, "Pick one in the Model box."); }
-    catch (e) { if (loud) toast("bad", "Couldn't list models", e.message); }
+    try { const r = await api.get(`/api/cloud/models?provider=${at}`); LISTS[at] = r.models; delete LIST_ERR[at]; if (loud) toast("ok", `${r.models.length} models on your account`, "Pick one in the Model box."); }
+    catch (e) { LIST_ERR[at] = e.message; if (loud) toast("bad", "Couldn't list models", e.message); }
     if (at === prov) fillModels();
   };
   modelSel.addEventListener("change", () => { model.hidden = modelSel.value !== "__other"; if (!model.hidden) model.focus(); });
+  /* 1.3.7 (Tim, 22 Nov: "still won't show the api"): a pasted key is saved at once and the account is asked for its models */
+  const keyNow = async () => { const k = keyIn.value.trim(); if (k.length < 20) return; delete LISTS[prov]; delete LIST_ERR[prov];
+    if (await save({})) { toast("ok", "Key saved", `Asking ${c.providers[prov].name} which models your account offers…`); loadModels(true); } };
+  keyIn.addEventListener("paste", () => setTimeout(keyNow, 50));
+  keyIn.addEventListener("change", keyNow);
+  keyIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); keyNow(); } });
   const chat = el("input", { type: "checkbox" }), writing = el("input", { type: "checkbox" });
   let prov = c.provider;
   const sw = el("button", { type: "button", class: "switch", role: "switch", "aria-label": "Use my cloud AI" }, el("i"));
@@ -3384,7 +3391,8 @@ async function cloudCard() {
       el("label", { class: "f", style: "flex:1 1 260px" }, "Model", modelSel, model),
       el("button", { type: "button", class: "btn", title: "Fetch the list of models on your account again", onclick: async () => {
         if (keyIn.value.trim() && !(await save())) return;
-        delete LISTS[prov]; await loadModels(true);
+        if (!c.keys[prov]) { keyIn.focus(); return toast("info", "Paste your key first", `The list comes from your ${c.providers[prov].name} account, so it needs the key.`); }
+        delete LISTS[prov]; delete LIST_ERR[prov]; await loadModels(true);
       } }, "Refresh the list")),
     gone,
     el("div", { class: "uses" },
