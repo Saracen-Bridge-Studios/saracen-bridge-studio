@@ -307,6 +307,18 @@ const tipsOn = () => { try { return localStorage.getItem("jon-tips") !== "off"; 
 function askReveal() { try { return localStorage.getItem("jonny-reveal") === "finished" ? "finished" : "stream"; } catch (e) { return "stream"; } }
 function setTips(on) { try { localStorage.setItem("jon-tips", on ? "on" : "off"); } catch (e) { /* private window */ } }
 function jonHide() { if (JON.bubble) { const b = JON.bubble; JON.bubble = null; b.classList.add("out"); setTimeout(() => b.remove(), 160); } }
+/* 1.3.4 (Tim, 22 Nov: "when you hit setup through him nothing happens"): already on Settings, a link to #/settings
+   changed nothing. Now it closes Jonny's panel and scrolls to the AI part of Settings, lit up. */
+function goAiSetup(ev) {
+  if (ev) ev.preventDefault();
+  if (ASK.open) askToggle(false);
+  jonHide();
+  const show = () => { const c = document.querySelector("[data-ai-setup]"); if (!c) return false;
+    c.scrollIntoView({ behavior: "smooth", block: "start" }); c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash"); return true; };
+  if (location.hash === "#/settings") { if (!show()) route().then(() => setTimeout(show, 200)); }
+  else { location.hash = "#/settings"; let n = 0; const t = setInterval(() => { if (show() || ++n > 30) clearInterval(t); }, 150); }
+}
+document.addEventListener("click", ev => { const a = ev.target.closest && ev.target.closest('a[href="#/settings"]'); if (a) goAiSetup(ev); });
 function jonAsk(q) { jonHide(); askToggle(true); setTimeout(() => ASK.node && ASK.node.send(q), 80); }
 function jonOffer(type, text, action, force) {
   const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || "") || Date.now() - COACH.lastInput < 4000;
@@ -515,7 +527,7 @@ function askBuild() {
         el("div", { class: "jon jon-hero", html: jonSvg(false) }),
         el("div", { class: "hello" }, "I'm Jonny. How can I help with ", el("em", {}, "your film?")),
         el("p", {}, "I know every tool in the Studio and Saracen Bridge's own methods, and I can see the page you're on. Ask me how to do something, what a result means, or for notes on the project."),
-        off ? el("div", { class: "notice", style: "margin:6px 0 0" }, el("div", { class: "ic" }, icon("sparkle")), el("div", { class: "grow" }, el("div", {}, "No AI engine yet"), el("div", { class: "sub" }, "Connect Gemma, or your own cloud AI, in Settings.")), el("a", { class: "btn sm", href: "#/settings", onclick: () => askToggle(false) }, "Set up"))
+        off ? el("div", { class: "notice", style: "margin:6px 0 0" }, el("div", { class: "ic" }, icon("sparkle")), el("div", { class: "grow" }, el("div", {}, "No AI engine yet"), el("div", { class: "sub" }, WEB.web ? ((WEB.user || {}).role === "admin" ? "Pick Gemma or a cloud AI in Settings › AI brain." : "Ask an admin to set up the AI brain in Settings.") : "Connect Gemma, or your own cloud AI, in Settings.")), el("a", { class: "btn sm", href: "#/settings" }, "Set up"))
           : el("div", { class: "sugs" }, askSuggestions().map(q => el("button", { type: "button", class: "sug", onclick: () => { input.value = q; go(); } }, icon("arrow"), q)))));
     }
     const stick = nearBottom() || ASK.msgs.some(m => !m._el);
@@ -3027,11 +3039,22 @@ async function webBrainPicker(card) {
 async function webSettings() {
   topbar(["Studio", "Settings"]);
   const a = WEB.ai || {}, u = WEB.user || {}, admin = u.role === "admin";
-  const shown = (title, pw) => el("div", { class: "notice", style: "margin-top:12px" }, el("div", { class: "ic" }, icon("check")),
-    el("div", { class: "grow" }, el("div", {}, title), el("div", { class: "sub" }, "Shown once. Send it to them privately; they can change it in Settings › My account."),
-      el("code", { class: "pw-once" }, pw)));
+  /* 1.3.4 (Tim, 22 Nov: "i need it to show the user and pass"): the login in plain view, with Copy; it stays until closed */
+  const shown = (title, pw, who) => {
+    const addr = WEB.public_url || location.origin;
+    const text = `Saracen Bridge Studio\n${addr}\nEmail: ${who}\nPassword: ${pw}`;
+    const box = el("div", { class: "notice login-card", style: "margin-top:12px" }, el("div", { class: "ic" }, icon("check")),
+      el("div", { class: "grow" }, el("div", {}, el("b", {}, title)),
+        el("div", { class: "login-lines" }, el("span", {}, "Address"), el("code", {}, addr), el("span", {}, "Email"), el("code", {}, who), el("span", {}, "Password"), el("code", { class: "pw-once" }, pw)),
+        el("div", { class: "sub" }, "Copy it now and send it to them. Passwords are kept locked, so the Studio can't show this one again later; if it's lost, reset it.")),
+      el("div", { class: "row", style: "gap:8px;align-self:center" },
+        el("button", { type: "button", class: "btn sm primary", onclick: async () => { try { await navigator.clipboard.writeText(text); toast("ok", "Copied", "Paste it into a message to them."); } catch { toast("info", "Select and copy", "Your browser didn't allow copying; select the lines and copy them."); } } }, "Copy login"),
+        el("button", { type: "button", class: "btn sm quiet", onclick: () => box.remove() }, "Close")));
+    return box;
+  };
+  const eye = inp => el("button", { type: "button", class: "btn sm quiet pw-eye", "aria-label": "Show password", onclick: ev => { const v = inp.type === "password"; inp.type = v ? "text" : "password"; ev.currentTarget.textContent = v ? "Hide" : "Show"; } }, "Show");
   const brainModel = el("div", { class: "row", style: "gap:10px;align-items:flex-end;flex:1 1 100%" });
-  const brain = el("div", { class: "card" }, el("h2", {}, icon("sparkle"), "AI brain"),
+  const brain = el("div", { class: "card", "data-ai-setup": "" }, el("h2", {}, icon("sparkle"), "AI brain"),
     el("p", { class: "muted small", style: "margin-top:-4px" }, admin ? "Choose where the Studio's AI work runs for everyone. Nobody else needs a key of their own."
       : a.local ? "Writing tools and Ask Jonny run on Gemma, on the computer that hosts this Studio. Nothing is sent to a cloud AI. It does one job at a time, at that computer's speed."
       : "Writing tools and Ask Jonny use the company's cloud AI account, set up on this server. Nobody needs a key of their own."),
@@ -3062,7 +3085,7 @@ async function webSettings() {
   const cur = el("input", { type: "password", autocomplete: "current-password" }), nw = el("input", { type: "password", autocomplete: "new-password" });
   const mine = el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("users"), "My account"),
     el("p", { style: "margin:0 0 14px" }, el("b", {}, u.name || u.email), el("span", { class: "muted" }, ` · ${u.email} · ${admin ? "admin" : "member"}`)),
-    el("div", { class: "row" }, el("label", { class: "f" }, "Current password", cur), el("label", { class: "f" }, "New password (10 or more characters)", nw),
+    el("div", { class: "row" }, el("label", { class: "f" }, "Current password", el("div", { class: "pw-wrap" }, cur, eye(cur))), el("label", { class: "f" }, "New password (10 or more characters)", el("div", { class: "pw-wrap" }, nw, eye(nw))),
       el("button", { type: "button", class: "btn", onclick: async () => {
         try { await api.post("/api/web/password", { current: cur.value, new: nw.value }); toast("ok", "Password changed", "Sign in again with the new one."); setTimeout(() => location.href = "/login", 1200); }
         catch (e) { toast("bad", "Couldn't change it", e.message); } } }, "Change password"),
@@ -3072,20 +3095,27 @@ async function webSettings() {
     const list = el("div", {}), out = el("div", {});
     const email = el("input", { type: "text", placeholder: "name@company.com", inputmode: "email" }), name = el("input", { type: "text", placeholder: "Their name" });
     const role = el("select", {}, el("option", { value: "member" }, "Member"), el("option", { value: "admin" }, "Admin"));
+    const pick = el("input", { type: "text", placeholder: "Blank: the Studio makes one", autocomplete: "off", spellcheck: "false" });
     const drawTeam = async () => {
       const r = await api.get("/api/web/users");
       put(list, el("div", { class: "scroll" }, el("table", {}, el("thead", {}, el("tr", {}, el("th", {}, "Name"), el("th", {}, "Email"), el("th", {}, "Role"), el("th", {}, ""))),
         el("tbody", {}, r.users.map(x => el("tr", {}, el("td", {}, el("b", {}, x.name || "—")), el("td", {}, x.email), el("td", {}, x.role),
           el("td", { style: "text-align:right;white-space:nowrap" },
-            el("button", { type: "button", class: "btn sm", onclick: async () => { try { const k = await api.post(`/api/web/users/${encodeURIComponent(x.email)}/reset`, {}); put(out, shown(`New password for ${x.email}`, k.password)); } catch (e) { toast("bad", "Couldn't reset it", e.message); } } }, "Reset password"),
+            x.email === u.email ? el("span", { class: "muted small" }, "You: change yours under My account") : el("button", { type: "button", class: "btn sm", onclick: async () => {
+              const np = el("input", { type: "text", placeholder: "Blank: the Studio makes one", autocomplete: "off", spellcheck: "false", style: "flex:1 1 240px" });
+              put(out, el("div", { class: "notice", style: "margin-top:12px;align-items:center" }, el("div", { class: "grow" }, el("div", {}, el("b", {}, `New password for ${x.email}`)),
+                el("div", { class: "row", style: "gap:10px;margin-top:8px" }, np,
+                  el("button", { type: "button", class: "btn sm primary", onclick: async () => { try { const k = await api.post(`/api/web/users/${encodeURIComponent(x.email)}/reset`, { password: np.value }); put(out, shown(`New login for ${x.name || x.email}`, k.password, k.email)); } catch (e) { toast("bad", "Couldn't reset it", e.message); } } }, "OK, set it"),
+                  el("button", { type: "button", class: "btn sm quiet", onclick: () => put(out) }, "Cancel")))));
+              np.focus(); } }, "Reset password"),
             x.email === u.email ? null : el("button", { type: "button", class: "btn quiet sm", onclick: async () => { if (!confirm(`Remove ${x.email}'s login?`)) return; try { await api.del(`/api/web/users/${encodeURIComponent(x.email)}`); drawTeam(); } catch (e) { toast("bad", "Couldn't remove it", e.message); } } }, "Remove"))))))));
     };
     cards.push(el("div", { class: "card", style: "margin-top:20px" }, el("h2", {}, icon("users"), "Team"),
       el("p", { class: "muted small", style: "margin-top:-4px" }, "Everyone who can sign in. Admins add people, reset passwords and import data; members use the tools."),
       list,
-      el("div", { class: "row", style: "margin-top:16px" }, el("label", { class: "f" }, "Email", email), el("label", { class: "f" }, "Name", name), el("label", { class: "f" }, "Role", role),
+      el("div", { class: "row", style: "margin-top:16px" }, el("label", { class: "f" }, "Email", email), el("label", { class: "f" }, "Name", name), el("label", { class: "f" }, "Role", role), el("label", { class: "f" }, "Password (10 or more)", pick),
         el("button", { type: "button", class: "btn primary", onclick: async () => {
-          try { const k = await api.post("/api/web/users", { email: email.value, name: name.value, role: role.value }); put(out, shown(`Login for ${email.value.trim()}`, k.password)); email.value = name.value = ""; drawTeam(); }
+          try { const k = await api.post("/api/web/users", { email: email.value, name: name.value, role: role.value, password: pick.value }); put(out, shown(`Login for ${name.value.trim() || k.email}`, k.password, k.email)); email.value = name.value = pick.value = ""; drawTeam(); }
           catch (e) { toast("bad", "Couldn't add them", e.message); } } }, "Add person")),
       out));
     drawTeam();
@@ -3260,7 +3290,7 @@ async function dlWatch() {
 
 async function cloudCard() {
   let c = await api.get("/api/cloud");
-  const card = el("div", { class: "card cloud-card", style: "margin-top:20px" });
+  const card = el("div", { class: "card cloud-card", style: "margin-top:20px", "data-ai-setup": "" });
   const keyIn = el("input", { type: "password", autocomplete: "off", spellcheck: "false", "aria-label": "API key" });
   /* 1.3.1 (Tim, 18 Nov: "option to choose api models as they become discontinued"): the Model box is a list of what the
      account offers today, fetched when a key is saved, with the Studio's default first and "Another model" to type one.

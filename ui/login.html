@@ -38,7 +38,7 @@
     <p class="lede">Your production tools, budgets and Library, for your team.</p>
     <form id="f" autocomplete="on">
       <label class="f">Email<input id="email" type="text" inputmode="email" autocomplete="username" required autofocus></label>
-      <label class="f">Password<input id="password" type="password" autocomplete="current-password" required></label>
+      <label class="f">Password<span style="display:flex;gap:6px;align-items:center"><input id="password" type="password" autocomplete="current-password" required style="flex:1 1 auto;min-width:0"><button type="button" class="btn sm quiet" id="pwshow" aria-label="Show password">Show</button></span></label>
       <div class="msg" id="msg" role="alert"></div>
       <button class="btn primary" type="submit">Sign in</button>
     </form>
@@ -59,5 +59,6 @@
     } catch (e) { msg.textContent = e.message; b.disabled = false; }
   });
 </script>
+<script>document.getElementById("pwshow").addEventListener("click",function(){var i=document.getElementById("password"),v=i.type==="password";i.type=v?"text":"password";this.textContent=v?"Hide":"Show";});</script>
 </body>
 </html>

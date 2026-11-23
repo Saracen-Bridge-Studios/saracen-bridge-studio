@@ -115,14 +115,15 @@ def web_logout(request: Request, response: Response):
 def web_me(request: Request):
     if not web.ENABLED:
         return {"web": False}
+    pub = os.environ.get("STUDIO_PUBLIC_URL", "").strip().rstrip("/")
     if web.local_ai():                                    # the host computer's own Gemma (1.3.3)
         st = llm.status(store.load_settings())
         return {"web": True, "user": _web_user(request),
-                "ai": {"provider": "local", "name": "Gemma", "maker": "", "local": True,
+                "public_url": pub, "ai": {"provider": "local", "name": "Gemma", "maker": "", "local": True,
                        "model": st.get("model", ""), "ready": bool(st.get("connected")), "reason": st.get("reason", "")}}
     a = web.ai()
     prov = llm.CLOUD.get(a["provider"], {})
-    return {"web": True, "user": _web_user(request),
+    return {"web": True, "user": _web_user(request), "public_url": pub,
             "ai": {"provider": a["provider"], "name": prov.get("name", a["provider"]), "maker": prov.get("maker", ""),
                    "model": a["model"] or prov.get("model", ""), "ready": bool(a["key"] and prov)}}
 
@@ -222,14 +223,15 @@ def web_users(request: Request):
 @app.post("/api/web/users")
 def web_add_user(request: Request, body: dict = Body(...)):
     _web_admin(request)
-    pw = _web_call(web.add_user, str(body.get("email", "")), str(body.get("name", "")), str(body.get("role", "member")))
-    return {"ok": True, "password": pw}
+    pw = _web_call(web.add_user, str(body.get("email", "")), str(body.get("name", "")), str(body.get("role", "member")),
+                   str(body.get("password") or "").strip() or None)       # 1.3.4: the admin can choose it, or leave it blank
+    return {"ok": True, "email": web._norm(str(body.get("email", ""))), "password": pw}
 
 
 @app.post("/api/web/users/{email}/reset")
-def web_reset_user(request: Request, email: str):
+def web_reset_user(request: Request, email: str, body: dict = Body(default={})):
     _web_admin(request)
-    return {"ok": True, "password": _web_call(web.set_password, email)}
+    return {"ok": True, "email": web._norm(email), "password": _web_call(web.set_password, email, str((body or {}).get("password") or "").strip() or None)}
 
 
 @app.delete("/api/web/users/{email}")

@@ -137,3 +137,24 @@ def test_an_admin_picks_the_ai_and_adds_a_key_in_settings(tmp_path, monkeypatch)
     assert keys.get("openai") == "" and not c.get("/api/web/me").json()["ai"]["ready"]
     v = c.put("/api/web/ai", json={"provider": "local", "use": True}).json()
     assert v["provider"] == "local" and web.local_ai()
+
+
+def test_an_admin_can_choose_a_persons_password(tmp_path, monkeypatch):
+    """1.3.4 (Tim, 22 Nov): the admin can type the password when adding someone or resetting theirs."""
+    from studio import web
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
+    monkeypatch.setattr(web, "ENABLED", True)
+    monkeypatch.setattr(web, "SCRYPT", {"n": 2 ** 10, "r": 8, "p": 1, "dklen": 32})
+    web._sessions.clear(); web._fails.clear()
+    from fastapi.testclient import TestClient
+    from studio.server import app
+    c = TestClient(app)
+    web.add_user("boss@example.com", "Boss", "admin", "correct horse battery")
+    c.post("/api/web/login", json={"email": "boss@example.com", "password": "correct horse battery"})
+    r = c.post("/api/web/users", json={"email": "Jon@Example.com", "name": "Jon", "role": "member", "password": "chosen-by-boss-1"}).json()
+    assert r["password"] == "chosen-by-boss-1" and r["email"] == "jon@example.com" and web.check_password("jon@example.com", "chosen-by-boss-1")
+    r = c.post("/api/web/users/jon@example.com/reset", json={"password": "second-choice-22"}).json()
+    assert r["password"] == "second-choice-22" and web.check_password("jon@example.com", "second-choice-22")
+    r = c.post("/api/web/users/jon@example.com/reset", json={}).json()          # blank: the Studio makes one
+    assert len(r["password"]) >= 10 and web.check_password("jon@example.com", r["password"])
+    assert c.post("/api/web/users/jon@example.com/reset", json={"password": "short"}).status_code == 400

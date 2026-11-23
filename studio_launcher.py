@@ -141,12 +141,15 @@ def web_setup() -> str:
             out.write("# Saracen Bridge Studio web host: where the team's AI work runs. Save, then restart the web host.\n"
                       "# Provider: local (the Gemma on this computer; no key needed), or a cloud account: openai, anthropic or gemini,\n"
                       "# with its key below. Leave the model blank for the Studio's default.\n"
-                      "STUDIO_AI_PROVIDER=local\nSTUDIO_AI_KEY=\nSTUDIO_AI_MODEL=\n")
+                      "STUDIO_AI_PROVIDER=local\nSTUDIO_AI_KEY=\nSTUDIO_AI_MODEL=\n"
+                      "# The address the team uses, shown on the login details an admin copies to send.\n"
+                      "STUDIO_PUBLIC_URL=https://studio.twokingdomsentertainment.com\n")
     with open(f, encoding="utf-8-sig") as src:
         for line in src:
             k, sep, v = line.strip().partition("=")
-            if sep and k in ("STUDIO_AI_PROVIDER", "STUDIO_AI_KEY", "STUDIO_AI_MODEL") and v.strip():     # the file is what the owner edits, so it wins
+            if sep and k in ("STUDIO_AI_PROVIDER", "STUDIO_AI_KEY", "STUDIO_AI_MODEL", "STUDIO_PUBLIC_URL") and v.strip():     # the file is what the owner edits, so it wins
                 os.environ[k] = v.strip()
+    os.environ.setdefault("STUDIO_PUBLIC_URL", "https://studio.twokingdomsentertainment.com")   # Tim and Jon's address, 22 Nov
     if not os.environ.get("STUDIO_AI_KEY") and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() != "local":
         os.environ["STUDIO_AI_PROVIDER"] = "local"        # no cloud key: the team uses this computer's Gemma (1.3.3)
     return folder

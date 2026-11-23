@@ -9,7 +9,9 @@ Tim, 22 Nov: "we need a better way to add our cloud compute like before, the thr
 button with clear tabs and an ok so it's easy for ten year olds".
 - Added: Settings › AI brain on the web version, for admins: four tabs (Gemma on the host computer, Claude, ChatGPT, Gemini), each showing whether it's in use or has a key; three numbered steps (open the provider's key page, paste the key and press Add, press OK to use it); Remove key. Members see what's in use and can't change it. (S-136)
 - Changed: an admin's choice in Settings now comes before the server's own setting (STUDIO_AI_PROVIDER and STUDIO_AI_KEY), which stays as the fallback. Keys added in Settings are kept on the host computer, sealed as the desktop keeps its keys (DPAPI on Windows), and never sent back to a browser. (S-136)
-- Tests: tests/test_web_host.py (4).
+- Added: Team, for admins: type the password when adding someone or resetting theirs (or leave it blank and the Studio makes one). The new login shows the address, email and password in plain view with Copy login, and stays until closed. Show buttons on every password box, the sign-in page included. Your own row points to My account, so you can't reset yourself out by mistake. (S-137)
+- Fixed: Jonny's Set up button, and any link to Settings pressed while already on Settings, did nothing. They now close Jonny's panel, scroll to the AI part of Settings and light it up. (S-137)
+- Tests: tests/test_web_host.py (5).
 
 ## 1.3.3 (22 Nov 2026), the web host can use its own Gemma
 Tim, 22 Nov: "temp ill host the web, have it so jon or woever can use my gemma for now and ill make sure my laptop stays
