@@ -249,7 +249,7 @@ def ai_key_for(prov: str) -> str:
     if prov not in AI_CHOICES or prov == "local":
         return ""
     return keys.get(prov) or (os.environ.get("STUDIO_AI_KEY", "").strip()
-                              if os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == prov else "")
+                              if os.environ.get("STUDIO_AI_PROVIDER", "openai").strip().lower() == prov else "")   # same default as ai()
 
 
 def local_ai() -> bool:

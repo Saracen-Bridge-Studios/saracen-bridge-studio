@@ -3015,7 +3015,19 @@ async function webBrainPicker(card) {
     const tabs = el("div", { class: "tabs provs", role: "group", "aria-label": "Where the AI work runs" }, v.providers.map(p =>
       el("button", { type: "button", "aria-pressed": String(p.id === tab), onclick: () => { tab = p.id; draw(); } },
         el("b", {}, p.name), el("small", {}, p.id === v.provider ? "In use now" : p.needs_key ? (p.has_key ? "Key added" : "No key yet") : "Free · no key"))));
-    let panel;
+    let panel, modelSel = null;
+    const models = el("div", { class: "row", style: "gap:10px;align-items:center;flex:1 1 auto" },
+      P.needs_key && !P.has_key ? el("span", { class: "muted" }, "Choose a model: the list comes from your account once the key is added.") : el("span", { class: "muted" }, "Asking your account which models it offers…"));
+    const loadModels = async PP => {
+      let r; try { r = await api.get(`/api/web/ai-models?provider=${PP.id}`); }
+      catch (e) { return put(models, el("span", { class: "note FAIL", style: "margin:0" }, icon("alert"), ` ${e.message}`),
+        el("button", { type: "button", class: "btn sm", onclick: () => { put(models, el("span", { class: "muted" }, "Asking again…")); loadModels(PP); } }, "Try again")); }
+      if (tab !== PP.id) return;
+      if (!r.models.length) return put(models, el("span", { class: "note PRELIMINARY", style: "margin:0" }, `Your ${PP.name} account didn't list any writing models. Check the account has API access.`));
+      modelSel = el("select", { "aria-label": `${PP.name} model`, style: "width:100%" }, r.models.map(m => el("option", { value: m, selected: m === r.suggested }, m)));
+      put(models, el("label", { class: "f", style: "flex:0 1 340px;margin:0" }, `Choose a model (${r.models.length} on your account)`, modelSel),
+        el("button", { type: "button", class: "btn sm quiet", onclick: () => { put(models, el("span", { class: "muted" }, "Asking again…")); loadModels(PP); } }, "Refresh the list"));
+    };
     if (!P.needs_key) {
       panel = el("div", { class: "brain-panel" },
         el("p", {}, "Gemma runs on the computer that hosts this Studio. It's free and nothing leaves that computer, but it's slower and does one job at a time."),
@@ -3035,10 +3047,14 @@ async function webBrainPicker(card) {
           P.has_key ? el("span", {}, icon("check"), ` Key added${P.hint ? ` (${P.hint})` : ""}. `,
               el("button", { type: "button", class: "btn sm quiet", onclick: async () => { if (await send({ provider: P.id, remove_key: true }, ["Key removed", `The ${P.name} key is gone from this computer.`])) { if (inUse) refresh(); else draw(); } } }, "Remove key"))
             : el("div", { class: "row", style: "gap:10px;flex:1 1 auto" }, keyIn, el("button", { type: "button", class: "btn", onclick: add }, icon("plus"), "Add"))),
-        el("div", { class: "brain-step" }, el("span", { class: "n" }, "3"),
-          inUse ? el("span", {}, icon("check"), ` ${P.name} is in use now.`)
-            : el("button", { type: "button", class: "btn primary", disabled: !P.has_key, title: P.has_key ? "" : "Add a key first",
-                onclick: async () => { if (await send({ provider: P.id, use: true }, [`AI brain: ${P.name}`, `AI work now goes to ${P.maker} through this account.`])) refresh(); } }, icon("check"), `OK, use ${P.name}`)));
+        el("div", { class: "brain-step" }, el("span", { class: "n" }, "3"), models),
+        el("div", { class: "brain-step" }, el("span", { class: "n" }, "4"),
+          el("button", { type: "button", class: "btn primary", disabled: !P.has_key, title: P.has_key ? "" : "Add a key first",
+            onclick: async () => { const m = modelSel ? modelSel.value : ""; if (P.has_key && modelSel && !m) return toast("info", "Choose a model first", "Pick one from the list in step 3.");
+              if (await send({ provider: P.id, use: true, model: m }, [`AI brain: ${P.name}`, `Using ${m || "the Studio's default"} through your ${P.maker} account.`])) refresh(); } },
+            icon("check"), inUse ? `OK, save` : `OK, use ${P.name}`),
+          inUse ? el("span", { class: "muted small" }, `${P.name} is in use now.`) : null));
+      if (P.has_key) loadModels(P);
     }
     put(box, tabs, panel);
   };
@@ -3081,7 +3097,7 @@ async function webSettings() {
     a.ready ? el("div", { class: "row", style: "margin-top:16px" }, el("button", { type: "button", class: "btn primary", onclick: async ev => { const b = ev.currentTarget; b.disabled = true; await testEngine(); b.disabled = false; } }, icon("sparkle"), "Test the AI brain"),
       u.role === "admin" ? brainModel : null) : null);
   if (admin) webBrainPicker(brain);                         /* 1.3.4: the admin picks where the AI runs, and adds keys, right here */
-  if (a.ready && u.role === "admin" && !a.local) (async () => {       /* 1.3.1: the model is chosen here, from what the account offers today */
+  if (false) (async () => {       /* 1.3.1's separate model chooser: replaced by step 3 of the picker (1.3.6) */
     let r; try { r = await api.get("/api/web/ai-models"); } catch (e) { return put(brainModel, el("span", { class: "muted small" }, `Couldn't list the account's models: ${e.message}`)); }
     const sel = el("select", { "aria-label": "Model for the AI brain" },
       el("option", { value: "" }, "The server's own setting"), r.models.map(m => el("option", { value: m, selected: m === r.chosen }, m)),

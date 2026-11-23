@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.5"
+VERSION = "1.3.6"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -163,7 +163,7 @@ def _web_ai_view() -> dict:
     return {"provider": a["provider"], "ready": bool(a["key"]) if a["provider"] != "local" else bool(llm.status(store.load_settings()).get("connected")),
             "providers": [{"id": "local", "name": "Gemma", "maker": "The host computer", "needs_key": False}]
             + [{"id": p, "name": v["name"], "maker": v["maker"], "needs_key": True, "keys_at": v["keys_at"],
-                "has_key": bool(keys.get(p) or (os.environ.get("STUDIO_AI_KEY", "").strip() and os.environ.get("STUDIO_AI_PROVIDER", "").strip().lower() == p)),
+                "has_key": bool(web.ai_key_for(p)),
                 "hint": keys.hint(p)} for p, v in llm.CLOUD.items()]}
 
 
@@ -198,7 +198,10 @@ def web_ai_put(request: Request, body: dict = Body(...)):
             raise HTTPException(409, f"Add a {llm.CLOUD[prov]['name']} key first.")
         s = store.load_settings()
         old = s.get("web_ai") or {}
-        s["web_ai"] = {"provider": prov, "model": old.get("model", "") if old.get("provider") == prov else ""}
+        model = str(body.get("model") or "").strip()[:120]
+        if model and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/\-]*", model):
+            raise HTTPException(400, "That doesn't look like a model name.")
+        s["web_ai"] = {"provider": prov, "model": model or (old.get("model", "") if old.get("provider") == prov else "")}
         store.save_settings(s)
     return _web_ai_view()
 
@@ -220,19 +223,25 @@ def web_ai_model(request: Request, body: dict = Body(...)):
 
 
 @app.get("/api/web/ai-models")
-def web_ai_models(request: Request):
-    """Admin: the models the company's AI account offers, to pick STUDIO_AI_MODEL (model names change often)."""
+def web_ai_models(request: Request, provider: str = ""):
+    """Admin: ask the cloud account which models it offers today (1.3.6; Tim, 22 Nov: "ping the api, api tells us what
+    models are available and we choose it"). Any provider with a key, not only the one in use."""
     _web_admin(request)
     a = web.ai()
-    if not a["key"] or a["provider"] not in llm.CLOUD:
-        raise HTTPException(409, "The AI brain has no key on this server yet.")
+    prov = provider or a["provider"]
+    if prov not in llm.CLOUD:
+        raise HTTPException(400, "Choose Claude, ChatGPT or Gemini.")
+    key = web.ai_key_for(prov)
+    if not key:
+        raise HTTPException(409, f"Add a {llm.CLOUD[prov]['name']} key first.")
     try:
-        models = llm.cloud_models(a["provider"], a["key"])
-        in_use = a["model"] or llm.CLOUD[a["provider"]]["model"]
-        return {"provider": a["provider"], "in_use": in_use, "listed": in_use in models, "models": models,
-                "chosen": ((store.load_settings().get("web_ai") or {}).get("model") or "")}
+        models = llm.cloud_models(prov, key)
     except llm.EngineError as e:
-        raise HTTPException(502, f"The AI account didn't answer: {e}") from e
+        raise HTTPException(502, f"{llm.CLOUD[prov]['name']} didn't answer: {e}. Check the key is right and the account is set up for API use.") from e
+    chosen = a["model"] if a["provider"] == prov else ""
+    in_use = chosen or llm.CLOUD[prov]["model"]
+    return {"provider": prov, "in_use": in_use, "listed": in_use in models, "models": models, "chosen": chosen,
+            "suggested": chosen if chosen in models else (llm.CLOUD[prov]["model"] if llm.CLOUD[prov]["model"] in models else (models[0] if models else ""))}
 
 
 @app.post("/api/web/password")

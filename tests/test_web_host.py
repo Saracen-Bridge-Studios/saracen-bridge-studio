@@ -173,3 +173,33 @@ def test_reload_always_gets_the_newest_studio(tmp_path, monkeypatch):
         assert f"/ui/studio.css?v={server.VERSION}-" in r.text
     r = c.get("/ui/studio.js")
     assert r.status_code == 200 and "no-cache" in r.headers["cache-control"]
+
+
+def test_the_picker_lists_the_accounts_models_and_saves_the_choice(tmp_path, monkeypatch):
+    """1.3.6 (Tim, 22 Nov): "ping the api, api tells us what models are available and we choose it"."""
+    from studio import llm, web
+    monkeypatch.setenv("STUDIO_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("STUDIO_AI_PROVIDER", "local")
+    monkeypatch.delenv("STUDIO_AI_KEY", raising=False)
+    monkeypatch.setattr(web, "ENABLED", True)
+    monkeypatch.setattr(web, "SCRYPT", {"n": 2 ** 10, "r": 8, "p": 1, "dklen": 32})
+    web._sessions.clear(); web._fails.clear()
+    asked = []
+    def fake_models(provider, key):
+        asked.append((provider, key))
+        return ["model-b", "model-a"]
+    monkeypatch.setattr(llm, "cloud_models", fake_models)
+    from fastapi.testclient import TestClient
+    from studio.server import app
+    c = TestClient(app)
+    web.add_user("boss@example.com", "Boss", "admin", "correct horse battery")
+    c.post("/api/web/login", json={"email": "boss@example.com", "password": "correct horse battery"})
+    assert c.get("/api/web/ai-models?provider=anthropic").status_code == 409          # no key yet
+    key = "sk-ant-test-" + "b" * 40
+    c.put("/api/web/ai", json={"provider": "anthropic", "key": key})
+    r = c.get("/api/web/ai-models?provider=anthropic").json()
+    assert r["models"] == ["model-b", "model-a"] and r["suggested"] == "model-b" and asked[-1] == ("anthropic", key)
+    v = c.put("/api/web/ai", json={"provider": "anthropic", "use": True, "model": "model-a"}).json()
+    assert v["provider"] == "anthropic" and web.ai()["model"] == "model-a"
+    assert c.get("/api/web/ai-models?provider=anthropic").json()["suggested"] == "model-a"
+    assert c.put("/api/web/ai", json={"provider": "anthropic", "use": True, "model": "bad name!"}).status_code == 400

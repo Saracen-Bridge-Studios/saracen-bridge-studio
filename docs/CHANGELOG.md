@@ -4,6 +4,13 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.6 (22 Nov 2026), choose the model from the account's own list
+Tim, 22 Nov: "i need the models listed from the api for the cloud ai, we don't know what models to put and it's not
+working, so ping the api, api tells us what models are available and we choose it".
+- Added: step 3 of the AI brain picker asks the cloud account which models it offers today and lists them to choose from (Refresh the list; plain message and Try again if the account doesn't answer). Step 4, OK, saves the provider and the chosen model together. The old separate model box is gone. (S-139)
+- Fixed: the server's own key was missed for the default provider when STUDIO_AI_PROVIDER was left unset. (S-139)
+- Tests: tests/test_web_host.py (7).
+
 ## 1.3.5 (22 Nov 2026), a reload always gets the newest Studio
 Tim, 22 Nov: "make sure the reload button kills cache so they get the latest updates when using the web version".
 - Fixed: pages now name the Studio's files with the release stamp, and pages and files are sent as "check with the server first", so a reload gets the newest version through the browser and through Cloudflare. (S-138)
