@@ -4,6 +4,10 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.9 (22 Nov 2026), the provider's real reason gets through Cloudflare
+Tim, 22 Nov: step 3 said "bad gateway" while the Studio itself was running.
+- Fixed: when a cloud AI account or an AI engine fails, the Studio now answers 424 with the reason (a wrong key, no API access) in place of 502. Cloudflare swaps a 502 from the Studio for its own "bad gateway" page, which hid the real reason. (S-141)
+
 ## 1.3.8 (22 Nov 2026), no more gpt-5.5
 Tim, 22 Nov: "stop using gpt 5.5 it's discontinued", "fix the model 5.5 to actual mini model".
 - Changed: the Studio's ChatGPT model is now gpt-6.1-terra, OpenAI's current mini model (named on OpenAI's deprecations page as the replacement for the mini line), and it's used only if the account lists it. With no model chosen, the Studio uses the first model the account itself lists, so a retired name is never sent. (S-140)

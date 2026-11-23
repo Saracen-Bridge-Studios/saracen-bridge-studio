@@ -23,7 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from . import web
 from . import agents, agreement, assist, bfi, bfiread, brandspot, budget, casting, coverage, estimates, schedreason, sales, fetch, finance, greenlight, incentive, jobs, keys, knowledge, llm, lookbook, lookups, ocr, producerfee, refdata, script, store, termsheet
 
-VERSION = "1.3.8"
+VERSION = "1.3.9"
 UI_DIR = refdata.app_root() / "ui"
 CATALOG = json.loads((refdata.app_root() / "tools" / "catalog.json").read_text(encoding="utf-8"))
 GENRES = json.loads((refdata.app_root() / "tools" / "genres.json").read_text(encoding="utf-8"))   # Tim's list (1.1.2)
@@ -93,6 +93,9 @@ def _web_call(fn, *a, **k):
 # files with this release's stamp, and pages and files are sent "check with the server first", so a reload always gets
 # the newest Studio, through the browser and through Cloudflare alike.
 NO_CACHE = {"Cache-Control": "no-cache, must-revalidate"}
+# 1.3.9 (22 Nov): when an AI provider or engine fails, the Studio answers 424, not 502. Behind Cloudflare a 502 from the
+# Studio is swapped for Cloudflare's own "bad gateway" page, which hid the provider's real reason (a wrong key, say).
+UPSTREAM = 424
 
 
 def _asset_stamp() -> str:
@@ -237,7 +240,7 @@ def web_ai_models(request: Request, provider: str = ""):
     try:
         models = llm.cloud_models(prov, key)
     except llm.EngineError as e:
-        raise HTTPException(502, f"{llm.CLOUD[prov]['name']} didn't answer: {e}. Check the key is right and the account is set up for API use.") from e
+        raise HTTPException(UPSTREAM, f"{llm.CLOUD[prov]['name']} didn't answer: {e}. Check the key is right and the account is set up for API use.") from e
     chosen = a["model"] if a["provider"] == prov else ""
     in_use = chosen or llm.CLOUD[prov]["model"]
     return {"provider": prov, "in_use": in_use, "listed": in_use in models, "models": models, "chosen": chosen,
@@ -540,7 +543,7 @@ def cloud_models(provider: str):
     try:
         models = llm.cloud_models(provider, key)
     except llm.EngineError as e:
-        raise HTTPException(502, f"{llm.CLOUD[provider]['name']} did not list models: {e}") from e
+        raise HTTPException(UPSTREAM, f"{llm.CLOUD[provider]['name']} did not list models: {e}") from e
     c = store.load_settings().get("cloud_ai") or {}
     in_use = (c.get("model") if c.get("provider") == provider else "") or llm.CLOUD[provider]["model"]
     # listed: False means the provider no longer offers the model in use (retired or renamed): choose another
@@ -562,7 +565,7 @@ def cloud_test():
         reply = llm.chat(engine, "Reply in five words or fewer.", "Say that the Saracen Bridge Studio cloud link is ready.",
                          settings=s, max_tokens=40, temperature=0)
     except llm.EngineError as e:
-        raise HTTPException(502, f"{llm.CLOUD[p]['name']} did not answer: {e}") from e
+        raise HTTPException(UPSTREAM, f"{llm.CLOUD[p]['name']} did not answer: {e}") from e
     return {"ok": True, "reply": reply, "seconds": round(_t.time() - t0, 1), "engine": engine.describe()}
 
 
@@ -630,7 +633,7 @@ def ai_test(body: dict = Body(default={})):
         reply = llm.chat(engine, "Reply in five words or fewer.", "Say that the Saracen Bridge Studio engine is ready.",
                          settings=settings, max_tokens=24, temperature=0, think=False)
     except llm.EngineError as e:
-        raise HTTPException(502, f"The engine did not answer: {e}") from e
+        raise HTTPException(UPSTREAM, f"The engine did not answer: {e}") from e
     return {"ok": True, "reply": reply, "seconds": round(_t.time() - t0, 1), "engine": engine.describe()}
 
 
@@ -1824,7 +1827,7 @@ def agents_suggest(body: dict = Body(...)):
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
     except llm.EngineError as e:
-        raise HTTPException(502, f"The AI engine couldn't assess the fits: {e}") from e
+        raise HTTPException(UPSTREAM, f"The AI engine couldn't assess the fits: {e}") from e
     return {"assessed": len(done), "fits": done}
 
 
