@@ -4,6 +4,12 @@ Every change to the Studio gets an entry here, newest first, in the release that
 
 Revisions before 0.3.1 are recorded only in the register (S-01 to S-23).
 
+## 1.3.8 (22 Nov 2026), no more gpt-5.5
+Tim, 22 Nov: "stop using gpt 5.5 it's discontinued", "fix the model 5.5 to actual mini model".
+- Changed: the Studio's ChatGPT model is now gpt-6.1-terra, OpenAI's current mini model (named on OpenAI's deprecations page as the replacement for the mini line), and it's used only if the account lists it. With no model chosen, the Studio uses the first model the account itself lists, so a retired name is never sent. (S-140)
+- Changed: the desktop Model box lists only the account's own models (no "Studio's default" entry); when nothing is saved, or the saved model is gone, it picks from the list and saves it. Each provider's main family is listed first. (S-140)
+- Tests: tests/test_web_host.py (8).
+
 ## 1.3.7 (22 Nov 2026), the desktop model list fills as soon as a key is pasted
 Tim, 22 Nov, on the desktop Cloud AI card: "still won't show the api".
 - Fixed: the desktop Cloud AI card waited for Save before asking the account for its models. A pasted key is now saved at once and the list fills by itself; if the account doesn't answer, the reason shows on the card; Refresh the list with no key says to paste one. (S-139)

@@ -89,12 +89,35 @@ class Engine:
 CLOUD = {
     "anthropic": {"name": "Claude", "maker": "Anthropic", "url": "https://api.anthropic.com/v1", "model": "claude-sonnet-5-5",
                   "keys_at": "https://console.anthropic.com/settings/keys"},
-    "openai": {"name": "ChatGPT", "maker": "OpenAI", "url": "https://api.openai.com/v1", "model": "gpt-5.5",
+    "openai": {"name": "ChatGPT", "maker": "OpenAI", "url": "https://api.openai.com/v1", "model": "gpt-6.1-terra",   # Tim, 22 Nov: gpt-5.5 is discontinued; OpenAI's current mini model (its deprecations page names gpt-6.1-terra as the replacement for the mini line). Used only when the account lists it
                "keys_at": "https://platform.openai.com/api-keys"},
     "gemini": {"name": "Gemini", "maker": "Google", "url": "https://generativelanguage.googleapis.com/v1beta/openai",
                "model": "gemini-3.8-flash", "keys_at": "https://aistudio.google.com/apikey"},
 }
 ANTHROPIC_VERSION = "2023-06-01"
+
+
+_PICKED: dict[tuple, tuple[float, str]] = {}
+
+
+def pick_cloud_model(provider: str, key: str) -> str:
+    """1.3.8 (Tim, 22 Nov: "stop using gpt 5.5, it's discontinued"): with no model chosen, use the first writing model the
+    account itself lists today, never a name written into the Studio. Asked once and remembered for an hour; the
+    Studio's built-in name is only the last resort when the account can't be reached."""
+    import hashlib, time as _t
+    k = (provider, hashlib.sha256(key.encode()).hexdigest()[:16])
+    hit = _PICKED.get(k)
+    if hit and _t.time() - hit[0] < 3600:
+        return hit[1]
+    try:
+        listed = cloud_models(provider, key)
+        model = next((m for m in listed if m == CLOUD[provider]["model"]), listed[0] if listed else "")
+    except Exception:  # noqa: BLE001 - unreachable: fall back, and ask again in ten minutes
+        _PICKED[k] = (_t.time() - 3000, CLOUD[provider]["model"])
+        return CLOUD[provider]["model"]
+    model = model or CLOUD[provider]["model"]
+    _PICKED[k] = (_t.time(), model)
+    return model
 
 
 def cloud_engine(settings: dict, use: str) -> Engine | None:
@@ -105,7 +128,7 @@ def cloud_engine(settings: dict, use: str) -> Engine | None:
         if not use or not a["key"] or a["provider"] not in CLOUD:
             return None
         p = a["provider"]
-        return Engine("anthropic" if p == "anthropic" else "cloud", CLOUD[p]["url"], a["model"] or CLOUD[p]["model"], a["key"], p)
+        return Engine("anthropic" if p == "anthropic" else "cloud", CLOUD[p]["url"], a["model"] or pick_cloud_model(p, a["key"]), a["key"], p)
     c = settings.get("cloud_ai") or {}
     prov = c.get("provider", "anthropic")
     if not c.get("enabled") or not (c.get("use_for") or {}).get(use) or prov not in CLOUD:
@@ -113,7 +136,7 @@ def cloud_engine(settings: dict, use: str) -> Engine | None:
     key = keys.get(prov)
     if not key:
         return None
-    return Engine("anthropic" if prov == "anthropic" else "cloud", CLOUD[prov]["url"], c.get("model") or CLOUD[prov]["model"], key, prov)
+    return Engine("anthropic" if prov == "anthropic" else "cloud", CLOUD[prov]["url"], c.get("model") or pick_cloud_model(prov, key), key, prov)
 
 
 def _auth(engine: Engine) -> dict:
@@ -156,7 +179,8 @@ _NOT_CHAT = re.compile(r"embed|whisper|tts|audio|speech|transcri|dall-?e|image|i
 def _model_order(name: str):
     """Newest first within a family: higher version numbers before lower, then by name."""
     nums = [-float(n) for n in re.findall(r"\d+(?:\.\d+)?", name)[:3]]
-    return (re.split(r"[\d]", name, maxsplit=1)[0], nums, name)
+    main = 0 if re.match(r"(gpt|claude|gemini)-", name) else 1      # 1.3.8: each provider's own main family first
+    return (main, re.split(r"[\d]", name, maxsplit=1)[0], nums, name)
 
 
 # ---------------------------------------------------------------- HTTP

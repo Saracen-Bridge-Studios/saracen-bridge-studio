@@ -3327,15 +3327,16 @@ async function cloudCard() {
   const LISTS = {}, LIST_ERR = {};                    /* provider -> the account's models, once fetched; or why not */
   const chosen = () => modelSel.value === "__other" ? model.value.trim() : modelSel.value;
   const fillModels = () => {
-    const P = c.providers[prov], list = LISTS[prov], cur = c.provider === prov && c.model && c.model !== P.model ? c.model : "";
+    /* 1.3.8 (Tim, 22 Nov: "stop using gpt 5.5, it's discontinued"): only models the account lists today, no name written
+       into the Studio. The saved model is kept while the account still lists it; otherwise the first one on the list. */
+    const P = c.providers[prov], list = LISTS[prov], cur = c.provider === prov ? (c.model || "") : "";
     const known = new Set(list || []);
-    const opts = [el("option", { value: "" }, `The Studio's default (${P.model})${list && !known.has(P.model) ? " · not on your account's list" : ""}`)];
-    if (cur && !known.has(cur)) opts.push(el("option", { value: cur }, `${cur}${list ? " · not on your account's list" : ""}`));
-    (list || []).filter(m => m !== P.model).forEach(m => opts.push(el("option", { value: m }, m)));
+    const opts = list && list.length ? list.map(m => el("option", { value: m }, m))
+      : [el("option", { value: cur }, cur ? `${cur}` : (c.keys[prov] ? "Asking your account…" : "Paste your key to see the models"))];
     opts.push(el("option", { value: "__other" }, "Another model: type its name"));
-    put(modelSel, opts); modelSel.value = cur; model.hidden = true; model.value = "";
-    const using = cur || P.model;
-    put(gone, list && !known.has(using) ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` ${P.name} no longer lists “${using}” on your account: it has been retired or renamed. Pick another model above and press Save.`)
+    put(modelSel, opts); model.hidden = true; model.value = "";
+    modelSel.value = list && list.length ? (known.has(cur) ? cur : list[0]) : cur;
+    put(gone, list && cur && !known.has(cur) ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` ${P.name} no longer lists “${cur}” on your account: it has been retired or renamed. “${list[0]}” is picked instead; press Save to keep it, or choose another.`)
       : !list && LIST_ERR[prov] ? el("p", { class: "note FAIL", style: "margin-top:10px" }, icon("alert"), ` Couldn't get the model list: ${LIST_ERR[prov]} Check the key, then press Refresh the list.`)
       : !list && c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Asking your account which models it offers…")
       : !c.keys[prov] ? el("p", { class: "muted small", style: "margin:8px 0 0" }, "Paste your key: the models on your account then fill this list by themselves.") : null);
@@ -3345,7 +3346,11 @@ async function cloudCard() {
     if (!c.keys[at]) { fillModels(); return; }
     try { const r = await api.get(`/api/cloud/models?provider=${at}`); LISTS[at] = r.models; delete LIST_ERR[at]; if (loud) toast("ok", `${r.models.length} models on your account`, "Pick one in the Model box."); }
     catch (e) { LIST_ERR[at] = e.message; if (loud) toast("bad", "Couldn't list models", e.message); }
-    if (at === prov) fillModels();
+    if (at === prov) {
+      fillModels();
+      const pick = chosen();                       /* nothing saved yet, or the saved one is gone: keep the account's own */
+      if (pick && pick !== "__other" && (c.provider !== at || !c.model) && LISTS[at] && LISTS[at].length) await save({ model: pick });
+    }
   };
   modelSel.addEventListener("change", () => { model.hidden = modelSel.value !== "__other"; if (!model.hidden) model.focus(); });
   /* 1.3.7 (Tim, 22 Nov: "still won't show the api"): a pasted key is saved at once and the account is asked for its models */

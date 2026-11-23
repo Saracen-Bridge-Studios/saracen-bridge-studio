@@ -203,3 +203,20 @@ def test_the_picker_lists_the_accounts_models_and_saves_the_choice(tmp_path, mon
     assert v["provider"] == "anthropic" and web.ai()["model"] == "model-a"
     assert c.get("/api/web/ai-models?provider=anthropic").json()["suggested"] == "model-a"
     assert c.put("/api/web/ai", json={"provider": "anthropic", "use": True, "model": "bad name!"}).status_code == 400
+
+
+def test_no_written_in_model_when_the_account_can_say(monkeypatch):
+    """1.3.8 (Tim, 22 Nov): "stop using gpt 5.5, it's discontinued". With no model chosen, the account's own list decides."""
+    from studio import llm
+    llm._PICKED.clear()
+    monkeypatch.setattr(llm, "cloud_models", lambda p, k: sorted(["chatgpt-x", "gpt-6-luna", "gpt-6.1-terra", "gpt-6.1-sol", "o9"], key=llm._model_order))
+    assert llm.CLOUD["openai"]["model"] == "gpt-6.1-terra" and llm.cloud_models("openai", "")[0] == "gpt-6.1-sol"
+    assert llm.pick_cloud_model("openai", "sk-test-key-1") == "gpt-6.1-terra"     # the Studio's choice, because the account lists it
+    llm._PICKED.clear()
+    monkeypatch.setattr(llm, "cloud_models", lambda p, k: ["gpt-7-sol", "gpt-7-terra"])
+    assert llm.pick_cloud_model("openai", "sk-test-key-1") == "gpt-7-sol"         # not listed any more: the account's first
+    def boom(p, k):
+        raise llm.EngineError("offline")
+    llm._PICKED.clear()
+    monkeypatch.setattr(llm, "cloud_models", boom)
+    assert llm.pick_cloud_model("openai", "sk-test-key-2") == "gpt-6.1-terra"     # unreachable: the built-in name as last resort
